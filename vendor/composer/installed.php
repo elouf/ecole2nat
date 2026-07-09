@@ -3,7 +3,7 @@
         'name' => 'ecole2nat/ecole2nat',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => 'bf860f1747f84859d3880970fb38a44a31b17407',
+        'reference' => '32f20b4c7145a93124b896a28b924bbc06dc1aba',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         'ecole2nat/ecole2nat' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => 'bf860f1747f84859d3880970fb38a44a31b17407',
+            'reference' => '32f20b4c7145a93124b896a28b924bbc06dc1aba',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
