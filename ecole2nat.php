@@ -23,11 +23,8 @@ define('E2N_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('E2N_PLUGIN_BASENAME', plugin_basename(__FILE__));
 
 /**
- * Chargement manuel temporaire.
- * Plus tard, Composer prendra le relais.
  */
-require_once E2N_PLUGIN_PATH . 'src/Core/Plugin.php';
-require_once E2N_PLUGIN_PATH . 'src/Database/Installer.php';
+require_once E2N_PLUGIN_PATH . 'vendor/autoload.php';
 
 /**
  * Démarrage du plugin.
