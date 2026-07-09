@@ -16,6 +16,11 @@
 /readme.html
 /wp-*.php
 /xmlrpc.php
+/vendor/
+.idea/
+.vscode/
+.DS_Store
+node_modules/
 
 # Configuration
 wp-config.php

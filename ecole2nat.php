@@ -29,12 +29,12 @@ require_once E2N_PLUGIN_PATH . 'vendor/autoload.php';
 /**
  * Démarrage du plugin.
  */
-function e2n(): \Ecole2Nat\Core\Plugin
+function e2n(): \Ecole2Nat\Application\Application
 {
     static $plugin = null;
 
     if ($plugin === null) {
-        $plugin = new \Ecole2Nat\Core\Plugin();
+        $plugin = new \Ecole2Nat\Application\Application();
     }
 
     return $plugin;
