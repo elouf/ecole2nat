@@ -4,6 +4,7 @@ namespace Ecole2Nat\Admin;
 
 use Ecole2Nat\Admin\Pages\SeasonPage;
 use Ecole2Nat\Admin\Pages\CategoryPage;
+use Ecole2Nat\Admin\Pages\ReferencePage;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -52,6 +53,17 @@ class Menu
             'manage_options',
             'ecole2nat-categories',
             [$categoryPage, 'render']
+        );
+
+        $referencePage = new ReferencePage();
+
+        add_submenu_page(
+            'ecole2nat',
+            'Référentiel',
+            'Référentiel',
+            'manage_options',
+            'ecole2nat-reference',
+            [$referencePage, 'render']
         );
     }
 
