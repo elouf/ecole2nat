@@ -5,6 +5,7 @@ namespace Ecole2Nat\Admin\Pages;
 use Ecole2Nat\Category\CategoryRepository;
 use Ecole2Nat\Reference\DomainRepository;
 use Ecole2Nat\Reference\SkillRepository;
+use Ecole2Nat\Exercise\ExerciseRepository;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -26,6 +27,7 @@ class ReferencePage
         $categoryRepository = new CategoryRepository();
         $domainRepository = new DomainRepository();
         $skillRepository = new SkillRepository();
+        $exerciseRepository = new ExerciseRepository();
 
         $categories = $categoryRepository->all();
         $message = '';
@@ -127,6 +129,71 @@ class ReferencePage
             echo '<p>' . esc_html($message) . '</p>';
             echo '</div>';
         }
+
+        if (isset($_POST['e2n_add_exercise'])) {
+            check_admin_referer('e2n_add_exercise');
+
+            $skillId = isset($_POST['skill_id'])
+                ? absint($_POST['skill_id'])
+                : 0;
+
+            $name = isset($_POST['exercise_name'])
+                ? sanitize_text_field(wp_unslash($_POST['exercise_name']))
+                : '';
+
+            $description = isset($_POST['exercise_description'])
+                ? sanitize_textarea_field(
+                    wp_unslash($_POST['exercise_description'])
+                )
+                : '';
+
+            $objectives = isset($_POST['exercise_objectives'])
+                ? sanitize_textarea_field(
+                    wp_unslash($_POST['exercise_objectives'])
+                )
+                : '';
+
+            $coachNotes = isset($_POST['exercise_coach_notes'])
+                ? sanitize_textarea_field(
+                    wp_unslash($_POST['exercise_coach_notes'])
+                )
+                : '';
+
+            $equipment = isset($_POST['exercise_equipment'])
+                ? sanitize_text_field(
+                    wp_unslash($_POST['exercise_equipment'])
+                )
+                : '';
+
+            $duration = isset($_POST['exercise_duration'])
+                && $_POST['exercise_duration'] !== ''
+                    ? absint($_POST['exercise_duration'])
+                    : null;
+
+            $difficulty = isset($_POST['exercise_difficulty'])
+                ? min(5, max(1, absint($_POST['exercise_difficulty'])))
+                : 1;
+
+            if ($skillId === 0 || $name === '') {
+                $message = 'La compétence et le nom de l’exercice sont obligatoires.';
+            } elseif (
+                $exerciseRepository->create(
+                    $skillId,
+                    $name,
+                    $description,
+                    $objectives,
+                    $coachNotes,
+                    $equipment,
+                    $duration,
+                    $difficulty
+                )
+            ) {
+                $message = 'L’exercice a bien été ajouté.';
+            } else {
+                $message = 'Impossible d’ajouter l’exercice.';
+            }
+        }
+
 
         /*
          * Sélection de la catégorie.
@@ -267,39 +334,177 @@ class ReferencePage
             if (empty($skills)) {
                 echo '<p>Aucune compétence.</p>';
             } else {
-                echo '<table class="wp-list-table widefat fixed striped">';
-                echo '<thead>';
-                echo '<tr>';
-                echo '<th scope="col">Compétence</th>';
-                echo '<th scope="col">Description</th>';
-                echo '<th scope="col">Ordre</th>';
-                echo '</tr>';
-                echo '</thead>';
-
-                echo '<tbody>';
-
+                
                 foreach ($skills as $skill) {
-                    echo '<tr>';
+                    $skillId = (int) $skill['id'];
+                    $exercises = $exerciseRepository->allBySkill($skillId);
 
-                    echo '<td>';
-                    echo '<strong>';
+                    echo '<div style="
+                        margin: 15px 0;
+                        padding: 15px;
+                        border: 1px solid #dcdcde;
+                        background: #fff;
+                    ">';
+
+                    echo '<h3 style="margin-top: 0;">';
                     echo esc_html($skill['name']);
-                    echo '</strong>';
-                    echo '</td>';
+                    echo '</h3>';
 
-                    echo '<td>';
-                    echo esc_html($skill['description']);
-                    echo '</td>';
+                    if (!empty($skill['description'])) {
+                        echo '<p>' . esc_html($skill['description']) . '</p>';
+                    }
 
-                    echo '<td>';
-                    echo esc_html((string) $skill['sort_order']);
-                    echo '</td>';
+                    echo '<h4>Exercices</h4>';
 
-                    echo '</tr>';
+                    if (empty($exercises)) {
+                        echo '<p>Aucun exercice.</p>';
+                    } else {
+                        echo '<table class="wp-list-table widefat fixed striped">';
+                        echo '<thead>';
+                        echo '<tr>';
+                        echo '<th>Nom</th>';
+                        echo '<th>Objectif</th>';
+                        echo '<th>Matériel</th>';
+                        echo '<th>Durée</th>';
+                        echo '<th>Difficulté</th>';
+                        echo '</tr>';
+                        echo '</thead>';
+                        echo '<tbody>';
+
+                        foreach ($exercises as $exercise) {
+                            echo '<tr>';
+                            echo '<td><strong>'
+                                . esc_html($exercise['name'])
+                                . '</strong></td>';
+
+                            echo '<td>'
+                                . esc_html($exercise['objectives'])
+                                . '</td>';
+
+                            echo '<td>'
+                                . esc_html($exercise['equipment'])
+                                . '</td>';
+
+                            echo '<td>';
+
+                            if ($exercise['duration'] !== null) {
+                                echo esc_html((string) $exercise['duration']) . ' min';
+                            } else {
+                                echo '—';
+                            }
+
+                            echo '</td>';
+
+                            echo '<td>'
+                                . esc_html((string) $exercise['difficulty'])
+                                . '/5</td>';
+
+                            echo '</tr>';
+                        }
+
+                        echo '</tbody>';
+                        echo '</table>';
+                    }
+
+                    echo '<details style="margin-top: 15px;">';
+                    echo '<summary style="cursor: pointer;">';
+                    echo '<strong>Ajouter un exercice</strong>';
+                    echo '</summary>';
+
+                    echo '<form method="post" style="margin-top: 15px;">';
+
+                    wp_nonce_field('e2n_add_exercise');
+
+                    echo '<input
+                        type="hidden"
+                        name="skill_id"
+                        value="' . esc_attr((string) $skillId) . '"
+                    >';
+
+                    echo '<p>';
+                    echo '<label><strong>Nom</strong></label><br>';
+                    echo '<input
+                        type="text"
+                        name="exercise_name"
+                        class="regular-text"
+                        required
+                    >';
+                    echo '</p>';
+
+                    echo '<p>';
+                    echo '<label><strong>Description</strong></label><br>';
+                    echo '<textarea
+                        name="exercise_description"
+                        class="large-text"
+                        rows="3"
+                    ></textarea>';
+                    echo '</p>';
+
+                    echo '<p>';
+                    echo '<label><strong>Objectif</strong></label><br>';
+                    echo '<textarea
+                        name="exercise_objectives"
+                        class="large-text"
+                        rows="2"
+                    ></textarea>';
+                    echo '</p>';
+
+                    echo '<p>';
+                    echo '<label><strong>Consignes coach</strong></label><br>';
+                    echo '<textarea
+                        name="exercise_coach_notes"
+                        class="large-text"
+                        rows="2"
+                    ></textarea>';
+                    echo '</p>';
+
+                    echo '<p>';
+                    echo '<label><strong>Matériel</strong></label><br>';
+                    echo '<input
+                        type="text"
+                        name="exercise_equipment"
+                        class="regular-text"
+                    >';
+                    echo '</p>';
+
+                    echo '<p>';
+                    echo '<label><strong>Durée en minutes</strong></label><br>';
+                    echo '<input
+                        type="number"
+                        name="exercise_duration"
+                        min="1"
+                    >';
+                    echo '</p>';
+
+                    echo '<p>';
+                    echo '<label><strong>Difficulté</strong></label><br>';
+                    echo '<select name="exercise_difficulty">';
+
+                    for ($difficulty = 1; $difficulty <= 5; $difficulty++) {
+                        echo '<option value="' . $difficulty . '">';
+                        echo $difficulty . '/5';
+                        echo '</option>';
+                    }
+
+                    echo '</select>';
+                    echo '</p>';
+
+                    echo '<p>';
+                    echo '<button
+                        type="submit"
+                        class="button"
+                        name="e2n_add_exercise"
+                        value="1"
+                    >';
+                    echo 'Ajouter l’exercice';
+                    echo '</button>';
+                    echo '</p>';
+
+                    echo '</form>';
+                    echo '</details>';
+
+                    echo '</div>';
                 }
-
-                echo '</tbody>';
-                echo '</table>';
             }
 
             echo '<hr>';
