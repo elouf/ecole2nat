@@ -100,5 +100,26 @@ class Installer
         ) {$charsetCollate};";
 
         dbDelta($sql);
+
+        $tableName = Config::table('exercises');
+
+        $sql = "CREATE TABLE {$tableName} (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            skill_id BIGINT UNSIGNED NOT NULL,
+            name VARCHAR(150) NOT NULL,
+            description TEXT NULL,
+            objectives TEXT NULL,
+            coach_notes TEXT NULL,
+            equipment VARCHAR(255) NULL,
+            duration INT UNSIGNED NULL,
+            difficulty TINYINT UNSIGNED NOT NULL DEFAULT 1,
+            created_at DATETIME NOT NULL,
+            updated_at DATETIME NULL,
+            PRIMARY KEY (id),
+            KEY skill_id (skill_id),
+            KEY difficulty (difficulty)
+        ) {$charsetCollate};";
+
+        dbDelta($sql);
     }
 }
