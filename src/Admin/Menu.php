@@ -3,6 +3,7 @@
 namespace Ecole2Nat\Admin;
 
 use Ecole2Nat\Admin\Pages\SeasonPage;
+use Ecole2Nat\Admin\Pages\CategoryPage;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -40,6 +41,17 @@ class Menu
             'manage_options',
             'ecole2nat-seasons',
             [$seasonPage, 'render']
+        );
+
+        $categoryPage = new CategoryPage();
+
+        add_submenu_page(
+            'ecole2nat',
+            'Catégories',
+            'Catégories',
+            'manage_options',
+            'ecole2nat-categories',
+            [$categoryPage, 'render']
         );
     }
 

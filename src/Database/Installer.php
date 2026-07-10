@@ -2,6 +2,8 @@
 
 namespace Ecole2Nat\Database;
 
+use Ecole2Nat\Support\Config;
+
 if (!defined('ABSPATH')) {
     exit;
 }
@@ -28,7 +30,7 @@ class Installer
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
         $charsetCollate = $wpdb->get_charset_collate();
-        $tableName = $wpdb->prefix . 'e2n_seasons';
+        $tableName = Config::table('seasons');
 
         $sql = "CREATE TABLE {$tableName} (
             id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -40,6 +42,23 @@ class Installer
             updated_at DATETIME NULL,
             PRIMARY KEY  (id),
             KEY is_current (is_current)
+        ) {$charsetCollate};";
+
+        dbDelta($sql);
+
+        $tableName = Config::table('categories');
+
+        $sql = "CREATE TABLE {$tableName} (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            name VARCHAR(100) NOT NULL,
+            description TEXT NULL,
+            sort_order INT NOT NULL DEFAULT 0,
+            is_active TINYINT(1) NOT NULL DEFAULT 1,
+            created_at DATETIME NOT NULL,
+            updated_at DATETIME NULL,
+            PRIMARY KEY (id),
+            KEY sort_order (sort_order),
+            KEY is_active (is_active)
         ) {$charsetCollate};";
 
         dbDelta($sql);
