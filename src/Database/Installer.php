@@ -62,5 +62,43 @@ class Installer
         ) {$charsetCollate};";
 
         dbDelta($sql);
+
+        $tableName = Config::table('skill_domains');
+
+        $sql = "CREATE TABLE {$tableName} (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            category_id BIGINT UNSIGNED NOT NULL,
+            name VARCHAR(150) NOT NULL,
+            description TEXT NULL,
+            sort_order INT NOT NULL DEFAULT 0,
+            is_active TINYINT(1) NOT NULL DEFAULT 1,
+            created_at DATETIME NOT NULL,
+            updated_at DATETIME NULL,
+            PRIMARY KEY (id),
+            KEY category_id (category_id),
+            KEY sort_order (sort_order),
+            KEY is_active (is_active)
+        ) {$charsetCollate};";
+
+        dbDelta($sql);
+
+        $tableName = Config::table('skills');
+
+        $sql = "CREATE TABLE {$tableName} (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            domain_id BIGINT UNSIGNED NOT NULL,
+            name VARCHAR(150) NOT NULL,
+            description TEXT NULL,
+            sort_order INT NOT NULL DEFAULT 0,
+            is_active TINYINT(1) NOT NULL DEFAULT 1,
+            created_at DATETIME NOT NULL,
+            updated_at DATETIME NULL,
+            PRIMARY KEY (id),
+            KEY domain_id (domain_id),
+            KEY sort_order (sort_order),
+            KEY is_active (is_active)
+        ) {$charsetCollate};";
+
+        dbDelta($sql);
     }
 }
