@@ -1,7 +1,8 @@
 <?php
+
 namespace Ecole2Nat\Admin;
 
-use Ecole2Nat\Season\SeasonRepository;
+use Ecole2Nat\Admin\Pages\SeasonPage;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -20,67 +21,33 @@ class Menu
             'dashicons-swimming',
             26
         );
+
+        add_submenu_page(
+            'ecole2nat',
+            'Tableau de bord',
+            'Tableau de bord',
+            'manage_options',
+            'ecole2nat',
+            [$this, 'renderDashboard']
+        );
+
+        $seasonPage = new SeasonPage();
+
+        add_submenu_page(
+            'ecole2nat',
+            'Saisons',
+            'Saisons',
+            'manage_options',
+            'ecole2nat-seasons',
+            [$seasonPage, 'render']
+        );
     }
 
     public function renderDashboard(): void
-{
-    $repository = new SeasonRepository();
-
-    if (
-        isset($_POST['e2n_add_season'])
-        && check_admin_referer('e2n_add_season')
-    ) {
-        $name = sanitize_text_field($_POST['season_name'] ?? '');
-
-        if ($name !== '') {
-            $repository->create($name);
-        }
+    {
+        echo '<div class="wrap">';
+        echo '<h1>Ecole2Nat\'</h1>';
+        echo '<p>Bienvenue dans le tableau de bord.</p>';
+        echo '</div>';
     }
-
-    $seasons = $repository->all();
-
-    echo '<div class="wrap">';
-    echo '<h1>Ecole2Nat\'</h1>';
-
-    echo '<h2>Saisons</h2>';
-
-    echo '<form method="post">';
-
-wp_nonce_field('e2n_add_season');
-
-echo '<p>';
-
-echo '<input
-        type="text"
-        name="season_name"
-        placeholder="2026-2027"
-        required>';
-
-echo ' ';
-
-echo '<button
-        type="submit"
-        class="button button-primary"
-        name="e2n_add_season">
-        Ajouter une saison
-      </button>';
-
-echo '</p>';
-
-echo '</form>';
-
-    if (empty($seasons)) {
-        echo '<p>Aucune saison.</p>';
-    } else {
-        echo '<ul>';
-
-        foreach ($seasons as $season) {
-            echo '<li>' . esc_html($season['name']) . '</li>';
-        }
-
-        echo '</ul>';
-    }
-
-    echo '</div>';
-}
 }

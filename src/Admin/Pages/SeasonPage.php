@@ -27,48 +27,45 @@ class SeasonPage
 
         $seasons = $repository->all();
 
-        echo '<div class="wrap">';
-        echo '<h1>Saisons</h1>';
-
-        echo '<form method="post">';
-
-        wp_nonce_field('e2n_add_season');
-
-        echo '<p>';
-
-        echo '<input type="text"
-                    name="season_name"
-                    placeholder="2026-2027"
-                    required>';
-
-        echo ' <button class="button button-primary"
-                       type="submit"
-                       name="e2n_add_season">
-                    Ajouter une saison
-                </button>';
-
-        echo '</p>';
-
-        echo '</form>';
-
         if (empty($seasons)) {
+    echo '<p>Aucune saison.</p>';
+} else {
+    echo '<table class="wp-list-table widefat fixed striped">';
 
-            echo '<p>Aucune saison.</p>';
+    echo '<thead>';
+    echo '<tr>';
+    echo '<th>Saison</th>';
+    echo '<th>Début</th>';
+    echo '<th>Fin</th>';
+    echo '<th>Courante</th>';
+    echo '</tr>';
+    echo '</thead>';
 
-        } else {
+    echo '<tbody>';
 
-            echo '<ul>';
+    foreach ($seasons as $season) {
+        $startDate = !empty($season['start_date'])
+            ? esc_html($season['start_date'])
+            : '—';
 
-            foreach ($seasons as $season) {
+        $endDate = !empty($season['end_date'])
+            ? esc_html($season['end_date'])
+            : '—';
 
-                echo '<li>' . esc_html($season['name']) . '</li>';
+        $isCurrent = !empty($season['is_current'])
+            ? 'Oui'
+            : 'Non';
 
-            }
+        echo '<tr>';
+        echo '<td>' . esc_html($season['name']) . '</td>';
+        echo '<td>' . $startDate . '</td>';
+        echo '<td>' . $endDate . '</td>';
+        echo '<td>' . esc_html($isCurrent) . '</td>';
+        echo '</tr>';
+    }
 
-            echo '</ul>';
-
-        }
-
-        echo '</div>';
+    echo '</tbody>';
+    echo '</table>';
+}
     }
 }
