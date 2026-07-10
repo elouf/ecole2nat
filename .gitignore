@@ -21,6 +21,7 @@
 .vscode/
 .DS_Store
 node_modules/
+*.zip
 
 # Configuration
 wp-config.php
