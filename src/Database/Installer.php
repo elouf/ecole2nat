@@ -121,5 +121,66 @@ class Installer
         ) {$charsetCollate};";
 
         dbDelta($sql);
+
+        $tableName = Config::table('groups');
+
+        $sql = "CREATE TABLE {$tableName} (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            season_id BIGINT UNSIGNED NOT NULL,
+            category_id BIGINT UNSIGNED NOT NULL,
+            name VARCHAR(150) NOT NULL,
+            color VARCHAR(20) NULL,
+            weekday TINYINT UNSIGNED NULL,
+            start_time TIME NULL,
+            end_time TIME NULL,
+            is_active TINYINT(1) NOT NULL DEFAULT 1,
+            created_at DATETIME NOT NULL,
+            updated_at DATETIME NULL,
+            PRIMARY KEY (id),
+            KEY season_id (season_id),
+            KEY category_id (category_id),
+            KEY weekday (weekday),
+            KEY is_active (is_active)
+        ) {$charsetCollate};";
+
+        dbDelta($sql);
+
+        $tableName = Config::table('swimmers');
+
+        $sql = "CREATE TABLE {$tableName} (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+
+            group_id BIGINT UNSIGNED NULL
+
+            last_name VARCHAR(100) NOT NULL,
+            first_name VARCHAR(100) NOT NULL,
+
+            birth_date DATE NULL,
+            gender CHAR(1) NULL,
+
+            responsible_name VARCHAR(150) NULL,
+            responsible_email VARCHAR(150) NULL,
+            responsible_phone VARCHAR(30) NULL,
+
+            licence_number VARCHAR(50) NULL,
+
+            registration_date DATE NULL,
+
+            medical_note TEXT NULL,
+
+            is_active TINYINT(1) NOT NULL DEFAULT 1,
+
+            created_at DATETIME NOT NULL,
+            updated_at DATETIME NULL,
+
+            PRIMARY KEY (id),
+
+            KEY group_id (group_id),
+            KEY last_name (last_name),
+            KEY is_active (is_active)
+
+        ) {$charsetCollate};";
+
+        dbDelta($sql);
     }
 }

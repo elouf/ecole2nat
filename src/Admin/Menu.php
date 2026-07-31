@@ -5,6 +5,8 @@ namespace Ecole2Nat\Admin;
 use Ecole2Nat\Admin\Pages\SeasonPage;
 use Ecole2Nat\Admin\Pages\CategoryPage;
 use Ecole2Nat\Admin\Pages\ReferencePage;
+use Ecole2Nat\Admin\Pages\GroupPage;
+use Ecole2Nat\Admin\Pages\SwimmerPage;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -26,11 +28,20 @@ class Menu
 
         add_submenu_page(
             'ecole2nat',
-            'Tableau de bord',
-            'Tableau de bord',
+            __('Groupes', 'ecole2nat'),
+            __('Groupes', 'ecole2nat'),
             'manage_options',
+            'ecole2nat-groups',
+            [new GroupPage(), 'render']
+        );
+
+        add_submenu_page(
             'ecole2nat',
-            [$this, 'renderDashboard']
+            __('Nageurs', 'ecole2nat'),
+            __('Nageurs', 'ecole2nat'),
+            'manage_options',
+            'ecole2nat-swimmers',
+            [new SwimmerPage(), 'render']
         );
 
         $seasonPage = new SeasonPage();
