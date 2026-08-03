@@ -56,7 +56,7 @@ class Installer
             is_active TINYINT(1) NOT NULL DEFAULT 1,
             created_at DATETIME NOT NULL,
             updated_at DATETIME NULL,
-            PRIMARY KEY (id),
+            PRIMARY KEY  (id),
             KEY sort_order (sort_order),
             KEY is_active (is_active)
         ) {$charsetCollate};";
@@ -74,7 +74,7 @@ class Installer
             is_active TINYINT(1) NOT NULL DEFAULT 1,
             created_at DATETIME NOT NULL,
             updated_at DATETIME NULL,
-            PRIMARY KEY (id),
+            PRIMARY KEY  (id),
             KEY category_id (category_id),
             KEY sort_order (sort_order),
             KEY is_active (is_active)
@@ -93,7 +93,7 @@ class Installer
             is_active TINYINT(1) NOT NULL DEFAULT 1,
             created_at DATETIME NOT NULL,
             updated_at DATETIME NULL,
-            PRIMARY KEY (id),
+            PRIMARY KEY  (id),
             KEY domain_id (domain_id),
             KEY sort_order (sort_order),
             KEY is_active (is_active)
@@ -115,7 +115,7 @@ class Installer
             difficulty TINYINT UNSIGNED NOT NULL DEFAULT 1,
             created_at DATETIME NOT NULL,
             updated_at DATETIME NULL,
-            PRIMARY KEY (id),
+            PRIMARY KEY  (id),
             KEY skill_id (skill_id),
             KEY difficulty (difficulty)
         ) {$charsetCollate};";
@@ -136,7 +136,7 @@ class Installer
             is_active TINYINT(1) NOT NULL DEFAULT 1,
             created_at DATETIME NOT NULL,
             updated_at DATETIME NULL,
-            PRIMARY KEY (id),
+            PRIMARY KEY  (id),
             KEY season_id (season_id),
             KEY category_id (category_id),
             KEY weekday (weekday),
@@ -149,36 +149,78 @@ class Installer
 
         $sql = "CREATE TABLE {$tableName} (
             id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-
-            group_id BIGINT UNSIGNED NULL
-
+            group_id BIGINT UNSIGNED NULL,
             last_name VARCHAR(100) NOT NULL,
             first_name VARCHAR(100) NOT NULL,
-
             birth_date DATE NULL,
             gender CHAR(1) NULL,
-
             responsible_name VARCHAR(150) NULL,
             responsible_email VARCHAR(150) NULL,
             responsible_phone VARCHAR(30) NULL,
-
             licence_number VARCHAR(50) NULL,
-
             registration_date DATE NULL,
-
             medical_note TEXT NULL,
-
             is_active TINYINT(1) NOT NULL DEFAULT 1,
-
             created_at DATETIME NOT NULL,
             updated_at DATETIME NULL,
-
-            PRIMARY KEY (id),
-
+            PRIMARY KEY  (id),
             KEY group_id (group_id),
             KEY last_name (last_name),
             KEY is_active (is_active)
 
+        ) {$charsetCollate};";
+
+        dbDelta($sql);
+
+        $tableName = Config::table('sessions');
+
+        $sql = "CREATE TABLE {$tableName} (
+            id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+            category_id bigint(20) unsigned NOT NULL,
+            name varchar(150) NOT NULL,
+            objectives text NULL,
+            is_active tinyint(1) NOT NULL DEFAULT 1,
+            created_at datetime NOT NULL,
+            updated_at datetime NULL,
+            PRIMARY KEY  (id),
+            KEY category_id (category_id),
+            KEY is_active (is_active)
+        ) {$charsetCollate};";
+
+        dbDelta($sql);
+
+        $tableName = Config::table('session_parts');
+
+        $sql = "CREATE TABLE {$tableName} (
+            id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+            session_id bigint(20) unsigned NOT NULL,
+            title varchar(150) NOT NULL,
+            position int(11) unsigned NOT NULL DEFAULT 0,
+            created_at datetime NOT NULL,
+            updated_at datetime NULL,
+            PRIMARY KEY  (id),
+            KEY session_id (session_id),
+            KEY position (position)
+        ) {$charsetCollate};";
+
+        dbDelta($sql);
+
+        $tableName = Config::table('session_exercises');
+
+        $sql = "CREATE TABLE {$tableName} (
+            id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+            part_id bigint(20) unsigned NOT NULL,
+            exercise_id bigint(20) unsigned NOT NULL,
+            position int(11) unsigned NOT NULL DEFAULT 0,
+            custom_duration int(11) unsigned NULL,
+            coach_notes text NULL,
+            created_at datetime NOT NULL,
+            updated_at datetime NULL,
+            PRIMARY KEY  (id),
+            UNIQUE KEY part_exercise (part_id,exercise_id),
+            KEY part_id (part_id),
+            KEY exercise_id (exercise_id),
+            KEY position (position)
         ) {$charsetCollate};";
 
         dbDelta($sql);

@@ -7,6 +7,10 @@ use Ecole2Nat\Admin\Pages\CategoryPage;
 use Ecole2Nat\Admin\Pages\ReferencePage;
 use Ecole2Nat\Admin\Pages\GroupPage;
 use Ecole2Nat\Admin\Pages\SwimmerPage;
+use Ecole2Nat\Admin\Pages\SessionListPage;
+use Ecole2Nat\Admin\Pages\SessionPage;
+use Ecole2Nat\Admin\Pages\ExerciseListPage;
+use Ecole2Nat\Admin\Pages\ExercisePage;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -75,6 +79,44 @@ class Menu
             'manage_options',
             'ecole2nat-reference',
             [$referencePage, 'render']
+        );
+
+        add_submenu_page(
+            'ecole2nat',
+            __('Séances', 'ecole2nat'),
+            __('Séances', 'ecole2nat'),
+            'manage_options',
+            'ecole2nat-sessions',
+            [new SessionListPage(), 'render']
+        );
+
+        $sessionPage = new SessionPage();
+
+        add_submenu_page(
+            'ecole2nat',
+            __('Modifier une séance', 'ecole2nat'),
+            __('Éditeur de séance', 'ecole2nat'),
+            'manage_options',
+            'ecole2nat-session',
+            [$sessionPage, 'render']
+        );
+
+        add_submenu_page(
+            'ecole2nat',
+            __('Bibliothèque d’exercices', 'ecole2nat'),
+            __('Bibliothèque d’exercices', 'ecole2nat'),
+            'manage_options',
+            'ecole2nat-exercises',
+            [new ExerciseListPage(), 'render']
+        );
+
+        add_submenu_page(
+            'ecole2nat',
+            __('Exercice', 'ecole2nat'),
+            __('Éditeur d’exercice', 'ecole2nat'),
+            'manage_options',
+            'ecole2nat-exercise',
+            [new ExercisePage(), 'render']
         );
     }
 
