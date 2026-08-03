@@ -154,4 +154,67 @@ class SwimmerRepository
 
         return $count > 0;
     }
+
+    public function find(int $id): ?array
+{
+    global $wpdb;
+
+    $result = $wpdb->get_row(
+        $wpdb->prepare(
+            'SELECT *
+            FROM ' . Config::table('swimmers') . '
+            WHERE id = %d
+            LIMIT 1',
+            $id
+        ),
+        ARRAY_A
+    );
+
+    return is_array($result) ? $result : null;
+}
+
+public function update(int $id, array $data): bool
+{
+    global $wpdb;
+
+    $result = $wpdb->update(
+        Config::table('swimmers'),
+        [
+            'group_id'           => $data['group_id'],
+            'last_name'          => $data['last_name'],
+            'first_name'         => $data['first_name'],
+            'birth_date'         => $data['birth_date'],
+            'gender'             => $data['gender'],
+            'responsible_name'   => $data['responsible_name'],
+            'responsible_email'  => $data['responsible_email'],
+            'responsible_phone'  => $data['responsible_phone'],
+            'licence_number'     => $data['licence_number'],
+            'registration_date'  => $data['registration_date'],
+            'medical_note'       => $data['medical_note'],
+            'updated_at'         => current_time('mysql'),
+        ],
+        [
+            'id' => $id,
+        ],
+        [
+            '%d',
+            '%s',
+            '%s',
+            '%s',
+            '%s',
+            '%s',
+            '%s',
+            '%s',
+            '%s',
+            '%s',
+            '%s',
+            '%s',
+        ],
+        [
+            '%d',
+        ]
+    );
+
+    return $result !== false;
+}
 }

@@ -47,4 +47,19 @@ class SwimmerService
     {
         return $this->repository->toggleActive($id);
     }
+
+    public function find(int $id): ?array
+    {
+        return $this->repository->find($id);
+    }
+
+    public function update(int $id, array $data): array
+    {
+        $updated = $this->repository->update($id, $data);
+
+        return [
+            'success' => $updated,
+            'message' => $updated ? 'updated' : 'error',
+        ];
+    }
 }

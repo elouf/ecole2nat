@@ -13,6 +13,7 @@ class SwimmerPage
 {
     private SwimmerService $swimmerService;
     private GroupService $groupService;
+    private ?array $editingSwimmer = null;
 
     public function __construct()
     {
@@ -33,6 +34,14 @@ class SwimmerPage
 
         $this->handleActions();
 
+        if (
+            isset($_GET['action'], $_GET['swimmer_id']) &&
+            $_GET['action'] === 'edit'
+        ) {
+            $this->editingSwimmer = $this->swimmerService->find(
+                (int) $_GET['swimmer_id']
+            );
+        }
         $swimmers = $this->swimmerService->all();
 
         ?>
@@ -52,23 +61,26 @@ class SwimmerPage
 
     private function handleActions(): void
     {
+        /*
+        * Activation / désactivation d’un nageur.
+        */
         if (
-            isset($_GET['e2n_action'], $_GET['swimmer_id']) &&
-            $_GET['e2n_action'] === 'toggle_swimmer'
+            isset($_GET['e2n_action'], $_GET['swimmer_id'])
+            && sanitize_key(wp_unslash($_GET['e2n_action'])) === 'toggle_swimmer'
         ) {
-            $swimmerId = (int) $_GET['swimmer_id'];
+            $swimmerId = absint($_GET['swimmer_id']);
 
             check_admin_referer(
                 'e2n_toggle_swimmer_' . $swimmerId
             );
 
-            $this->swimmerService->toggleActive($swimmerId);
+            $updated = $this->swimmerService->toggleActive($swimmerId);
 
-            wp_redirect(
+            wp_safe_redirect(
                 add_query_arg(
                     [
                         'page'    => 'ecole2nat-swimmers',
-                        'message' => 'updated',
+                        'message' => $updated ? 'updated' : 'error',
                     ],
                     admin_url('admin.php')
                 )
@@ -77,58 +89,81 @@ class SwimmerPage
             exit;
         }
 
-        if (
-            !isset($_POST['e2n_action']) ||
-            $_POST['e2n_action'] !== 'create_swimmer'
-        ) {
+        /*
+        * Les actions suivantes concernent uniquement les formulaires POST.
+        */
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             return;
         }
 
-        check_admin_referer('e2n_create_swimmer');
+        $action = isset($_POST['e2n_action'])
+            ? sanitize_key(wp_unslash($_POST['e2n_action']))
+            : '';
 
-        $result = $this->swimmerService->create([
-            'group_id' => !empty($_POST['group_id'])
-                ? (int) $_POST['group_id']
-                : null,
+        /*
+        * Création d’un nageur.
+        */
+        if ($action === 'create_swimmer') {
+            check_admin_referer('e2n_create_swimmer');
 
-            'registration_date' => !empty($_POST['registration_date'])
-                ? sanitize_text_field($_POST['registration_date'])
-                : current_time('Y-m-d'),
-            'last_name'           => sanitize_text_field($_POST['last_name'] ?? ''),
-            'first_name'          => sanitize_text_field($_POST['first_name'] ?? ''),
-            'birth_date'          => !empty($_POST['birth_date']) ? $_POST['birth_date'] : null,
-            'gender'              => sanitize_text_field($_POST['gender'] ?? ''),
-            'responsible_name' => sanitize_text_field(
-                $_POST['responsible_name'] ?? ''
-            ),
+            $result = $this->swimmerService->create(
+                $this->getFormData()
+            );
 
-            'responsible_email' => sanitize_email(
-                $_POST['responsible_email'] ?? ''
-            ),
+            wp_safe_redirect(
+                add_query_arg(
+                    [
+                        'page'    => 'ecole2nat-swimmers',
+                        'message' => $result['message'],
+                    ],
+                    admin_url('admin.php')
+                )
+            );
 
-            'responsible_phone' => sanitize_text_field(
-                $_POST['responsible_phone'] ?? ''
-            ),
-            'licence_number' => sanitize_text_field(
-                $_POST['licence_number'] ?? ''
-            ),
+            exit;
+        }
 
-            'medical_note' => sanitize_textarea_field(
-                $_POST['medical_note'] ?? ''
-            ),
-        ]);
+        /*
+        * Modification d’un nageur.
+        */
+        if ($action === 'update_swimmer') {
+            check_admin_referer('e2n_create_swimmer');
 
-        wp_redirect(
-            add_query_arg(
-                [
-                    'page'    => 'ecole2nat-swimmers',
-                    'message' => $result['message'],
-                ],
-                admin_url('admin.php')
-            )
-        );
+            $swimmerId = isset($_POST['swimmer_id'])
+                ? absint($_POST['swimmer_id'])
+                : 0;
 
-        exit;
+            if ($swimmerId <= 0) {
+                wp_safe_redirect(
+                    add_query_arg(
+                        [
+                            'page'    => 'ecole2nat-swimmers',
+                            'message' => 'error',
+                        ],
+                        admin_url('admin.php')
+                    )
+                );
+
+                exit;
+            }
+
+            $result = $this->swimmerService->update(
+                $swimmerId,
+                $this->getFormData()
+            );
+
+            wp_safe_redirect(
+                add_query_arg(
+                    [
+                        'page'    => 'ecole2nat-swimmers',
+                        'message' => $result['message'],
+                    ],
+                    admin_url('admin.php')
+                )
+            );
+
+            exit;
+        }
     }
 
     private function renderNotice(): void
@@ -187,13 +222,25 @@ class SwimmerPage
 
     private function renderCreateForm(): void
     {
+        $isEditing = $this->editingSwimmer !== null;
         ?>
         <form method="post">
             <input
                 type="hidden"
                 name="e2n_action"
-                value="create_swimmer"
+                value="<?php echo esc_attr(
+                    $isEditing
+                        ? 'update_swimmer'
+                        : 'create_swimmer'
+                ); ?>"
             >
+            <?php if ($isEditing) : ?>
+                <input
+                    type="hidden"
+                    name="swimmer_id"
+                    value="<?php echo esc_attr((string) $this->editingSwimmer['id']); ?>"
+                >
+            <?php endif; ?>
 
             <?php wp_nonce_field('e2n_create_swimmer'); ?>
 
@@ -209,7 +256,9 @@ class SwimmerPage
 
             <?php
             submit_button(
-                __('Créer le nageur', 'ecole2nat')
+                $isEditing
+                    ? __('Enregistrer les modifications', 'ecole2nat')
+                    : __('Créer le nageur', 'ecole2nat')
             );
             ?>
         </form>
@@ -222,7 +271,13 @@ class SwimmerPage
         <div class="postbox">
             <div class="postbox-header">
                 <h2 class="hndle">
-                    <?php esc_html_e('Informations du nageur', 'ecole2nat'); ?>
+                    <?php
+                    echo esc_html(
+                        $this->editingSwimmer === null
+                            ? __('Informations du nageur', 'ecole2nat')
+                            : __('Modification du nageur', 'ecole2nat')
+                    );
+                    ?>
                 </h2>
             </div>
 
@@ -243,6 +298,7 @@ class SwimmerPage
                                 id="last_name"
                                 name="last_name"
                                 class="regular-text"
+                                value="<?php echo esc_attr($this->fieldValue('last_name')); ?>"
                                 required
                             >
                         </td>
@@ -261,6 +317,7 @@ class SwimmerPage
                                 id="first_name"
                                 name="first_name"
                                 class="regular-text"
+                                value="<?php echo esc_attr($this->fieldValue('first_name')); ?>"
                                 required
                             >
                         </td>
@@ -278,6 +335,7 @@ class SwimmerPage
                                 type="date"
                                 id="birth_date"
                                 name="birth_date"
+                                value="<?php echo esc_attr($this->fieldValue('birth_date')); ?>"
                             >
                         </td>
                     </tr>
@@ -298,11 +356,17 @@ class SwimmerPage
                                     <?php esc_html_e('— Sélectionner —', 'ecole2nat'); ?>
                                 </option>
 
-                                <option value="F">
+                                <option
+                                    value="F"
+                                    <?php selected($this->fieldValue('gender'), 'F'); ?>
+                                >
                                     <?php esc_html_e('Féminin', 'ecole2nat'); ?>
                                 </option>
 
-                                <option value="M">
+                                <option
+                                    value="M"
+                                    <?php selected($this->fieldValue('gender'), 'M'); ?>
+                                >
                                     <?php esc_html_e('Masculin', 'ecole2nat'); ?>
                                 </option>
                             </select>
@@ -347,7 +411,13 @@ class SwimmerPage
                                 </option>
 
                                 <?php foreach ($groups as $group) : ?>
-                                    <option value="<?php echo esc_attr($group['id']); ?>">
+                                    <option
+                                        value="<?php echo esc_attr((string) $group['id']); ?>"
+                                        <?php selected(
+                                            (int) $this->fieldValue('group_id', '0'),
+                                            (int) $group['id']
+                                        ); ?>
+                                    >
                                         <?php echo esc_html($group['name']); ?>
                                     </option>
                                 <?php endforeach; ?>
@@ -368,7 +438,12 @@ class SwimmerPage
                                 type="date"
                                 id="registration_date"
                                 name="registration_date"
-                                value="<?php echo esc_attr(current_time('Y-m-d')); ?>"
+                                value="<?php echo esc_attr(
+                                    $this->fieldValue(
+                                        'registration_date',
+                                        current_time('Y-m-d')
+                                    )
+                                ); ?>"
                             >
                         </td>
                     </tr>
@@ -407,6 +482,7 @@ class SwimmerPage
                                 id="responsible_name"
                                 name="responsible_name"
                                 class="regular-text"
+                                value="<?php echo esc_attr($this->fieldValue('responsible_name')); ?>"
                             >
                         </td>
                     </tr>
@@ -424,6 +500,7 @@ class SwimmerPage
                                 id="responsible_email"
                                 name="responsible_email"
                                 class="regular-text"
+                                value="<?php echo esc_attr($this->fieldValue('responsible_email')); ?>"
                             >
                         </td>
                     </tr>
@@ -441,6 +518,7 @@ class SwimmerPage
                                 id="responsible_phone"
                                 name="responsible_phone"
                                 class="regular-text"
+                                value="<?php echo esc_attr($this->fieldValue('responsible_phone')); ?>"
                             >
                         </td>
                     </tr>
@@ -479,6 +557,7 @@ class SwimmerPage
                                 id="licence_number"
                                 name="licence_number"
                                 class="regular-text"
+                                value="<?php echo esc_attr($this->fieldValue('licence_number')); ?>"
                             >
                         </td>
                     </tr>
@@ -496,7 +575,7 @@ class SwimmerPage
                                 name="medical_note"
                                 rows="4"
                                 class="large-text"
-                            ></textarea>
+                            ><?php echo esc_textarea($this->fieldValue('medical_note')); ?></textarea>
                         </td>
                     </tr>
 
@@ -605,7 +684,16 @@ class SwimmerPage
 
                                     <td>
                                         <?php
-                                        $actionUrl = wp_nonce_url(
+                                        $editUrl = add_query_arg(
+                                            [
+                                                'page'       => 'ecole2nat-swimmers',
+                                                'action'     => 'edit',
+                                                'swimmer_id' => (int) $swimmer['id'],
+                                            ],
+                                            admin_url('admin.php')
+                                        );
+
+                                        $toggleUrl = wp_nonce_url(
                                             add_query_arg(
                                                 [
                                                     'page'       => 'ecole2nat-swimmers',
@@ -618,7 +706,13 @@ class SwimmerPage
                                         );
                                         ?>
 
-                                        <a href="<?php echo esc_url($actionUrl); ?>">
+                                        <a href="<?php echo esc_url($editUrl); ?>">
+                                            <?php esc_html_e('Modifier', 'ecole2nat'); ?>
+                                        </a>
+
+                                        <span aria-hidden="true"> | </span>
+
+                                        <a href="<?php echo esc_url($toggleUrl); ?>">
                                             <?php
                                             echo (int) $swimmer['is_active'] === 1
                                                 ? esc_html__('Désactiver', 'ecole2nat')
@@ -634,5 +728,46 @@ class SwimmerPage
             </div>
         </div>
         <?php
+    }
+
+    private function getFormData(): array
+    {
+        return [
+            'group_id' => !empty($_POST['group_id'])
+                ? (int) $_POST['group_id']
+                : null,
+
+            'last_name' => sanitize_text_field($_POST['last_name'] ?? ''),
+            'first_name' => sanitize_text_field($_POST['first_name'] ?? ''),
+
+            'birth_date' => !empty($_POST['birth_date'])
+                ? sanitize_text_field($_POST['birth_date'])
+                : null,
+
+            'gender' => sanitize_text_field($_POST['gender'] ?? ''),
+
+            'responsible_name' => sanitize_text_field($_POST['responsible_name'] ?? ''),
+            'responsible_email' => sanitize_email($_POST['responsible_email'] ?? ''),
+            'responsible_phone' => sanitize_text_field($_POST['responsible_phone'] ?? ''),
+
+            'licence_number' => sanitize_text_field($_POST['licence_number'] ?? ''),
+
+            'registration_date' => !empty($_POST['registration_date'])
+                ? sanitize_text_field($_POST['registration_date'])
+                : current_time('Y-m-d'),
+
+            'medical_note' => sanitize_textarea_field($_POST['medical_note'] ?? ''),
+        ];
+    }
+
+    private function fieldValue(string $field, string $default = ''): string
+    {
+        if ($this->editingSwimmer === null) {
+            return $default;
+        }
+
+        return isset($this->editingSwimmer[$field])
+            ? (string) $this->editingSwimmer[$field]
+            : $default;
     }
 }
