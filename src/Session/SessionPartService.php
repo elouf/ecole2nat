@@ -36,7 +36,7 @@ class SessionPartService
         if ($this->repository->exists($sessionId, $title)) {
             return [
                 'success' => false,
-                'message' => 'duplicate',
+                'message' => 'part_duplicate',
             ];
         }
 
@@ -52,7 +52,7 @@ class SessionPartService
 
         return [
             'success' => $created,
-            'message' => $created ? 'created' : 'error',
+            'message' => $created ? 'part_created' : 'error',
         ];
     }
 }

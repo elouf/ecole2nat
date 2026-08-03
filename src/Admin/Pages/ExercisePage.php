@@ -166,7 +166,6 @@ class ExercisePage
                 $data['objectives'],
                 $data['coach_notes'],
                 $data['equipment'],
-                $data['duration'],
                 $data['difficulty']
             );
 
@@ -411,36 +410,6 @@ class ExercisePage
 
                     <tr>
                         <th scope="row">
-                            <label for="e2n-exercise-duration">
-                                <?php esc_html_e(
-                                    'Durée',
-                                    'ecole2nat'
-                                ); ?>
-                            </label>
-                        </th>
-
-                        <td>
-                            <input
-                                id="e2n-exercise-duration"
-                                type="number"
-                                name="duration"
-                                min="1"
-                                value="<?php echo esc_attr(
-                                    $this->fieldValue('duration')
-                                ); ?>"
-                            >
-
-                            <span>
-                                <?php esc_html_e(
-                                    'minutes',
-                                    'ecole2nat'
-                                ); ?>
-                            </span>
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <th scope="row">
                             <label for="e2n-exercise-difficulty">
                                 <?php esc_html_e(
                                     'Difficulté',
@@ -534,11 +503,6 @@ class ExercisePage
                 )
                 : '',
 
-            'duration' => isset($_POST['duration'])
-                && $_POST['duration'] !== ''
-                    ? absint($_POST['duration'])
-                    : null,
-
             'difficulty' => isset($_POST['difficulty'])
                 ? min(
                     5,
@@ -555,6 +519,14 @@ class ExercisePage
         string $field,
         string $default = ''
     ): string {
+        if (
+            $this->editingExercise === null
+            && $field === 'skill_id'
+            && isset($_GET['skill_id'])
+        ) {
+            return (string) absint($_GET['skill_id']);
+        }
+
         if ($this->editingExercise === null) {
             return $default;
         }

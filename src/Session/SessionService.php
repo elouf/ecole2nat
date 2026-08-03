@@ -53,4 +53,30 @@ class SessionService
     {
         return $this->repository->find($id);
     }
+
+    public function update(
+        int $id,
+        int $categoryId,
+        string $name,
+        string $objectives = ''
+    ): array {
+        if ($id <= 0 || $categoryId <= 0 || trim($name) === '') {
+            return [
+                'success' => false,
+                'message' => 'invalid',
+            ];
+        }
+
+        $updated = $this->repository->update(
+            $id,
+            $categoryId,
+            $name,
+            $objectives
+        );
+
+        return [
+            'success' => $updated,
+            'message' => $updated ? 'session_updated' : 'error',
+        ];
+    }
 }

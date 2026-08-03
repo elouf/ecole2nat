@@ -74,8 +74,8 @@ class Menu
 
         add_submenu_page(
             'ecole2nat',
-            'Référentiel',
-            'Référentiel',
+            __('Référentiel pédagogique', 'ecole2nat'),
+            __('Référentiel pédagogique', 'ecole2nat'),
             'manage_options',
             'ecole2nat-reference',
             [$referencePage, 'render']

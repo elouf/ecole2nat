@@ -145,4 +145,37 @@ class SessionRepository
 
         return is_array($result) ? $result : null;
     }
+
+    public function update(
+        int $id,
+        int $categoryId,
+        string $name,
+        string $objectives = ''
+    ): bool {
+        global $wpdb;
+
+        $result = $wpdb->update(
+            Config::table('sessions'),
+            [
+                'category_id' => $categoryId,
+                'name'        => $name,
+                'objectives'  => $objectives,
+                'updated_at'  => current_time('mysql'),
+            ],
+            [
+                'id' => $id,
+            ],
+            [
+                '%d',
+                '%s',
+                '%s',
+                '%s',
+            ],
+            [
+                '%d',
+            ]
+        );
+
+        return $result !== false;
+    }
 }

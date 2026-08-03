@@ -174,9 +174,37 @@ class SessionListPage
                         </td>
 
                         <td>
+                            <?php
+                            $editUrl = add_query_arg(
+                                [
+                                    'page'       => 'ecole2nat-session',
+                                    'session_id' => (int) $session['id'],
+                                ],
+                                admin_url('admin.php')
+                            );
+
+                            $toggleUrl = wp_nonce_url(
+                                add_query_arg(
+                                    [
+                                        'page'       => 'ecole2nat-sessions',
+                                        'e2n_action' => 'toggle_session',
+                                        'session_id' => (int) $session['id'],
+                                    ],
+                                    admin_url('admin.php')
+                                ),
+                                'e2n_toggle_session_' . (int) $session['id']
+                            );
+                            ?>
+
+                            <a href="<?php echo esc_url($editUrl); ?>">
+                                <?php esc_html_e('Modifier', 'ecole2nat'); ?>
+                            </a>
+
+                            <span aria-hidden="true"> | </span>
+
                             <a href="<?php echo esc_url($toggleUrl); ?>">
                                 <?php
-                                echo $isActive
+                                echo (int) $session['is_active'] === 1
                                     ? esc_html__('Désactiver', 'ecole2nat')
                                     : esc_html__('Activer', 'ecole2nat');
                                 ?>

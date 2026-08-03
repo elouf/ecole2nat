@@ -84,7 +84,7 @@ class SessionPage
                 </div>
 
                 <div class="inside">
-                    <?php $this->renderForm($categories); ?>
+                    <?php $this->renderForm($categories, $session); ?>
                 </div>
             </div>
 
@@ -115,6 +115,13 @@ class SessionPage
                             <?php
                             $partId = (int) $part['id'];
                             $exercises = $this->exerciseService->allByPart($partId);
+                            $partDuration = array_sum(
+                                array_map(
+                                    static fn(array $exercise): int =>
+                                        (int) ($exercise['duration'] ?? 0),
+                                    $exercises
+                                )
+                            );
                             ?>
                             <div class="postbox">
                                 <div class="postbox-header">
@@ -122,9 +129,10 @@ class SessionPage
                                         <?php
                                         echo esc_html(
                                             sprintf(
-                                                '%d. %s',
+                                                '%d. %s — %d min',
                                                 (int) $part['position'],
-                                                $part['title']
+                                                $part['title'],
+                                                $partDuration
                                             )
                                         );
                                         ?>
@@ -144,29 +152,250 @@ class SessionPage
                                     <?php else : ?>
 
                                         <ol>
-                                            <?php foreach ($exercises as $exercise) : ?>
+                                            <?php foreach ($exercises as $index => $exercise) : ?>
                                                 <?php
-                                                $duration = !empty($exercise['custom_duration'])
-                                                    ? (int) $exercise['custom_duration']
-                                                    : (int) ($exercise['default_duration'] ?? 0);
+                                                $sessionExerciseId = (int) $exercise['id'];
+                                                $duration = (int) ($exercise['duration'] ?? 0);
                                                 ?>
 
-                                                <li style="margin-bottom: 12px;">
-                                                    <strong>
-                                                        <?php echo esc_html($exercise['name']); ?>
-                                                    </strong>
+                                                <li style="margin-bottom: 20px;">
+                                                    <p>
+                                                        <strong>
+                                                            <?php echo esc_html($exercise['name']); ?>
+                                                        </strong>
 
-                                                    <?php if ($duration > 0) : ?>
-                                                        <span>
+                                                        <?php if ($duration > 0) : ?>
                                                             — <?php echo esc_html((string) $duration); ?> min
-                                                        </span>
-                                                    <?php endif; ?>
+                                                        <?php endif; ?>
+                                                    </p>
 
                                                     <?php if (!empty($exercise['description'])) : ?>
                                                         <p class="description">
                                                             <?php echo esc_html($exercise['description']); ?>
                                                         </p>
                                                     <?php endif; ?>
+
+                                                    <?php if (!empty($exercise['coach_notes'])) : ?>
+                                                        <p>
+                                                            <strong>
+                                                                <?php esc_html_e('Consignes :', 'ecole2nat'); ?>
+                                                            </strong>
+
+                                                            <?php echo esc_html($exercise['coach_notes']); ?>
+                                                        </p>
+                                                    <?php endif; ?>
+
+                                                    <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                                                        <?php if ($index > 0) : ?>
+                                                            <form method="post">
+                                                                <?php
+                                                                wp_nonce_field(
+                                                                    'e2n_move_session_exercise_'
+                                                                    . $sessionExerciseId
+                                                                );
+                                                                ?>
+
+                                                                <input
+                                                                    type="hidden"
+                                                                    name="e2n_action"
+                                                                    value="move_session_exercise"
+                                                                >
+
+                                                                <input
+                                                                    type="hidden"
+                                                                    name="session_id"
+                                                                    value="<?php echo esc_attr((string) $sessionId); ?>"
+                                                                >
+
+                                                                <input
+                                                                    type="hidden"
+                                                                    name="session_exercise_id"
+                                                                    value="<?php echo esc_attr(
+                                                                        (string) $sessionExerciseId
+                                                                    ); ?>"
+                                                                >
+
+                                                                <input
+                                                                    type="hidden"
+                                                                    name="direction"
+                                                                    value="up"
+                                                                >
+
+                                                                <button class="button button-small" type="submit">
+                                                                    ↑
+                                                                </button>
+                                                            </form>
+                                                        <?php endif; ?>
+
+                                                        <?php if ($index < count($exercises) - 1) : ?>
+                                                            <form method="post">
+                                                                <?php
+                                                                wp_nonce_field(
+                                                                    'e2n_move_session_exercise_'
+                                                                    . $sessionExerciseId
+                                                                );
+                                                                ?>
+
+                                                                <input
+                                                                    type="hidden"
+                                                                    name="e2n_action"
+                                                                    value="move_session_exercise"
+                                                                >
+
+                                                                <input
+                                                                    type="hidden"
+                                                                    name="session_id"
+                                                                    value="<?php echo esc_attr((string) $sessionId); ?>"
+                                                                >
+
+                                                                <input
+                                                                    type="hidden"
+                                                                    name="session_exercise_id"
+                                                                    value="<?php echo esc_attr(
+                                                                        (string) $sessionExerciseId
+                                                                    ); ?>"
+                                                                >
+
+                                                                <input
+                                                                    type="hidden"
+                                                                    name="direction"
+                                                                    value="down"
+                                                                >
+
+                                                                <button class="button button-small" type="submit">
+                                                                    ↓
+                                                                </button>
+                                                            </form>
+                                                        <?php endif; ?>
+
+                                                        <details>
+                                                            <summary
+                                                                class="button button-small"
+                                                                style="cursor:pointer;"
+                                                            >
+                                                                <?php esc_html_e('Modifier', 'ecole2nat'); ?>
+                                                            </summary>
+
+                                                            <form method="post" style="margin-top:12px;">
+                                                                <?php
+                                                                wp_nonce_field(
+                                                                    'e2n_update_session_exercise_'
+                                                                    . $sessionExerciseId
+                                                                );
+                                                                ?>
+
+                                                                <input
+                                                                    type="hidden"
+                                                                    name="e2n_action"
+                                                                    value="update_session_exercise"
+                                                                >
+
+                                                                <input
+                                                                    type="hidden"
+                                                                    name="session_id"
+                                                                    value="<?php echo esc_attr((string) $sessionId); ?>"
+                                                                >
+
+                                                                <input
+                                                                    type="hidden"
+                                                                    name="session_exercise_id"
+                                                                    value="<?php echo esc_attr(
+                                                                        (string) $sessionExerciseId
+                                                                    ); ?>"
+                                                                >
+
+                                                                <p>
+                                                                    <label>
+                                                                        <strong>
+                                                                            <?php esc_html_e('Durée', 'ecole2nat'); ?>
+                                                                        </strong>
+                                                                    </label>
+                                                                    <br>
+
+                                                                    <input
+                                                                        type="number"
+                                                                        name="duration"
+                                                                        min="1"
+                                                                        value="<?php echo esc_attr(
+                                                                            (string) $duration
+                                                                        ); ?>"
+                                                                        required
+                                                                    >
+                                                                    minutes
+                                                                </p>
+
+                                                                <p>
+                                                                    <label>
+                                                                        <strong>
+                                                                            <?php esc_html_e(
+                                                                                'Consignes spécifiques',
+                                                                                'ecole2nat'
+                                                                            ); ?>
+                                                                        </strong>
+                                                                    </label>
+                                                                    <br>
+
+                                                                    <textarea
+                                                                        name="coach_notes"
+                                                                        rows="3"
+                                                                        class="large-text"
+                                                                    ><?php
+                                                                        echo esc_textarea(
+                                                                            (string) ($exercise['coach_notes'] ?? '')
+                                                                        );
+                                                                    ?></textarea>
+                                                                </p>
+
+                                                                <?php
+                                                                submit_button(
+                                                                    __('Enregistrer', 'ecole2nat'),
+                                                                    'primary small',
+                                                                    'submit',
+                                                                    false
+                                                                );
+                                                                ?>
+                                                            </form>
+                                                        </details>
+
+                                                        <form
+                                                            method="post"
+                                                            onsubmit="return confirm('Retirer cet exercice de la séance ?');"
+                                                        >
+                                                            <?php
+                                                            wp_nonce_field(
+                                                                'e2n_delete_session_exercise_'
+                                                                . $sessionExerciseId
+                                                            );
+                                                            ?>
+
+                                                            <input
+                                                                type="hidden"
+                                                                name="e2n_action"
+                                                                value="delete_session_exercise"
+                                                            >
+
+                                                            <input
+                                                                type="hidden"
+                                                                name="session_id"
+                                                                value="<?php echo esc_attr((string) $sessionId); ?>"
+                                                            >
+
+                                                            <input
+                                                                type="hidden"
+                                                                name="session_exercise_id"
+                                                                value="<?php echo esc_attr(
+                                                                    (string) $sessionExerciseId
+                                                                ); ?>"
+                                                            >
+
+                                                            <button
+                                                                class="button button-small"
+                                                                type="submit"
+                                                            >
+                                                                <?php esc_html_e('Retirer', 'ecole2nat'); ?>
+                                                            </button>
+                                                        </form>
+                                                    </div>
                                                 </li>
                                             <?php endforeach; ?>
                                         </ol>
@@ -174,16 +403,27 @@ class SessionPage
                                     <?php endif; ?>
 
                                     <p>
-                                        <button
-                                            type="button"
+                                        <?php
+                                        $libraryUrl = add_query_arg(
+                                            [
+                                                'page' => 'ecole2nat-exercises',
+                                                'mode' => 'select',
+                                                'part_id' => $partId,
+                                                'session_id' => $sessionId,
+                                            ],
+                                            admin_url('admin.php')
+                                        );
+                                        ?>
+
+                                        <a
+                                            href="<?php echo esc_url($libraryUrl); ?>"
                                             class="button button-secondary"
-                                            disabled
                                         >
                                             <?php esc_html_e(
-                                                'Ajouter un exercice',
+                                                'Choisir dans la bibliothèque',
                                                 'ecole2nat'
                                             ); ?>
-                                        </button>
+                                        </a>
                                     </p>
                                 </div>
                             </div>
@@ -258,6 +498,124 @@ class SessionPage
             ? sanitize_key(wp_unslash($_POST['e2n_action']))
             : '';
 
+        if ($action === 'update_session_exercise') {
+            $sessionExerciseId = isset($_POST['session_exercise_id'])
+                ? absint($_POST['session_exercise_id'])
+                : 0;
+
+            check_admin_referer(
+                'e2n_update_session_exercise_' . $sessionExerciseId
+            );
+
+            $sessionId = isset($_POST['session_id'])
+                ? absint($_POST['session_id'])
+                : 0;
+
+            $duration = isset($_POST['duration'])
+                ? absint($_POST['duration'])
+                : 0;
+
+            $coachNotes = isset($_POST['coach_notes'])
+                ? sanitize_textarea_field(
+                    wp_unslash($_POST['coach_notes'])
+                )
+                : '';
+
+            $result = $this->exerciseService->update(
+                $sessionExerciseId,
+                $duration,
+                $coachNotes
+            );
+
+            $this->redirectToEditor(
+                $sessionId,
+                $result['message']
+            );
+        }
+
+        if ($action === 'delete_session_exercise') {
+            $sessionExerciseId = isset($_POST['session_exercise_id'])
+                ? absint($_POST['session_exercise_id'])
+                : 0;
+
+            check_admin_referer(
+                'e2n_delete_session_exercise_' . $sessionExerciseId
+            );
+
+            $sessionId = isset($_POST['session_id'])
+                ? absint($_POST['session_id'])
+                : 0;
+
+            $result = $this->exerciseService->delete(
+                $sessionExerciseId
+            );
+
+            $this->redirectToEditor(
+                $sessionId,
+                $result['message']
+            );
+        }
+
+        if ($action === 'move_session_exercise') {
+            $sessionExerciseId = isset($_POST['session_exercise_id'])
+                ? absint($_POST['session_exercise_id'])
+                : 0;
+
+            check_admin_referer(
+                'e2n_move_session_exercise_' . $sessionExerciseId
+            );
+
+            $sessionId = isset($_POST['session_id'])
+                ? absint($_POST['session_id'])
+                : 0;
+
+            $direction = isset($_POST['direction'])
+                ? sanitize_key(wp_unslash($_POST['direction']))
+                : '';
+
+            $result = $this->exerciseService->move(
+                $sessionExerciseId,
+                $direction
+            );
+
+            $this->redirectToEditor(
+                $sessionId,
+                $result['message']
+            );
+        }
+                                                    
+        if ($action === 'update_session') {
+            check_admin_referer('e2n_create_session');
+
+            $sessionId = isset($_POST['session_id'])
+                ? absint($_POST['session_id'])
+                : 0;
+
+            $categoryId = isset($_POST['category_id'])
+                ? absint($_POST['category_id'])
+                : 0;
+
+            $name = isset($_POST['name'])
+                ? sanitize_text_field(wp_unslash($_POST['name']))
+                : '';
+
+            $objectives = isset($_POST['objectives'])
+                ? sanitize_textarea_field(wp_unslash($_POST['objectives']))
+                : '';
+
+            $result = $this->sessionService->update(
+                $sessionId,
+                $categoryId,
+                $name,
+                $objectives
+            );
+
+            $this->redirectToEditor(
+                $sessionId,
+                $result['message']
+            );
+        }
+
         /*
         * Création d'une partie de séance.
         */
@@ -319,8 +677,25 @@ class SessionPage
         }
     }
 
-    private function renderForm(array $categories): void
-    {
+    private function renderForm(
+        array $categories,
+        ?array $session
+    ): void {
+    
+    $isEditing = $session !== null;
+
+    $selectedCategoryId = $isEditing
+        ? (int) $session['category_id']
+        : 0;
+
+    $name = $isEditing
+        ? (string) $session['name']
+        : '';
+
+    $objectives = $isEditing
+        ? (string) ($session['objectives'] ?? '')
+        : '';
+
         if ($categories === []) {
             ?>
             <div class="notice notice-warning inline">
@@ -343,8 +718,18 @@ class SessionPage
             <input
                 type="hidden"
                 name="e2n_action"
-                value="create_session"
+                value="<?php echo esc_attr(
+                    $isEditing ? 'update_session' : 'create_session'
+                ); ?>"
             >
+
+            <?php if ($isEditing) : ?>
+                <input
+                    type="hidden"
+                    name="session_id"
+                    value="<?php echo esc_attr((string) $session['id']); ?>"
+                >
+            <?php endif; ?>
 
             <table class="form-table" role="presentation">
                 <tbody>
@@ -369,7 +754,11 @@ class SessionPage
                                 <?php foreach ($categories as $category) : ?>
                                     <option
                                         value="<?php echo esc_attr((string) $category['id']); ?>"
-                                    >
+                                        <?php selected(
+                                            $selectedCategoryId,
+                                            (int) $category['id']
+                                        ); ?>
+                                        >
                                         <?php echo esc_html($category['name']); ?>
                                     </option>
                                 <?php endforeach; ?>
@@ -391,6 +780,7 @@ class SessionPage
                                 name="name"
                                 class="regular-text"
                                 maxlength="150"
+                                value="<?php echo esc_attr($name); ?>"
                                 required
                             >
                         </td>
@@ -409,13 +799,19 @@ class SessionPage
                                 name="objectives"
                                 class="large-text"
                                 rows="5"
-                            ></textarea>
+                            ><?php echo esc_textarea($objectives); ?></textarea>
                         </td>
                     </tr>
                 </tbody>
             </table>
 
-            <?php submit_button(__('Enregistrer la séance', 'ecole2nat')); ?>
+            <?php
+            submit_button(
+                $isEditing
+                    ? __('Enregistrer les modifications', 'ecole2nat')
+                    : __('Créer la séance', 'ecole2nat')
+            );
+            ?>
         </form>
         <?php
     }
@@ -431,6 +827,22 @@ class SessionPage
                 'warning',
                 __('Une séance portant ce nom existe déjà pour cette catégorie.', 'ecole2nat'),
             ],
+            'part_created' => [
+                'success',
+                __('La partie a bien été ajoutée.', 'ecole2nat'),
+            ],
+            'part_duplicate' => [
+                'warning',
+                __('Une partie portant ce titre existe déjà dans cette séance.', 'ecole2nat'),
+            ],
+            'exercise_created' => [
+                'success',
+                __('L’exercice a bien été ajouté à la séance.', 'ecole2nat'),
+            ],
+            'exercise_duplicate' => [
+                'warning',
+                __('Cet exercice est déjà présent dans cette partie.', 'ecole2nat'),
+            ],
             'invalid' => [
                 'error',
                 __('Veuillez remplir les champs obligatoires.', 'ecole2nat'),
@@ -439,13 +851,21 @@ class SessionPage
                 'error',
                 __('Une erreur est survenue.', 'ecole2nat'),
             ],
-            'created' => [
+            'session_updated' => [
                 'success',
-                __('La partie a bien été ajoutée.', 'ecole2nat'),
+                __('La séance a bien été modifiée.', 'ecole2nat'),
             ],
-            'duplicate' => [
-                'warning',
-                __('Une partie portant ce titre existe déjà dans cette séance.', 'ecole2nat'),
+            'exercise_updated' => [
+                'success',
+                __('L’exercice a bien été modifié.', 'ecole2nat'),
+            ],
+            'exercise_deleted' => [
+                'success',
+                __('L’exercice a bien été retiré de la séance.', 'ecole2nat'),
+            ],
+            'exercise_moved' => [
+                'success',
+                __('L’ordre des exercices a bien été modifié.', 'ecole2nat'),
             ],
         ];
 

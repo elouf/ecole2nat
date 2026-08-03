@@ -86,7 +86,6 @@ class ExerciseRepository
         string $objectives = '',
         string $coachNotes = '',
         string $equipment = '',
-        ?int $duration = null,
         int $difficulty = 1
     ): bool {
         global $wpdb;
@@ -100,7 +99,6 @@ class ExerciseRepository
                 'objectives'  => $objectives,
                 'coach_notes' => $coachNotes,
                 'equipment'   => $equipment,
-                'duration'    => $duration,
                 'difficulty'  => $difficulty,
                 'created_at'  => current_time('mysql'),
             ],
@@ -133,7 +131,6 @@ class ExerciseRepository
                 'objectives'  => $data['objectives'],
                 'coach_notes' => $data['coach_notes'],
                 'equipment'   => $data['equipment'],
-                'duration'    => $data['duration'],
                 'difficulty'  => $data['difficulty'],
                 'updated_at'  => current_time('mysql'),
             ],
