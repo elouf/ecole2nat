@@ -1,22 +1,59 @@
-# ecole2nat
-Plugin WordPress de suivi pédagogique pour école de natation
 # Ecole2Nat'
 
-Plugin WordPress destiné à la gestion pédagogique des écoles de natation.
+Plugin WordPress de suivi et de préparation pédagogique pour école de natation.
 
-## Modules
+## Modules disponibles
 
-- Référentiel
-- Exercices
-- Séances
-- Evaluations
-- Bilans
-- Familles
+- saisons ;
+- catégories ;
+- référentiel pédagogique : domaines et compétences ;
+- bibliothèque d'exercices ;
+- groupes ;
+- nageurs ;
+- séances types avec parties, exercices, durées et consignes.
 
-## Développement
+## Séances types
 
-...
+Le module permet de :
 
-## Installation
+- créer et modifier une séance ;
+- organiser la séance en parties ;
+- ajouter des exercices depuis la bibliothèque ;
+- définir une durée et des consignes propres à chaque utilisation ;
+- réordonner ou retirer les exercices ;
+- renommer, déplacer ou supprimer les parties ;
+- calculer automatiquement les durées ;
+- dupliquer une séance complète ;
+- imprimer une fiche A4.
 
-...
+## Prérequis
+
+- WordPress 6.0 ou supérieur ;
+- PHP 8.1 ou supérieur ;
+- Composer 2.
+
+## Installation de développement
+
+```bash
+git clone https://github.com/elouf/ecole2nat.git
+cd ecole2nat
+composer install
+```
+
+Place ensuite le dépôt dans :
+
+```text
+wp-content/plugins/ecole2nat
+```
+
+Active l'extension dans l'administration WordPress.
+
+## Vérification de syntaxe
+
+```bash
+find src -name '*.php' -print0 | xargs -0 -n1 php -l
+```
+
+## Modèle de données
+
+Voir [`docs/database.md`](docs/database.md).

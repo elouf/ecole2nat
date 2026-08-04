@@ -20,38 +20,33 @@ class SessionService
         return $this->repository->all();
     }
 
+    public function find(int $id): ?array
+    {
+        return $this->repository->find($id);
+    }
+
     public function create(
         int $categoryId,
         string $name,
         string $objectives = ''
     ): array {
-        if ($this->repository->exists($categoryId, $name)) {
-            return [
-                'success' => false,
-                'message' => 'duplicate',
-            ];
+        $name = trim($name);
+
+        if ($categoryId <= 0 || $name === '') {
+            return ['success' => false, 'message' => 'invalid', 'id' => 0];
         }
 
-        $created = $this->repository->create(
-            $categoryId,
-            $name,
-            $objectives
-        );
+        if ($this->repository->exists($categoryId, $name)) {
+            return ['success' => false, 'message' => 'duplicate', 'id' => 0];
+        }
+
+        $id = $this->repository->create($categoryId, $name, $objectives);
 
         return [
-            'success' => $created,
-            'message' => $created ? 'created' : 'error',
+            'success' => $id > 0,
+            'message' => $id > 0 ? 'session_created' : 'error',
+            'id' => $id,
         ];
-    }
-
-    public function toggleActive(int $id): bool
-    {
-        return $this->repository->toggleActive($id);
-    }
-
-    public function find(int $id): ?array
-    {
-        return $this->repository->find($id);
     }
 
     public function update(
@@ -60,11 +55,14 @@ class SessionService
         string $name,
         string $objectives = ''
     ): array {
-        if ($id <= 0 || $categoryId <= 0 || trim($name) === '') {
-            return [
-                'success' => false,
-                'message' => 'invalid',
-            ];
+        $name = trim($name);
+
+        if ($id <= 0 || $categoryId <= 0 || $name === '') {
+            return ['success' => false, 'message' => 'invalid'];
+        }
+
+        if ($this->repository->exists($categoryId, $name, $id)) {
+            return ['success' => false, 'message' => 'duplicate'];
         }
 
         $updated = $this->repository->update(
@@ -77,6 +75,36 @@ class SessionService
         return [
             'success' => $updated,
             'message' => $updated ? 'session_updated' : 'error',
+        ];
+    }
+
+    public function toggleActive(int $id): bool
+    {
+        return $this->repository->toggleActive($id);
+    }
+
+    public function duplicate(int $id): array
+    {
+        $session = $this->repository->find($id);
+        if ($session === null) {
+            return ['success' => false, 'message' => 'error', 'id' => 0];
+        }
+
+        $baseName = sprintf(__('Copie de %s', 'ecole2nat'), $session['name']);
+        $name = $baseName;
+        $suffix = 2;
+
+        while ($this->repository->exists((int) $session['category_id'], $name)) {
+            $name = sprintf('%s (%d)', $baseName, $suffix);
+            $suffix++;
+        }
+
+        $newId = $this->repository->duplicate($id, $name);
+
+        return [
+            'success' => $newId > 0,
+            'message' => $newId > 0 ? 'duplicated' : 'error',
+            'id' => $newId,
         ];
     }
 }

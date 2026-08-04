@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'ecole2nat/ecole2nat',
-        'pretty_version' => 'dev-main',
-        'version' => 'dev-main',
-        'reference' => '606e102946ed9af24bb6b6872768545b5e27f191',
+        'pretty_version' => '1.0.0+no-version-set',
+        'version' => '1.0.0.0',
+        'reference' => null,
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         'ecole2nat/ecole2nat' => array(
-            'pretty_version' => 'dev-main',
-            'version' => 'dev-main',
-            'reference' => '606e102946ed9af24bb6b6872768545b5e27f191',
+            'pretty_version' => '1.0.0+no-version-set',
+            'version' => '1.0.0.0',
+            'reference' => null,
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

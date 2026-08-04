@@ -2,15 +2,16 @@
 
 namespace Ecole2Nat\Admin;
 
-use Ecole2Nat\Admin\Pages\SeasonPage;
 use Ecole2Nat\Admin\Pages\CategoryPage;
-use Ecole2Nat\Admin\Pages\ReferencePage;
-use Ecole2Nat\Admin\Pages\GroupPage;
-use Ecole2Nat\Admin\Pages\SwimmerPage;
-use Ecole2Nat\Admin\Pages\SessionListPage;
-use Ecole2Nat\Admin\Pages\SessionPage;
 use Ecole2Nat\Admin\Pages\ExerciseListPage;
 use Ecole2Nat\Admin\Pages\ExercisePage;
+use Ecole2Nat\Admin\Pages\GroupPage;
+use Ecole2Nat\Admin\Pages\ReferencePage;
+use Ecole2Nat\Admin\Pages\SeasonPage;
+use Ecole2Nat\Admin\Pages\SessionListPage;
+use Ecole2Nat\Admin\Pages\SessionPage;
+use Ecole2Nat\Admin\Pages\SessionPrintPage;
+use Ecole2Nat\Admin\Pages\SwimmerPage;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -48,29 +49,23 @@ class Menu
             [new SwimmerPage(), 'render']
         );
 
-        $seasonPage = new SeasonPage();
-
         add_submenu_page(
             'ecole2nat',
-            'Saisons',
-            'Saisons',
+            __('Saisons', 'ecole2nat'),
+            __('Saisons', 'ecole2nat'),
             'manage_options',
             'ecole2nat-seasons',
-            [$seasonPage, 'render']
+            [new SeasonPage(), 'render']
         );
-
-        $categoryPage = new CategoryPage();
 
         add_submenu_page(
             'ecole2nat',
-            'Catégories',
-            'Catégories',
+            __('Catégories', 'ecole2nat'),
+            __('Catégories', 'ecole2nat'),
             'manage_options',
             'ecole2nat-categories',
-            [$categoryPage, 'render']
+            [new CategoryPage(), 'render']
         );
-
-        $referencePage = new ReferencePage();
 
         add_submenu_page(
             'ecole2nat',
@@ -78,27 +73,7 @@ class Menu
             __('Référentiel pédagogique', 'ecole2nat'),
             'manage_options',
             'ecole2nat-reference',
-            [$referencePage, 'render']
-        );
-
-        add_submenu_page(
-            'ecole2nat',
-            __('Séances', 'ecole2nat'),
-            __('Séances', 'ecole2nat'),
-            'manage_options',
-            'ecole2nat-sessions',
-            [new SessionListPage(), 'render']
-        );
-
-        $sessionPage = new SessionPage();
-
-        add_submenu_page(
-            'ecole2nat',
-            __('Modifier une séance', 'ecole2nat'),
-            __('Éditeur de séance', 'ecole2nat'),
-            'manage_options',
-            'ecole2nat-session',
-            [$sessionPage, 'render']
+            [new ReferencePage(), 'render']
         );
 
         add_submenu_page(
@@ -112,19 +87,63 @@ class Menu
 
         add_submenu_page(
             'ecole2nat',
-            __('Exercice', 'ecole2nat'),
+            __('Séances', 'ecole2nat'),
+            __('Séances', 'ecole2nat'),
+            'manage_options',
+            'ecole2nat-sessions',
+            [new SessionListPage(), 'render']
+        );
+
+        // Pages internes : elles restent enregistrées pour les permissions,
+        // puis sont seulement masquées visuellement via admin_head.
+        add_submenu_page(
+            'ecole2nat',
+            __('Éditeur de séance', 'ecole2nat'),
+            __('Éditeur de séance', 'ecole2nat'),
+            'manage_options',
+            'ecole2nat-session',
+            [new SessionPage(), 'render']
+        );
+
+        add_submenu_page(
+            'ecole2nat',
+            __('Impression de séance', 'ecole2nat'),
+            __('Impression de séance', 'ecole2nat'),
+            'manage_options',
+            'ecole2nat-session-print',
+            [new SessionPrintPage(), 'render']
+        );
+
+        add_submenu_page(
+            'ecole2nat',
+            __('Éditeur d’exercice', 'ecole2nat'),
             __('Éditeur d’exercice', 'ecole2nat'),
             'manage_options',
             'ecole2nat-exercise',
             [new ExercisePage(), 'render']
         );
+
+        add_action('admin_head', [$this, 'hideInternalMenuItems']);
+    }
+
+    public function hideInternalMenuItems(): void
+    {
+        ?>
+        <style>
+            #toplevel_page_ecole2nat a[href="admin.php?page=ecole2nat-session"],
+            #toplevel_page_ecole2nat a[href="admin.php?page=ecole2nat-session-print"],
+            #toplevel_page_ecole2nat a[href="admin.php?page=ecole2nat-exercise"] {
+                display: none !important;
+            }
+        </style>
+        <?php
     }
 
     public function renderDashboard(): void
     {
         echo '<div class="wrap">';
         echo '<h1>Ecole2Nat\'</h1>';
-        echo '<p>Bienvenue dans le tableau de bord.</p>';
+        echo '<p>' . esc_html__('Bienvenue dans le tableau de bord.', 'ecole2nat') . '</p>';
         echo '</div>';
     }
 }
