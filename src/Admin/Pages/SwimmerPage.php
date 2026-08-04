@@ -712,6 +712,20 @@ class SwimmerPage
 
                                         <span aria-hidden="true"> | </span>
 
+                                        <a href="<?php echo esc_url(
+                                            add_query_arg(
+                                                [
+                                                    'page' => 'ecole2nat-parent-access',
+                                                    'swimmer_id' => (int) $swimmer['id'],
+                                                ],
+                                                admin_url('admin.php')
+                                            )
+                                        ); ?>">
+                                            <?php esc_html_e('Accès parents', 'ecole2nat'); ?>
+                                        </a>
+
+                                        <span aria-hidden="true"> | </span>
+
                                         <a href="<?php echo esc_url($toggleUrl); ?>">
                                             <?php
                                             echo (int) $swimmer['is_active'] === 1

@@ -7,6 +7,7 @@ use Ecole2Nat\Admin\Pages\ExerciseListPage;
 use Ecole2Nat\Admin\Pages\ExercisePage;
 use Ecole2Nat\Admin\Pages\EvaluationPage;
 use Ecole2Nat\Admin\Pages\GroupPage;
+use Ecole2Nat\Admin\Pages\ParentAccessPage;
 use Ecole2Nat\Admin\Pages\ReferencePage;
 use Ecole2Nat\Admin\Pages\SeasonPage;
 use Ecole2Nat\Admin\Pages\SessionListPage;
@@ -133,6 +134,16 @@ class Menu
             [new ExercisePage(), 'render']
         );
 
+
+        add_submenu_page(
+            'ecole2nat',
+            __('Accès parents', 'ecole2nat'),
+            __('Accès parents', 'ecole2nat'),
+            'manage_options',
+            'ecole2nat-parent-access',
+            [new ParentAccessPage(), 'render']
+        );
+
         add_action('admin_head', [$this, 'hideInternalMenuItems']);
     }
 
@@ -142,7 +153,8 @@ class Menu
         <style>
             #toplevel_page_ecole2nat a[href="admin.php?page=ecole2nat-session"],
             #toplevel_page_ecole2nat a[href="admin.php?page=ecole2nat-session-print"],
-            #toplevel_page_ecole2nat a[href="admin.php?page=ecole2nat-exercise"] {
+            #toplevel_page_ecole2nat a[href="admin.php?page=ecole2nat-exercise"],
+            #toplevel_page_ecole2nat a[href="admin.php?page=ecole2nat-parent-access"] {
                 display: none !important;
             }
         </style>

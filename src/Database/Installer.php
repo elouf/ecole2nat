@@ -159,12 +159,20 @@ class Installer
             licence_number VARCHAR(50) NULL,
             registration_date DATE NULL,
             medical_note TEXT NULL,
+            parent_message TEXT NULL,
+            parent_access_code_hash CHAR(64) NULL,
+            parent_access_enabled TINYINT(1) NOT NULL DEFAULT 0,
+            parent_access_created_at DATETIME NULL,
+            parent_access_last_used_at DATETIME NULL,
+            parent_access_count BIGINT UNSIGNED NOT NULL DEFAULT 0,
             is_active TINYINT(1) NOT NULL DEFAULT 1,
             created_at DATETIME NOT NULL,
             updated_at DATETIME NULL,
             PRIMARY KEY  (id),
+            UNIQUE KEY parent_access_code_hash (parent_access_code_hash),
             KEY group_id (group_id),
             KEY last_name (last_name),
+            KEY parent_access_enabled (parent_access_enabled),
             KEY is_active (is_active)
 
         ) {$charsetCollate};";
@@ -241,6 +249,22 @@ class Installer
             KEY swimmer_id (swimmer_id),
             KEY skill_id (skill_id),
             KEY status (status)
+        ) {$charsetCollate};";
+
+        dbDelta($sql);
+
+        $tableName = Config::table('parent_access_logs');
+
+        $sql = "CREATE TABLE {$tableName} (
+            id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+            swimmer_id bigint(20) unsigned NULL,
+            success tinyint(1) NOT NULL DEFAULT 0,
+            ip_hash char(64) NOT NULL,
+            attempted_at datetime NOT NULL,
+            PRIMARY KEY  (id),
+            KEY swimmer_id (swimmer_id),
+            KEY success (success),
+            KEY attempted_at (attempted_at)
         ) {$charsetCollate};";
 
         dbDelta($sql);
