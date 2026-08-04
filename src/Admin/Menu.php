@@ -5,6 +5,7 @@ namespace Ecole2Nat\Admin;
 use Ecole2Nat\Admin\Pages\CategoryPage;
 use Ecole2Nat\Admin\Pages\ExerciseListPage;
 use Ecole2Nat\Admin\Pages\ExercisePage;
+use Ecole2Nat\Admin\Pages\EvaluationPage;
 use Ecole2Nat\Admin\Pages\GroupPage;
 use Ecole2Nat\Admin\Pages\ReferencePage;
 use Ecole2Nat\Admin\Pages\SeasonPage;
@@ -92,6 +93,15 @@ class Menu
             'manage_options',
             'ecole2nat-sessions',
             [new SessionListPage(), 'render']
+        );
+
+        add_submenu_page(
+            'ecole2nat',
+            __('Évaluations', 'ecole2nat'),
+            __('Évaluations', 'ecole2nat'),
+            'manage_options',
+            'ecole2nat-evaluations',
+            [new EvaluationPage(), 'render']
         );
 
         // Pages internes : elles restent enregistrées pour les permissions,

@@ -16,3 +16,27 @@
 
 - mise à jour du README ;
 - ajout de la documentation du modèle de données.
+
+## 0.3.0
+
+### Ajouté
+
+- Évaluation progressive des nageurs sans campagne ni jalon obligatoire.
+- Trois niveaux par compétence : Non observé, En cours et Acquis.
+- Vue de synthèse par groupe.
+- Éditeur détaillé des niveaux d’un nageur, organisé par domaine pédagogique.
+- Notes facultatives par compétence.
+- Date et auteur de la dernière mise à jour.
+- Nouvelle table `e2n_swimmer_skill_levels`.
+
+## 0.3.0
+
+### Ajouté
+
+- Évaluation progressive des nageurs sans campagne ni jalon obligatoire.
+- Trois niveaux par compétence : Non observé, En cours et Acquis.
+- Vue de synthèse par groupe.
+- Éditeur détaillé des niveaux d’un nageur, organisé par domaine pédagogique.
+- Notes facultatives par compétence.
+- Date et auteur de la dernière mise à jour.
+- Nouvelle table `e2n_swimmer_skill_levels`.

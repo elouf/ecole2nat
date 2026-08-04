@@ -223,5 +223,26 @@ class Installer
         ) {$charsetCollate};";
 
         dbDelta($sql);
+
+        $tableName = Config::table('swimmer_skill_levels');
+
+        $sql = "CREATE TABLE {$tableName} (
+            id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+            swimmer_id bigint(20) unsigned NOT NULL,
+            skill_id bigint(20) unsigned NOT NULL,
+            status varchar(20) NOT NULL DEFAULT 'not_observed',
+            evaluated_at datetime NULL,
+            evaluated_by bigint(20) unsigned NULL,
+            notes text NULL,
+            created_at datetime NOT NULL,
+            updated_at datetime NULL,
+            PRIMARY KEY  (id),
+            UNIQUE KEY swimmer_skill (swimmer_id,skill_id),
+            KEY swimmer_id (swimmer_id),
+            KEY skill_id (skill_id),
+            KEY status (status)
+        ) {$charsetCollate};";
+
+        dbDelta($sql);
     }
 }

@@ -57,3 +57,7 @@ find src -name '*.php' -print0 | xargs -0 -n1 php -l
 ## Modèle de données
 
 Voir [`docs/database.md`](docs/database.md).
+
+## Évaluations progressives
+
+Le module Évaluations permet de suivre le niveau courant de chaque nageur sur les compétences du référentiel de la catégorie de son groupe. Les trois états disponibles sont : Non observé, En cours et Acquis. Les évaluations sont mises à jour au fil de l’eau, sans campagne ni calendrier imposé.
