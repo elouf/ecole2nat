@@ -20,16 +20,12 @@ class ParentAccessRepository
 
         $result = $wpdb->get_row(
             $wpdb->prepare(
-                "SELECT
-                    swimmers.*,
-                    groups.name AS group_name,
-                    groups.category_id,
-                    categories.name AS category_name
-                FROM {$swimmers} AS swimmers
-                LEFT JOIN {$groups} AS groups ON groups.id = swimmers.group_id
-                LEFT JOIN {$categories} AS categories ON categories.id = groups.category_id
-                WHERE swimmers.id = %d
-                LIMIT 1",
+                "SELECT swimmers.*, groups.name AS group_name, groups.category_id,
+                        categories.name AS category_name
+                 FROM {$swimmers} swimmers
+                 LEFT JOIN {$groups} groups ON groups.id = swimmers.group_id
+                 LEFT JOIN {$categories} categories ON categories.id = groups.category_id
+                 WHERE swimmers.id = %d LIMIT 1",
                 $swimmerId
             ),
             ARRAY_A
@@ -41,22 +37,17 @@ class ParentAccessRepository
     public function codeHashExists(string $codeHash): bool
     {
         global $wpdb;
-
-        $count = (int) $wpdb->get_var(
+        return (int) $wpdb->get_var(
             $wpdb->prepare(
-                'SELECT COUNT(*) FROM ' . Config::table('swimmers') . '
-                WHERE parent_access_code_hash = %s',
+                'SELECT COUNT(*) FROM ' . Config::table('swimmers') . ' WHERE parent_access_code_hash = %s',
                 $codeHash
             )
-        );
-
-        return $count > 0;
+        ) > 0;
     }
 
     public function saveAccessCode(int $swimmerId, string $codeHash): bool
     {
         global $wpdb;
-
         $result = $wpdb->update(
             Config::table('swimmers'),
             [
@@ -74,78 +65,54 @@ class ParentAccessRepository
             ['%s', '%d', '%s', '%s', '%d', '%s', '%s', '%s', '%s'],
             ['%d']
         );
-
         return $result !== false;
     }
 
     public function disableAccess(int $swimmerId): bool
     {
         global $wpdb;
-
-        $result = $wpdb->update(
+        return $wpdb->update(
             Config::table('swimmers'),
-            [
-                'parent_access_enabled' => 0,
-                'updated_at' => current_time('mysql'),
-            ],
+            ['parent_access_enabled' => 0, 'updated_at' => current_time('mysql')],
             ['id' => $swimmerId],
             ['%d', '%s'],
             ['%d']
-        );
-
-        return $result !== false;
+        ) !== false;
     }
 
     public function saveParentMessage(int $swimmerId, string $message): bool
     {
         global $wpdb;
-
-        $result = $wpdb->update(
+        return $wpdb->update(
             Config::table('swimmers'),
-            [
-                'parent_message' => $message,
-                'updated_at' => current_time('mysql'),
-            ],
+            ['parent_message' => $message, 'updated_at' => current_time('mysql')],
             ['id' => $swimmerId],
             ['%s', '%s'],
             ['%d']
-        );
-
-        return $result !== false;
+        ) !== false;
     }
 
     public function findByCodeHash(string $codeHash): ?array
     {
         global $wpdb;
-
         $swimmerId = $wpdb->get_var(
             $wpdb->prepare(
                 'SELECT id FROM ' . Config::table('swimmers') . '
-                WHERE parent_access_code_hash = %s
-                AND parent_access_enabled = 1
-                AND is_active = 1
-                LIMIT 1',
+                 WHERE parent_access_code_hash = %s AND parent_access_enabled = 1 AND is_active = 1 LIMIT 1',
                 $codeHash
             )
         );
-
-        if ($swimmerId === null) {
-            return null;
-        }
-
-        return $this->findSwimmer((int) $swimmerId);
+        return $swimmerId === null ? null : $this->findSwimmer((int) $swimmerId);
     }
 
     public function markUsed(int $swimmerId): void
     {
         global $wpdb;
-
         $wpdb->query(
             $wpdb->prepare(
                 'UPDATE ' . Config::table('swimmers') . '
-                SET parent_access_last_used_at = %s,
-                    parent_access_count = parent_access_count + 1
-                WHERE id = %d',
+                 SET parent_access_last_used_at = %s, parent_access_count = parent_access_count + 1
+                 WHERE id = %d',
                 current_time('mysql'),
                 $swimmerId
             )
@@ -155,7 +122,6 @@ class ParentAccessRepository
     public function logAttempt(?int $swimmerId, bool $success, string $ipHash): void
     {
         global $wpdb;
-
         $wpdb->insert(
             Config::table('parent_access_logs'),
             [
@@ -171,9 +137,7 @@ class ParentAccessRepository
     public function report(int $swimmerId): ?array
     {
         global $wpdb;
-
         $swimmer = $this->findSwimmer($swimmerId);
-
         if ($swimmer === null || empty($swimmer['category_id'])) {
             return null;
         }
@@ -181,61 +145,38 @@ class ParentAccessRepository
         $domains = Config::table('skill_domains');
         $skills = Config::table('skills');
         $levels = Config::table('swimmer_skill_levels');
-
         $rows = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT
-                    domains.id AS domain_id,
-                    domains.name AS domain_name,
-                    domains.description AS domain_description,
-                    skills.id AS skill_id,
-                    skills.name AS skill_name,
-                    skills.description AS skill_description,
-                    COALESCE(levels.status, 'not_observed') AS status,
-                    levels.evaluated_at
-                FROM {$domains} AS domains
-                INNER JOIN {$skills} AS skills
-                    ON skills.domain_id = domains.id
-                    AND skills.is_active = 1
-                LEFT JOIN {$levels} AS levels
-                    ON levels.skill_id = skills.id
-                    AND levels.swimmer_id = %d
-                WHERE domains.category_id = %d
-                AND domains.is_active = 1
-                ORDER BY domains.sort_order ASC, domains.name ASC,
-                    skills.sort_order ASC, skills.name ASC",
+                "SELECT domains.id AS domain_id, domains.name AS domain_name,
+                        domains.description AS domain_description,
+                        skills.id AS skill_id, skills.name AS skill_name,
+                        skills.description AS skill_description,
+                        COALESCE(levels.status, 'not_observed') AS status,
+                        levels.evaluated_at
+                 FROM {$domains} domains
+                 INNER JOIN {$skills} skills ON skills.domain_id = domains.id AND skills.is_active = 1
+                 LEFT JOIN {$levels} levels ON levels.skill_id = skills.id AND levels.swimmer_id = %d
+                 WHERE domains.category_id = %d AND domains.is_active = 1
+                 ORDER BY domains.sort_order ASC, domains.name ASC, skills.sort_order ASC, skills.name ASC",
                 $swimmerId,
                 (int) $swimmer['category_id']
             ),
             ARRAY_A
         );
-
         if (!is_array($rows)) {
             $rows = [];
         }
 
         $groupedDomains = [];
         $latestUpdate = null;
-        $counts = [
-            'not_observed' => 0,
-            'in_progress' => 0,
-            'acquired' => 0,
-        ];
-
+        $counts = ['not_observed' => 0, 'in_progress' => 0, 'acquired' => 0];
         foreach ($rows as $row) {
             $domainId = (int) $row['domain_id'];
-            $status = (string) $row['status'];
-
-            if (!isset($counts[$status])) {
-                $status = 'not_observed';
-            }
-
+            $status = isset($counts[$row['status']]) ? (string) $row['status'] : 'not_observed';
             $counts[$status]++;
-
             if (!empty($row['evaluated_at']) && ($latestUpdate === null || $row['evaluated_at'] > $latestUpdate)) {
                 $latestUpdate = $row['evaluated_at'];
             }
-
             if (!isset($groupedDomains[$domainId])) {
                 $groupedDomains[$domainId] = [
                     'id' => $domainId,
@@ -245,11 +186,9 @@ class ParentAccessRepository
                     'acquired_count' => 0,
                 ];
             }
-
             if ($status === 'acquired') {
                 $groupedDomains[$domainId]['acquired_count']++;
             }
-
             $groupedDomains[$domainId]['skills'][] = [
                 'id' => (int) $row['skill_id'],
                 'name' => $row['skill_name'],
@@ -267,58 +206,108 @@ class ParentAccessRepository
         ];
     }
 
-    public function distributionGroups(): array
+    public function distributionCategories(): array
     {
         global $wpdb;
+        $results = $wpdb->get_results(
+            'SELECT id, name FROM ' . Config::table('categories') . '
+             WHERE is_active = 1 ORDER BY sort_order ASC, name ASC',
+            ARRAY_A
+        );
+        return is_array($results) ? $results : [];
+    }
 
+    public function distributionGroups(array $categoryIds = []): array
+    {
+        global $wpdb;
         $groups = Config::table('groups');
         $seasons = Config::table('seasons');
         $categories = Config::table('categories');
+        $where = 'WHERE groups.is_active = 1';
+        $params = [];
+        $categoryIds = array_values(array_filter(array_unique(array_map('absint', $categoryIds))));
+        if ($categoryIds !== []) {
+            $where .= ' AND groups.category_id IN (' . implode(',', array_fill(0, count($categoryIds), '%d')) . ')';
+            $params = $categoryIds;
+        }
+        $sql = "SELECT groups.*, seasons.name AS season_name, seasons.is_current,
+                       categories.name AS category_name
+                FROM {$groups} groups
+                INNER JOIN {$seasons} seasons ON seasons.id = groups.season_id
+                INNER JOIN {$categories} categories ON categories.id = groups.category_id
+                {$where}
+                ORDER BY seasons.is_current DESC, seasons.start_date DESC,
+                         categories.sort_order ASC, groups.name ASC";
+        $results = $params === []
+            ? $wpdb->get_results($sql, ARRAY_A)
+            : $wpdb->get_results($wpdb->prepare($sql, $params), ARRAY_A);
+        return is_array($results) ? $results : [];
+    }
 
-        $results = $wpdb->get_results(
-            "SELECT
-                groups.*,
-                seasons.name AS season_name,
-                seasons.is_current,
-                categories.name AS category_name
-            FROM {$groups} AS groups
-            INNER JOIN {$seasons} AS seasons ON seasons.id = groups.season_id
-            INNER JOIN {$categories} AS categories ON categories.id = groups.category_id
-            WHERE groups.is_active = 1
-            ORDER BY seasons.is_current DESC, seasons.start_date DESC,
-                categories.sort_order ASC, groups.name ASC",
-            ARRAY_A
-        );
+    public function swimmersForDistribution(array $filters = []): array
+    {
+        global $wpdb;
+        $swimmers = Config::table('swimmers');
+        $groups = Config::table('groups');
+        $categories = Config::table('categories');
+        $seasons = Config::table('seasons');
 
+        $conditions = ['s.is_active = 1'];
+        $params = [];
+        $categoryIds = isset($filters['category_ids']) && is_array($filters['category_ids'])
+            ? array_values(array_filter(array_unique(array_map('absint', $filters['category_ids']))))
+            : [];
+        if ($categoryIds !== []) {
+            $conditions[] = 'g.category_id IN (' . implode(',', array_fill(0, count($categoryIds), '%d')) . ')';
+            array_push($params, ...$categoryIds);
+        }
+        $groupId = isset($filters['group_id']) ? absint($filters['group_id']) : 0;
+        if ($groupId > 0) {
+            $conditions[] = 's.group_id = %d';
+            $params[] = $groupId;
+        }
+        $accessStatus = sanitize_key((string) ($filters['access_status'] ?? 'all'));
+        if ($accessStatus === 'missing') {
+            $conditions[] = '(s.parent_access_code_hash IS NULL OR s.parent_access_code_hash = "" OR s.parent_access_enabled <> 1)';
+        } elseif ($accessStatus === 'active') {
+            $conditions[] = 's.parent_access_code_hash IS NOT NULL AND s.parent_access_code_hash <> "" AND s.parent_access_enabled = 1';
+        } elseif ($accessStatus === 'sent') {
+            $conditions[] = 's.parent_access_distributed_at IS NOT NULL';
+        } elseif ($accessStatus === 'not_sent') {
+            $conditions[] = 's.parent_access_distributed_at IS NULL';
+        }
+        $emailStatus = sanitize_key((string) ($filters['email_status'] ?? 'all'));
+        if ($emailStatus === 'with') {
+            $conditions[] = 's.responsible_email IS NOT NULL AND TRIM(s.responsible_email) <> ""';
+        } elseif ($emailStatus === 'without') {
+            $conditions[] = '(s.responsible_email IS NULL OR TRIM(s.responsible_email) = "")';
+        }
+
+        $sql = "SELECT s.*, g.name AS group_name, g.category_id, g.season_id,
+                       c.name AS category_name, se.name AS season_name, se.is_current
+                FROM {$swimmers} s
+                INNER JOIN {$groups} g ON g.id = s.group_id
+                INNER JOIN {$categories} c ON c.id = g.category_id
+                INNER JOIN {$seasons} se ON se.id = g.season_id
+                WHERE " . implode(' AND ', $conditions) . "
+                ORDER BY se.is_current DESC, se.start_date DESC,
+                         c.sort_order ASC, c.name ASC, g.name ASC,
+                         s.last_name ASC, s.first_name ASC";
+        $results = $params === []
+            ? $wpdb->get_results($sql, ARRAY_A)
+            : $wpdb->get_results($wpdb->prepare($sql, $params), ARRAY_A);
         return is_array($results) ? $results : [];
     }
 
     public function swimmersByGroupForDistribution(int $groupId): array
     {
-        global $wpdb;
-
-        $results = $wpdb->get_results(
-            $wpdb->prepare(
-                'SELECT * FROM ' . Config::table('swimmers') . '
-                WHERE group_id = %d
-                AND is_active = 1
-                ORDER BY last_name ASC, first_name ASC',
-                $groupId
-            ),
-            ARRAY_A
-        );
-
-        return is_array($results) ? $results : [];
+        return $this->swimmersForDistribution(['group_id' => $groupId]);
     }
 
-    public function markDistributed(
-        int $swimmerId,
-        string $method,
-        string $recipient = ''
-    ): bool {
+    public function markDistributed(int $swimmerId, string $method, string $recipient = ''): bool
+    {
         global $wpdb;
-
-        $result = $wpdb->update(
+        return $wpdb->update(
             Config::table('swimmers'),
             [
                 'parent_access_distributed_at' => current_time('mysql'),
@@ -329,9 +318,6 @@ class ParentAccessRepository
             ['id' => $swimmerId],
             ['%s', '%s', '%s', '%s'],
             ['%d']
-        );
-
-        return $result !== false;
+        ) !== false;
     }
-
 }

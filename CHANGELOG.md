@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.8.2 - Distribution globale des accès parents
+
+- Vue Accès parents globale avec filtres multi-catégories, groupe, statut d'accès et présence d'email.
+- Envoi en masse des accès non distribués sur tous les résultats filtrés.
+- Préparation et impression de tous les coupons correspondant aux filtres.
+- Les codes envoyés par email sont conservés dans le lot temporaire pour permettre une impression immédiate sans régénération.
+- Ajout des colonnes Catégorie et Groupe dans la vue de distribution.
+- Conservation des filtres après les actions de masse.
+
+## 0.8.1 - Correctif envoi des accès parents
+
+- Corrige le formatage `sprintf()` du corps d’email des accès parents.
+- Évite l’interprétation des placeholders positionnels `%1$s`, `%2$s` et `%3$s` comme variables PHP.
+
 ## 0.8.0 - Accès parents et distribution
 
 - liens directs **Évaluer**, **Voir le parcours** et **Accès parents** depuis la liste des nageurs ;
