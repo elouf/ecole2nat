@@ -12,7 +12,10 @@ Plugin WordPress de suivi et de préparation pédagogique pour école de natatio
 - nageurs ;
 - séances types avec parties, exercices, durées et consignes ;
 - évaluations progressives ;
-- portail parents sécurisé.
+- portail parents sécurisé ;
+- distribution groupée des accès parents par email, coupons ou CSV ;
+- synchronisation d’un classeur club avec saison cible ;
+- maintenance et purge contrôlée des données.
 
 ## Portail parents
 
@@ -23,10 +26,10 @@ Plugin WordPress de suivi et de préparation pédagogique pour école de natatio
 [e2n_parent_report]
 ```
 
-3. Dans **Ecole2Nat' → Nageurs**, ouvrez **Accès parents** sur la ligne d'un nageur.
-4. Générez un code de 8 caractères et remettez le coupon aux parents.
+3. Utilisez **Ecole2Nat' → Accès parents** pour distribuer les accès d’un groupe par email, coupons ou CSV.
+4. Les liens **Voir le parcours** du back-office permettent une prévisualisation administrateur sans exposer le code parent.
 
-Le code n'est jamais conservé en clair. Il n'est affiché dans l'administration qu'après sa génération ou sa régénération.
+Le code n'est jamais conservé en clair. Il n'est affiché dans l'administration qu'après sa génération ou sa régénération. Un renvoi génère donc un nouveau code et invalide l'ancien.
 
 ## Séances types
 
@@ -77,3 +80,24 @@ find src -name '*.php' -print0 | xargs -0 -n1 php -l
 ## Modèle de données
 
 Voir [`docs/database.md`](docs/database.md).
+
+## Synchronisation du classeur club
+
+Le menu **Ecole2Nat' → Synchronisation** accepte un classeur `.xlsx` comprenant :
+
+- `Inscriptions` ;
+- `Groupes` ou `Catégories` ;
+- `Référentiel`.
+
+Les autres onglets et les colonnes comptables sont ignorés. Avant l'analyse, l'administrateur choisit la **saison cible** : la colonne Saison n'est donc pas nécessaire dans l'onglet Groupes. L'association d'un nageur à son groupe repose sur la concaténation de la catégorie et du créneau, par exemple `Dauphin` + `Lundi 17h15` → `Dauphin Lundi 17h15`.
+
+
+## Maintenance
+
+L'écran **Ecole2Nat' → Maintenance** permet à un administrateur de purger intégralement les données du plugin sans désinstaller Ecole2Nat'. La purge conserve le schéma de base de données et les options techniques de version, mais efface toutes les données métier, évaluations, accès parents et journaux de synchronisation.
+
+Cette action est irréversible et exige une double confirmation explicite.
+
+## Mise à jour du schéma
+
+Ecole2Nat' compare automatiquement la version de base installée à `E2N_DB_VERSION`. Les migrations `dbDelta()` nécessaires sont appliquées au chargement après une mise à jour ; il n'est plus nécessaire de désactiver/réactiver l'extension pour ajouter les nouvelles colonnes.

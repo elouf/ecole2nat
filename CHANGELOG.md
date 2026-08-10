@@ -1,47 +1,56 @@
 # Changelog
 
-## 0.4.0
+## 0.8.0 - Accès parents et distribution
 
-### Portail parents
+- liens directs **Évaluer**, **Voir le parcours** et **Accès parents** depuis la liste des nageurs ;
+- prévisualisation administrateur sécurisée du parcours parent ;
+- lien **Voir le parcours parent** depuis la fiche d’évaluation ;
+- page de distribution des accès parents par groupe ;
+- génération et envoi individuel ou groupé par email ;
+- suivi de la dernière transmission ;
+- génération de coupons en masse et export CSV temporaire ;
+- les renvois régénèrent explicitement le code et invalident l’ancien ;
+- mise à niveau automatique du schéma de base de données lors d’une mise à jour du plugin.
 
-- ajout du shortcode public `[e2n_parent_report]` ;
-- ajout d’un accès par code aléatoire unique de 8 caractères ;
-- stockage exclusif de l’empreinte du code en base ;
-- génération, régénération et désactivation depuis l’administration ;
-- ajout d’un message de l’entraîneur visible par les familles ;
-- affichage mobile-first des compétences regroupées par domaine ;
-- vocabulaire parents : À découvrir, En progression et Acquis ;
-- progression globale et progression par domaine ;
-- impression d’un coupon d’accès et de la fiche parcours ;
-- limitation des tentatives et blocage temporaire ;
-- journalisation pseudonymisée des accès ;
-- exclusion du portail de l’indexation des moteurs de recherche.
+## 0.7.1 - Saison cible de synchronisation
 
-## 0.3.0
+- la synchronisation choisit explicitement une saison cible dans WordPress ;
+- la colonne `Saison` n’est plus requise dans l’onglet Groupes du classeur.
 
-### Évaluations progressives
+## 0.7.0 - Maintenance
 
-- évaluation progressive des nageurs sans campagne ni jalon obligatoire ;
-- trois niveaux par compétence : Non observé, En cours et Acquis ;
-- vue de synthèse par groupe ;
-- éditeur détaillé des niveaux d’un nageur, organisé par domaine pédagogique ;
-- notes facultatives par compétence ;
-- date et auteur de la dernière mise à jour ;
-- nouvelle table `e2n_swimmer_skill_levels`.
+- écran Maintenance et purge totale forcée des données Ecole2Nat’ ;
+- détection dynamique de toutes les tables `e2n_` ;
+- double confirmation avant toute purge destructive ;
+- nettoyage des transients et fichiers temporaires de synchronisation ;
+- conservation du plugin, du schéma et des options techniques ;
+- champ téléphone responsable porté à 100 caractères.
 
-## 0.2.0
+## 0.6.0 - Synchronisation du classeur club
 
-### Séances types
+- synchronisation d’un classeur `.xlsx` avec analyse préalable ;
+- onglets Inscriptions, Groupes/Catégories et Référentiel ;
+- association des nageurs par Catégorie + Créneau ;
+- synchronisation idempotente et journal des opérations.
 
-- ajout du calcul automatique de la durée totale ;
-- ajout du renommage, du déplacement et de la suppression des parties ;
-- ajout de la duplication complète d'une séance ;
-- ajout d'une vue d'impression A4 ;
-- correction de l'ancienne colonne de durée dans la liste ;
-- masquage visuel des pages internes d'édition ;
-- amélioration des contrôles de doublons lors des modifications.
+## 0.5.0 - Administration et qualité des données
 
-### Documentation
+- badges de statut, recherche, filtres, tris et pagination ;
+- suppressions protégées et transactionnelles avec contrôle des dépendances.
 
-- mise à jour du README ;
-- ajout de la documentation du modèle de données.
+## 0.4.0 - Portail parents
+
+- shortcode `[e2n_parent_report]` et codes aléatoires de 8 caractères ;
+- stockage exclusif de l’empreinte du code ;
+- progression, impression, limitation des tentatives et journalisation pseudonymisée.
+
+## 0.3.0 - Évaluations progressives
+
+- niveaux Non observé, En cours et Acquis ;
+- synthèse par groupe et éditeur détaillé par nageur ;
+- table `e2n_swimmer_skill_levels`.
+
+## 0.2.0 - Séances types
+
+- parties, exercices, durées et consignes propres à la séance ;
+- réorganisation, duplication, impression A4 et durée totale automatique.

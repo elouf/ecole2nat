@@ -4,6 +4,7 @@ namespace Ecole2Nat\Admin\Pages;
 
 use Ecole2Nat\Exercise\ExerciseRepository;
 use Ecole2Nat\Session\SessionExerciseService;
+use Ecole2Nat\Admin\Deletion\DeletionController;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -281,6 +282,11 @@ class ExerciseListPage
 
                                         <a href="<?php echo esc_url($editUrl); ?>">
                                             <?php esc_html_e('Modifier', 'ecole2nat'); ?>
+                                        </a><span aria-hidden="true"> | </span>
+                                        <?php $deleteUrl = DeletionController::url('exercise', $exerciseId, admin_url('admin.php?page=ecole2nat-exercises')); ?>
+                                        <a class="e2n-delete-link" href="<?php echo esc_url($deleteUrl); ?>"
+                                           onclick="return confirm('<?php echo esc_js(__('Supprimer cet exercice ?', 'ecole2nat')); ?>');">
+                                            <?php esc_html_e('Supprimer', 'ecole2nat'); ?>
                                         </a>
                                     <?php endif; ?>
                                 </td>

@@ -7,13 +7,16 @@ use Ecole2Nat\Admin\Pages\ExerciseListPage;
 use Ecole2Nat\Admin\Pages\ExercisePage;
 use Ecole2Nat\Admin\Pages\EvaluationPage;
 use Ecole2Nat\Admin\Pages\GroupPage;
+use Ecole2Nat\Admin\Pages\MaintenancePage;
 use Ecole2Nat\Admin\Pages\ParentAccessPage;
+use Ecole2Nat\Admin\Pages\ParentDistributionPage;
 use Ecole2Nat\Admin\Pages\ReferencePage;
 use Ecole2Nat\Admin\Pages\SeasonPage;
 use Ecole2Nat\Admin\Pages\SessionListPage;
 use Ecole2Nat\Admin\Pages\SessionPage;
 use Ecole2Nat\Admin\Pages\SessionPrintPage;
 use Ecole2Nat\Admin\Pages\SwimmerPage;
+use Ecole2Nat\Admin\Pages\SynchronizationPage;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -103,6 +106,33 @@ class Menu
             'manage_options',
             'ecole2nat-evaluations',
             [new EvaluationPage(), 'render']
+        );
+
+        add_submenu_page(
+            'ecole2nat',
+            __('Accès parents', 'ecole2nat'),
+            __('Accès parents', 'ecole2nat'),
+            'manage_options',
+            'ecole2nat-parent-distribution',
+            [new ParentDistributionPage(), 'render']
+        );
+
+        add_submenu_page(
+            'ecole2nat',
+            __('Synchronisation', 'ecole2nat'),
+            __('Synchronisation', 'ecole2nat'),
+            'manage_options',
+            'ecole2nat-synchronization',
+            [new SynchronizationPage(), 'render']
+        );
+
+        add_submenu_page(
+            'ecole2nat',
+            __('Maintenance', 'ecole2nat'),
+            __('Maintenance', 'ecole2nat'),
+            'manage_options',
+            'ecole2nat-maintenance',
+            [new MaintenancePage(), 'render']
         );
 
         // Pages internes : elles restent enregistrées pour les permissions,

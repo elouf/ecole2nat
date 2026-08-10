@@ -3,6 +3,7 @@
 namespace Ecole2Nat\Admin\Pages;
 
 use Ecole2Nat\Evaluation\EvaluationService;
+use Ecole2Nat\ParentPortal\ParentAccessService;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -11,10 +12,12 @@ if (!defined('ABSPATH')) {
 class EvaluationPage
 {
     private EvaluationService $evaluationService;
+    private ParentAccessService $parentAccessService;
 
     public function __construct()
     {
         $this->evaluationService = new EvaluationService();
+        $this->parentAccessService = new ParentAccessService();
     }
 
     public function render(): void
@@ -322,11 +325,17 @@ class EvaluationPage
             admin_url('admin.php')
         );
 
+        $previewUrl = $this->parentAccessService->previewUrl((int) $swimmer['id']);
         ?>
-        <p>
+        <p style="display:flex;gap:8px;flex-wrap:wrap;">
             <a href="<?php echo esc_url($backUrl); ?>" class="button">
                 <?php esc_html_e('Retour au groupe', 'ecole2nat'); ?>
             </a>
+            <?php if ($previewUrl !== '') : ?>
+                <a href="<?php echo esc_url($previewUrl); ?>" class="button" target="_blank" rel="noopener noreferrer">
+                    <?php esc_html_e('Voir le parcours parent', 'ecole2nat'); ?>
+                </a>
+            <?php endif; ?>
         </p>
 
         <div class="postbox">

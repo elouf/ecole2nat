@@ -6,6 +6,7 @@ use Ecole2Nat\Category\CategoryRepository;
 use Ecole2Nat\Exercise\ExerciseRepository;
 use Ecole2Nat\Reference\DomainRepository;
 use Ecole2Nat\Reference\SkillRepository;
+use Ecole2Nat\Admin\Deletion\DeletionController;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -383,6 +384,18 @@ class ReferencePage
                 <hr>
 
                 <?php $this->renderSkillForm($domainId); ?>
+
+                <p>
+                    <?php $deleteUrl = DeletionController::url(
+                        'domain',
+                        $domainId,
+                        add_query_arg(['page' => 'ecole2nat-reference', 'category' => (int) $domain['category_id']], admin_url('admin.php'))
+                    ); ?>
+                    <a class="e2n-delete-link" href="<?php echo esc_url($deleteUrl); ?>"
+                       onclick="return confirm('<?php echo esc_js(__('Supprimer ce domaine ?', 'ecole2nat')); ?>');">
+                        <?php esc_html_e('Supprimer le domaine', 'ecole2nat'); ?>
+                    </a>
+                </p>
             </div>
         </div>
         <?php
@@ -494,6 +507,18 @@ class ReferencePage
                         'Créer un exercice',
                         'ecole2nat'
                     ); ?>
+                </a>
+
+                <?php
+                $deleteUrl = DeletionController::url(
+                    'skill',
+                    $skillId,
+                    add_query_arg(['page' => 'ecole2nat-reference'], admin_url('admin.php'))
+                );
+                ?>
+                <a class="button button-small e2n-delete-link" href="<?php echo esc_url($deleteUrl); ?>"
+                   onclick="return confirm('<?php echo esc_js(__('Supprimer cette compétence ?', 'ecole2nat')); ?>');">
+                    <?php esc_html_e('Supprimer', 'ecole2nat'); ?>
                 </a>
             </p>
         </div>

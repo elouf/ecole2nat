@@ -2,6 +2,9 @@
 
 namespace Ecole2Nat\Admin\Pages;
 
+use Ecole2Nat\Admin\UI\Badge;
+use Ecole2Nat\Admin\Deletion\DeletionController;
+
 use Ecole2Nat\Category\CategoryRepository;
 
 if (!defined('ABSPATH')) {
@@ -199,11 +202,13 @@ class CategoryPage
             echo '<td><strong>' . esc_html($category['name']) . '</strong></td>';
             echo '<td>' . esc_html($category['description']) . '</td>';
             echo '<td>' . esc_html((string) $category['sort_order']) . '</td>';
-            echo '<td>' . ($isActive ? 'Active' : 'Inactive') . '</td>';
+            echo '<td>' . wp_kses_post(Badge::status($isActive)) . '</td>';
             echo '<td>';
             echo '<a href="' . esc_url($url) . '">';
             echo $isActive ? 'Désactiver' : 'Activer';
             echo '</a>';
+            $deleteUrl = DeletionController::url('category', $categoryId, admin_url('admin.php?page=ecole2nat-categories'));
+            echo ' | <a class="e2n-delete-link" onclick="return confirm(\'Supprimer cette catégorie ?\');" href="' . esc_url($deleteUrl) . '">Supprimer</a>';
             echo '</td>';
             echo '</tr>';
         }

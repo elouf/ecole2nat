@@ -4,6 +4,8 @@ namespace Ecole2Nat\Admin\Pages;
 
 use Ecole2Nat\Category\CategoryRepository;
 use Ecole2Nat\Group\GroupService;
+use Ecole2Nat\Admin\UI\Badge;
+use Ecole2Nat\Admin\Deletion\DeletionController;
 use Ecole2Nat\Season\SeasonRepository;
 
 if (!defined('ABSPATH')) {
@@ -548,33 +550,7 @@ class GroupPage
                         </td>
 
                         <td>
-                            <?php if ($isActive) : ?>
-                                <span
-                                    style="
-                                        display: inline-block;
-                                        padding: 3px 8px;
-                                        border-radius: 12px;
-                                        background: #edfaef;
-                                        color: #116329;
-                                        font-weight: 600;
-                                    "
-                                >
-                                    <?php echo esc_html__('Actif', 'ecole2nat'); ?>
-                                </span>
-                            <?php else : ?>
-                                <span
-                                    style="
-                                        display: inline-block;
-                                        padding: 3px 8px;
-                                        border-radius: 12px;
-                                        background: #f0f0f1;
-                                        color: #50575e;
-                                        font-weight: 600;
-                                    "
-                                >
-                                    <?php echo esc_html__('Inactif', 'ecole2nat'); ?>
-                                </span>
-                            <?php endif; ?>
+                            <?php echo wp_kses_post(Badge::status($isActive)); ?>
                         </td>
 
                         <td>
@@ -606,6 +582,17 @@ class GroupPage
                                     ?>
                                 </button>
                             </form>
+                            <?php
+                            $deleteUrl = DeletionController::url(
+                                'group',
+                                (int) $group['id'],
+                                admin_url('admin.php?page=ecole2nat-groups')
+                            );
+                            ?>
+                            <a class="e2n-delete-link" href="<?php echo esc_url($deleteUrl); ?>"
+                               onclick="return confirm('<?php echo esc_js(__('Supprimer ce groupe ?', 'ecole2nat')); ?>');">
+                                <?php esc_html_e('Supprimer', 'ecole2nat'); ?>
+                            </a>
                         </td>
                     </tr>
                 <?php endforeach; ?>

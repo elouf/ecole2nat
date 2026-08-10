@@ -1,0 +1,120 @@
+.e2n-status {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.4;
+    white-space: nowrap;
+}
+.e2n-status--active {
+    color: #0a4b2b;
+    background: #d9f2e3;
+    border: 1px solid #9ed6b4;
+}
+.e2n-status--inactive {
+    color: #5f2323;
+    background: #f8dddd;
+    border: 1px solid #e8aaaa;
+}
+.e2n-filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: end;
+    margin: 16px 0;
+    padding: 12px;
+    background: #fff;
+    border: 1px solid #dcdcde;
+}
+.e2n-filter-bar label { display: grid; gap: 4px; }
+.e2n-filter-bar .button { align-self: end; }
+.e2n-pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-top: 12px;
+}
+.e2n-pagination__links { display: flex; gap: 4px; flex-wrap: wrap; }
+.e2n-delete-link { color: #b32d2e; }
+.e2n-table-actions { white-space: normal; }
+
+/* Parent access distribution */
+.e2n-parent-coupons {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin-top: 18px;
+}
+
+.e2n-parent-coupon {
+    border: 1px solid #c3c4c7;
+    border-radius: 8px;
+    background: #fff;
+    padding: 22px;
+    text-align: center;
+    break-inside: avoid;
+}
+
+.e2n-parent-coupon-brand {
+    font-weight: 700;
+    margin: 0 0 4px;
+}
+
+.e2n-parent-coupon h3 {
+    margin: 4px 0 14px;
+}
+
+.e2n-parent-coupon-swimmer {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.e2n-parent-coupon-code {
+    font: 700 32px/1.2 monospace;
+    letter-spacing: .16em;
+    margin: 18px 0;
+}
+
+.e2n-parent-coupon-url {
+    overflow-wrap: anywhere;
+}
+
+@media print {
+    body.wp-admin .e2n-parent-distribution > :not(.e2n-parent-coupon-batch),
+    body.wp-admin .e2n-parent-coupon-batch .postbox-header,
+    body.wp-admin .e2n-parent-batch-actions,
+    body.wp-admin .e2n-parent-batch-clear,
+    body.wp-admin #adminmenumain,
+    body.wp-admin #wpadminbar,
+    body.wp-admin #wpfooter {
+        display: none !important;
+    }
+
+    body.wp-admin #wpcontent,
+    body.wp-admin #wpbody-content {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    .e2n-parent-coupon-batch,
+    .e2n-parent-coupon-batch .inside {
+        border: 0 !important;
+        box-shadow: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    .e2n-parent-coupons {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12mm;
+    }
+
+    .e2n-parent-coupon {
+        min-height: 72mm;
+        padding: 8mm;
+    }
+}

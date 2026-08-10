@@ -65,10 +65,13 @@ class ParentAccessRepository
                 'parent_access_created_at' => current_time('mysql'),
                 'parent_access_last_used_at' => null,
                 'parent_access_count' => 0,
+                'parent_access_distributed_at' => null,
+                'parent_access_distribution_method' => null,
+                'parent_access_distributed_to' => null,
                 'updated_at' => current_time('mysql'),
             ],
             ['id' => $swimmerId],
-            ['%s', '%d', '%s', '%s', '%d', '%s'],
+            ['%s', '%d', '%s', '%s', '%d', '%s', '%s', '%s', '%s'],
             ['%d']
         );
 
@@ -263,4 +266,72 @@ class ParentAccessRepository
             'latest_update' => $latestUpdate,
         ];
     }
+
+    public function distributionGroups(): array
+    {
+        global $wpdb;
+
+        $groups = Config::table('groups');
+        $seasons = Config::table('seasons');
+        $categories = Config::table('categories');
+
+        $results = $wpdb->get_results(
+            "SELECT
+                groups.*,
+                seasons.name AS season_name,
+                seasons.is_current,
+                categories.name AS category_name
+            FROM {$groups} AS groups
+            INNER JOIN {$seasons} AS seasons ON seasons.id = groups.season_id
+            INNER JOIN {$categories} AS categories ON categories.id = groups.category_id
+            WHERE groups.is_active = 1
+            ORDER BY seasons.is_current DESC, seasons.start_date DESC,
+                categories.sort_order ASC, groups.name ASC",
+            ARRAY_A
+        );
+
+        return is_array($results) ? $results : [];
+    }
+
+    public function swimmersByGroupForDistribution(int $groupId): array
+    {
+        global $wpdb;
+
+        $results = $wpdb->get_results(
+            $wpdb->prepare(
+                'SELECT * FROM ' . Config::table('swimmers') . '
+                WHERE group_id = %d
+                AND is_active = 1
+                ORDER BY last_name ASC, first_name ASC',
+                $groupId
+            ),
+            ARRAY_A
+        );
+
+        return is_array($results) ? $results : [];
+    }
+
+    public function markDistributed(
+        int $swimmerId,
+        string $method,
+        string $recipient = ''
+    ): bool {
+        global $wpdb;
+
+        $result = $wpdb->update(
+            Config::table('swimmers'),
+            [
+                'parent_access_distributed_at' => current_time('mysql'),
+                'parent_access_distribution_method' => sanitize_key($method),
+                'parent_access_distributed_to' => sanitize_text_field($recipient),
+                'updated_at' => current_time('mysql'),
+            ],
+            ['id' => $swimmerId],
+            ['%s', '%s', '%s', '%s'],
+            ['%d']
+        );
+
+        return $result !== false;
+    }
+
 }

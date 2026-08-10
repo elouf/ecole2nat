@@ -2,6 +2,8 @@
 
 namespace Ecole2Nat\Admin\Pages;
 
+use Ecole2Nat\Admin\Deletion\DeletionController;
+
 use Ecole2Nat\Season\SeasonRepository;
 
 if (!defined('ABSPATH')) {
@@ -142,6 +144,7 @@ class SeasonPage
         echo '<th scope="col">Début</th>';
         echo '<th scope="col">Fin</th>';
         echo '<th scope="col">Courante</th>';
+        echo '<th scope="col">Action</th>';
         echo '</tr>';
         echo '</thead>';
 
@@ -191,6 +194,12 @@ class SeasonPage
                 echo '</a>';
             }
 
+            echo '</td>';
+            echo '<td>';
+            if (empty($season['is_current'])) {
+                $deleteUrl = DeletionController::url('season', $seasonId, admin_url('admin.php?page=ecole2nat-seasons'));
+                echo '<a class="e2n-delete-link" onclick="return confirm(\'Supprimer cette saison ?\');" href="' . esc_url($deleteUrl) . '">Supprimer</a>';
+            } else { echo '—'; }
             echo '</td>';
             echo '</tr>';
         }

@@ -3,6 +3,8 @@
 namespace Ecole2Nat\Admin\Pages;
 
 use Ecole2Nat\Session\SessionService;
+use Ecole2Nat\Admin\UI\Badge;
+use Ecole2Nat\Admin\Deletion\DeletionController;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -156,9 +158,7 @@ class SessionListPage
                         <td><?php echo esc_html((string) ($session['parts_count'] ?? 0)); ?></td>
                         <td><?php echo esc_html((string) ($session['total_duration'] ?? 0)); ?> min</td>
                         <td>
-                            <?php echo $isActive
-                                ? esc_html__('Active', 'ecole2nat')
-                                : esc_html__('Inactive', 'ecole2nat'); ?>
+                            <?php echo wp_kses_post(Badge::status($isActive)); ?>
                         </td>
                         <td>
                             <a href="<?php echo esc_url($editUrl); ?>"><?php esc_html_e('Modifier', 'ecole2nat'); ?></a>
@@ -171,6 +171,11 @@ class SessionListPage
                                 <?php echo $isActive
                                     ? esc_html__('Désactiver', 'ecole2nat')
                                     : esc_html__('Activer', 'ecole2nat'); ?>
+                            </a><span aria-hidden="true"> | </span>
+                            <?php $deleteUrl = DeletionController::url('session', $sessionId, admin_url('admin.php?page=ecole2nat-sessions')); ?>
+                            <a class="e2n-delete-link" href="<?php echo esc_url($deleteUrl); ?>"
+                               onclick="return confirm('<?php echo esc_js(__('Supprimer cette séance, ses parties et leurs exercices ?', 'ecole2nat')); ?>');">
+                                <?php esc_html_e('Supprimer', 'ecole2nat'); ?>
                             </a>
                         </td>
                     </tr>

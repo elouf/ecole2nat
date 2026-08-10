@@ -217,4 +217,92 @@ public function update(int $id, array $data): bool
 
     return $result !== false;
 }
+
+    public function search(SwimmerSearchCriteria $criteria): array
+    {
+        global $wpdb;
+
+        $swimmers = Config::table('swimmers');
+        $groups = Config::table('groups');
+        $categories = Config::table('categories');
+        $seasons = Config::table('seasons');
+
+        [$where, $params] = $this->buildSearchWhere($criteria);
+        $allowedOrder = [
+            'last_name' => 's.last_name',
+            'first_name' => 's.first_name',
+            'birth_date' => 's.birth_date',
+            'group_name' => 'g.name',
+            'registration_date' => 's.registration_date',
+        ];
+        $orderBy = $allowedOrder[$criteria->orderBy] ?? 's.last_name';
+        $order = strtolower($criteria->order) === 'desc' ? 'DESC' : 'ASC';
+        $offset = max(0, ($criteria->page - 1) * $criteria->perPage);
+
+        $sql = "SELECT s.*, g.name AS group_name, g.category_id, g.season_id,
+                       c.name AS category_name, se.name AS season_name
+                FROM {$swimmers} s
+                LEFT JOIN {$groups} g ON g.id = s.group_id
+                LEFT JOIN {$categories} c ON c.id = g.category_id
+                LEFT JOIN {$seasons} se ON se.id = g.season_id
+                {$where}
+                ORDER BY {$orderBy} {$order}, s.last_name ASC, s.first_name ASC
+                LIMIT %d OFFSET %d";
+        $params[] = $criteria->perPage;
+        $params[] = $offset;
+
+        $results = $wpdb->get_results($wpdb->prepare($sql, $params), ARRAY_A);
+        return is_array($results) ? $results : [];
+    }
+
+    public function countSearch(SwimmerSearchCriteria $criteria): int
+    {
+        global $wpdb;
+        [$where, $params] = $this->buildSearchWhere($criteria);
+        $sql = 'SELECT COUNT(*) FROM ' . Config::table('swimmers') . ' s '
+            . 'LEFT JOIN ' . Config::table('groups') . ' g ON g.id = s.group_id '
+            . 'LEFT JOIN ' . Config::table('categories') . ' c ON c.id = g.category_id '
+            . 'LEFT JOIN ' . Config::table('seasons') . " se ON se.id = g.season_id {$where}";
+
+        return $params === []
+            ? (int) $wpdb->get_var($sql)
+            : (int) $wpdb->get_var($wpdb->prepare($sql, $params));
+    }
+
+    private function buildSearchWhere(SwimmerSearchCriteria $criteria): array
+    {
+        global $wpdb;
+        $conditions = [];
+        $params = [];
+
+        if ($criteria->search !== '') {
+            $like = '%' . $wpdb->esc_like($criteria->search) . '%';
+            $conditions[] = '(s.last_name LIKE %s OR s.first_name LIKE %s OR s.licence_number LIKE %s OR s.responsible_name LIKE %s)';
+            array_push($params, $like, $like, $like, $like);
+        }
+        if ($criteria->groupId > 0) {
+            $conditions[] = 's.group_id = %d';
+            $params[] = $criteria->groupId;
+        }
+        if ($criteria->categoryId > 0) {
+            $conditions[] = 'g.category_id = %d';
+            $params[] = $criteria->categoryId;
+        }
+        if ($criteria->seasonId > 0) {
+            $conditions[] = 'g.season_id = %d';
+            $params[] = $criteria->seasonId;
+        }
+        if ($criteria->status === 'active' || $criteria->status === 'inactive') {
+            $conditions[] = 's.is_active = %d';
+            $params[] = $criteria->status === 'active' ? 1 : 0;
+        }
+        if ($criteria->assignment === 'assigned') {
+            $conditions[] = 's.group_id IS NOT NULL';
+        } elseif ($criteria->assignment === 'unassigned') {
+            $conditions[] = 's.group_id IS NULL';
+        }
+
+        return [$conditions === [] ? '' : 'WHERE ' . implode(' AND ', $conditions), $params];
+    }
+
 }

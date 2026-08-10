@@ -62,4 +62,13 @@ class SwimmerService
             'message' => $updated ? 'updated' : 'error',
         ];
     }
+
+    public function search(SwimmerSearchCriteria $criteria): array
+    {
+        return [
+            'items' => $this->repository->search($criteria),
+            'total' => $this->repository->countSearch($criteria),
+        ];
+    }
+
 }

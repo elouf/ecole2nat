@@ -3,6 +3,7 @@
 namespace Ecole2Nat\Admin\Pages;
 
 use Ecole2Nat\ParentPortal\ParentAccessService;
+use Ecole2Nat\ParentPortal\ParentDistributionService;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -11,10 +12,12 @@ if (!defined('ABSPATH')) {
 class ParentAccessPage
 {
     private ParentAccessService $service;
+    private ParentDistributionService $distributionService;
 
     public function __construct()
     {
         $this->service = new ParentAccessService();
+        $this->distributionService = new ParentDistributionService();
     }
 
     public function render(): void
@@ -36,6 +39,7 @@ class ParentAccessPage
         $code = get_transient($transientKey);
         delete_transient($transientKey);
         $portalUrl = $this->service->portalUrl();
+        $previewUrl = $this->service->previewUrl($swimmerId);
 
         ?>
         <div class="wrap e2n-parent-access-admin">
@@ -83,6 +87,20 @@ class ParentAccessPage
                         <p><?php echo esc_html(sprintf(__('Dernier accès le %s · %d consultation(s)', 'ecole2nat'), wp_date('d/m/Y à H:i', strtotime($swimmer['parent_access_last_used_at'])), (int) $swimmer['parent_access_count'])); ?></p>
                     <?php endif; ?>
 
+                    <?php if (!empty($swimmer['parent_access_distributed_at'])) : ?>
+                        <p>
+                            <?php
+                            echo esc_html(
+                                sprintf(
+                                    __('Dernière transmission le %1$s à %2$s', 'ecole2nat'),
+                                    wp_date('d/m/Y à H:i', strtotime((string) $swimmer['parent_access_distributed_at'])),
+                                    (string) ($swimmer['parent_access_distributed_to'] ?: __('destinataire non renseigné', 'ecole2nat'))
+                                )
+                            );
+                            ?>
+                        </p>
+                    <?php endif; ?>
+
                     <div style="display:flex;gap:8px;flex-wrap:wrap;">
                         <form method="post">
                             <?php wp_nonce_field('e2n_generate_parent_access_' . $swimmerId); ?>
@@ -100,6 +118,23 @@ class ParentAccessPage
                             </form>
                         <?php endif; ?>
                     </div>
+
+                    <p style="display:flex;gap:8px;flex-wrap:wrap;">
+                        <?php if ($previewUrl !== '') : ?>
+                            <a href="<?php echo esc_url($previewUrl); ?>" class="button" target="_blank" rel="noopener noreferrer">
+                                <?php esc_html_e('Voir le parcours parent', 'ecole2nat'); ?>
+                            </a>
+                        <?php endif; ?>
+
+                        <?php if (!empty($swimmer['responsible_email']) && $portalUrl !== '') : ?>
+                            <form method="post" style="display:inline;" onsubmit="return confirm('<?php echo esc_js(__('Un nouveau code sera généré et l’ancien sera invalidé. Envoyer le nouvel accès par email ?', 'ecole2nat')); ?>');">
+                                <?php wp_nonce_field('e2n_email_parent_access_' . $swimmerId); ?>
+                                <input type="hidden" name="e2n_action" value="email_parent_access">
+                                <input type="hidden" name="swimmer_id" value="<?php echo esc_attr((string) $swimmerId); ?>">
+                                <?php submit_button(__('Générer et envoyer par email', 'ecole2nat'), 'secondary', 'submit', false); ?>
+                            </form>
+                        <?php endif; ?>
+                    </p>
                 </div>
             </div>
 
@@ -156,6 +191,12 @@ class ParentAccessPage
             $this->redirect($swimmerId, $result['message']);
         }
 
+        if ($action === 'email_parent_access') {
+            check_admin_referer('e2n_email_parent_access_' . $swimmerId);
+            $result = $this->distributionService->sendForSwimmer($swimmerId);
+            $this->redirect($swimmerId, $result['message']);
+        }
+
         if ($action === 'save_parent_message') {
             check_admin_referer('e2n_save_parent_message_' . $swimmerId);
             $message = isset($_POST['parent_message']) ? wp_unslash($_POST['parent_message']) : '';
@@ -171,6 +212,10 @@ class ParentAccessPage
             'access_generated' => ['success', __('Le code d’accès a bien été généré.', 'ecole2nat')],
             'access_disabled' => ['success', __('L’accès parents a bien été désactivé.', 'ecole2nat')],
             'parent_message_saved' => ['success', __('Le message destiné aux parents a bien été enregistré.', 'ecole2nat')],
+            'mail_sent' => ['success', __('Le nouvel accès a été transmis par email au responsable.', 'ecole2nat')],
+            'missing_email' => ['warning', __('Aucune adresse email responsable valide n’est renseignée.', 'ecole2nat')],
+            'missing_portal' => ['warning', __('Aucune page publique contenant [e2n_parent_report] n’a été trouvée.', 'ecole2nat')],
+            'mail_error' => ['error', __('WordPress n’a pas pu transmettre cet email au service d’envoi.', 'ecole2nat')],
             'invalid' => ['error', __('Le nageur est introuvable.', 'ecole2nat')],
             'error' => ['error', __('Une erreur est survenue.', 'ecole2nat')],
         ];

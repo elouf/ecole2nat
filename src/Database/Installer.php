@@ -23,6 +23,25 @@ class Installer
         // On ne supprime pas les données à la désactivation.
     }
 
+    /**
+     * Applique automatiquement les migrations dbDelta lors d'une mise à jour
+     * du plugin, sans imposer une désactivation/réactivation manuelle.
+     */
+    public static function maybeUpgrade(): void
+    {
+        $installedDbVersion = (string) get_option('e2n_db_version', '');
+        $installedVersion = (string) get_option('e2n_version', '');
+
+        if ($installedDbVersion !== E2N_DB_VERSION) {
+            self::createTables();
+            update_option('e2n_db_version', E2N_DB_VERSION);
+        }
+
+        if ($installedVersion !== E2N_VERSION) {
+            update_option('e2n_version', E2N_VERSION);
+        }
+    }
+
     private static function createTables(): void
     {
         global $wpdb;
@@ -155,7 +174,7 @@ class Installer
             gender CHAR(1) NULL,
             responsible_name VARCHAR(150) NULL,
             responsible_email VARCHAR(150) NULL,
-            responsible_phone VARCHAR(30) NULL,
+            responsible_phone VARCHAR(100) NULL,
             licence_number VARCHAR(50) NULL,
             registration_date DATE NULL,
             medical_note TEXT NULL,
@@ -165,6 +184,9 @@ class Installer
             parent_access_created_at DATETIME NULL,
             parent_access_last_used_at DATETIME NULL,
             parent_access_count BIGINT UNSIGNED NOT NULL DEFAULT 0,
+            parent_access_distributed_at DATETIME NULL,
+            parent_access_distribution_method VARCHAR(30) NULL,
+            parent_access_distributed_to VARCHAR(150) NULL,
             is_active TINYINT(1) NOT NULL DEFAULT 1,
             created_at DATETIME NOT NULL,
             updated_at DATETIME NULL,
@@ -173,6 +195,7 @@ class Installer
             KEY group_id (group_id),
             KEY last_name (last_name),
             KEY parent_access_enabled (parent_access_enabled),
+            KEY parent_access_distributed_at (parent_access_distributed_at),
             KEY is_active (is_active)
 
         ) {$charsetCollate};";
@@ -265,6 +288,22 @@ class Installer
             KEY swimmer_id (swimmer_id),
             KEY success (success),
             KEY attempted_at (attempted_at)
+        ) {$charsetCollate};";
+
+        dbDelta($sql);
+        $tableName = Config::table('synchronization_logs');
+
+        $sql = "CREATE TABLE {$tableName} (
+            id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+            filename varchar(255) NOT NULL,
+            status varchar(20) NOT NULL,
+            summary longtext NULL,
+            errors longtext NULL,
+            created_by bigint(20) unsigned NULL,
+            created_at datetime NOT NULL,
+            PRIMARY KEY  (id),
+            KEY status (status),
+            KEY created_at (created_at)
         ) {$charsetCollate};";
 
         dbDelta($sql);

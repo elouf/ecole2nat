@@ -73,7 +73,29 @@ class ParentPortal
             }
         }
 
-        $swimmerId = $this->service->authenticatedSwimmerId();
+        $previewMode = false;
+        $swimmerId = 0;
+
+        if (
+            is_user_logged_in()
+            && current_user_can('manage_options')
+            && isset($_GET['e2n_parent_preview'], $_GET['_wpnonce'])
+        ) {
+            $previewSwimmerId = absint($_GET['e2n_parent_preview']);
+            $nonce = sanitize_text_field(wp_unslash($_GET['_wpnonce']));
+
+            if (
+                $previewSwimmerId > 0
+                && wp_verify_nonce($nonce, 'e2n_parent_preview_' . $previewSwimmerId)
+            ) {
+                $previewMode = true;
+                $swimmerId = $previewSwimmerId;
+            }
+        }
+
+        if (!$previewMode) {
+            $swimmerId = $this->service->authenticatedSwimmerId();
+        }
 
         ob_start();
         ?>
@@ -88,7 +110,7 @@ class ParentPortal
                     $this->service->clearAccessCookie();
                     $this->renderLogin('report_unavailable');
                 } else {
-                    $this->renderReport($report);
+                    $this->renderReport($report, $previewMode);
                 }
                 ?>
             <?php endif; ?>
@@ -148,7 +170,7 @@ class ParentPortal
         <?php
     }
 
-    private function renderReport(array $report): void
+    private function renderReport(array $report, bool $previewMode = false): void
     {
         $swimmer = $report['swimmer'];
         $counts = $report['counts'];
@@ -156,6 +178,11 @@ class ParentPortal
         $acquired = (int) $counts['acquired'];
         $percentage = $total > 0 ? (int) round(($acquired / $total) * 100) : 0;
         ?>
+        <?php if ($previewMode) : ?>
+            <div class="e2n-parent-alert e2n-parent-preview-banner">
+                <?php esc_html_e('Prévisualisation administrateur — aucun code parent n’a été utilisé.', 'ecole2nat'); ?>
+            </div>
+        <?php endif; ?>
         <header class="e2n-parent-report-header">
             <div>
                 <p class="e2n-parent-eyebrow">
@@ -185,13 +212,15 @@ class ParentPortal
                 <button type="button" class="e2n-parent-print" onclick="window.print()">
                     <?php esc_html_e('Imprimer', 'ecole2nat'); ?>
                 </button>
-                <form method="post">
-                    <?php wp_nonce_field('e2n_parent_logout'); ?>
-                    <input type="hidden" name="e2n_parent_action" value="logout">
-                    <button type="submit" class="e2n-parent-change-code">
-                        <?php esc_html_e('Changer de code', 'ecole2nat'); ?>
-                    </button>
-                </form>
+                <?php if (!$previewMode) : ?>
+                    <form method="post">
+                        <?php wp_nonce_field('e2n_parent_logout'); ?>
+                        <input type="hidden" name="e2n_parent_action" value="logout">
+                        <button type="submit" class="e2n-parent-change-code">
+                            <?php esc_html_e('Changer de code', 'ecole2nat'); ?>
+                        </button>
+                    </form>
+                <?php endif; ?>
             </div>
         </header>
 
