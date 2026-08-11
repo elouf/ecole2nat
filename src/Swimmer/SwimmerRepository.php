@@ -73,7 +73,10 @@ class SwimmerRepository
             ]
         );
 
-        return $result !== false;
+        if ($result === false) {
+            return false;
+        }
+        return $this->syncMembership((int) $wpdb->insert_id, (int) ($data['group_id'] ?? 0));
     }
 
     public function toggleActive(int $id): bool
@@ -215,8 +218,33 @@ public function update(int $id, array $data): bool
         ]
     );
 
-    return $result !== false;
+    if ($result === false) {
+        return false;
+    }
+    return $this->syncMembership($id, (int) ($data['group_id'] ?? 0));
 }
+
+    private function syncMembership(int $swimmerId, int $groupId): bool
+    {
+        global $wpdb;
+        if ($groupId <= 0) {
+            return true;
+        }
+        $seasonId = (int) $wpdb->get_var(
+            $wpdb->prepare('SELECT season_id FROM ' . Config::table('groups') . ' WHERE id = %d', $groupId)
+        );
+        if ($seasonId <= 0) {
+            return false;
+        }
+        $table = Config::table('swimmer_group_memberships');
+        $sql = $wpdb->prepare(
+            "INSERT INTO {$table} (swimmer_id, season_id, group_id, created_at, updated_at)
+             VALUES (%d, %d, %d, %s, %s)
+             ON DUPLICATE KEY UPDATE group_id = VALUES(group_id), updated_at = VALUES(updated_at)",
+            $swimmerId, $seasonId, $groupId, current_time('mysql'), current_time('mysql')
+        );
+        return $wpdb->query($sql) !== false;
+    }
 
     public function search(SwimmerSearchCriteria $criteria): array
     {

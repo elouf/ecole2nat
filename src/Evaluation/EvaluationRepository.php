@@ -4,245 +4,89 @@ namespace Ecole2Nat\Evaluation;
 
 use Ecole2Nat\Support\Config;
 
-if (!defined('ABSPATH')) {
-    exit;
-}
+if (!defined('ABSPATH')) { exit; }
 
 class EvaluationRepository
 {
     public function groups(): array
     {
         global $wpdb;
-
-        $groupsTable = Config::table('groups');
-        $seasonsTable = Config::table('seasons');
-        $categoriesTable = Config::table('categories');
-
-        $results = $wpdb->get_results(
-            "SELECT
-                groups.*,
-                seasons.name AS season_name,
-                seasons.is_current,
-                categories.name AS category_name
-            FROM {$groupsTable} AS groups
-            INNER JOIN {$seasonsTable} AS seasons
-                ON seasons.id = groups.season_id
-            INNER JOIN {$categoriesTable} AS categories
-                ON categories.id = groups.category_id
-            WHERE groups.is_active = 1
-            ORDER BY
-                seasons.is_current DESC,
-                seasons.start_date DESC,
-                categories.sort_order ASC,
-                groups.name ASC",
-            ARRAY_A
-        );
-
-        return is_array($results) ? $results : [];
+        $g=Config::table('groups'); $s=Config::table('seasons'); $c=Config::table('categories');
+        $r=$wpdb->get_results("SELECT g.*, s.name season_name, s.is_current, c.name category_name
+            FROM {$g} g INNER JOIN {$s} s ON s.id=g.season_id INNER JOIN {$c} c ON c.id=g.category_id
+            WHERE g.is_active=1 ORDER BY s.is_current DESC,s.start_date DESC,c.sort_order ASC,g.name ASC",ARRAY_A);
+        return is_array($r)?$r:[];
     }
 
     public function findGroup(int $groupId): ?array
     {
         global $wpdb;
-
-        $groupsTable = Config::table('groups');
-        $seasonsTable = Config::table('seasons');
-        $categoriesTable = Config::table('categories');
-
-        $result = $wpdb->get_row(
-            $wpdb->prepare(
-                "SELECT
-                    groups.*,
-                    seasons.name AS season_name,
-                    categories.name AS category_name
-                FROM {$groupsTable} AS groups
-                INNER JOIN {$seasonsTable} AS seasons
-                    ON seasons.id = groups.season_id
-                INNER JOIN {$categoriesTable} AS categories
-                    ON categories.id = groups.category_id
-                WHERE groups.id = %d
-                LIMIT 1",
-                $groupId
-            ),
-            ARRAY_A
-        );
-
-        return is_array($result) ? $result : null;
+        $g=Config::table('groups'); $s=Config::table('seasons'); $c=Config::table('categories');
+        $r=$wpdb->get_row($wpdb->prepare("SELECT g.*,s.name season_name,c.name category_name FROM {$g} g
+            INNER JOIN {$s} s ON s.id=g.season_id INNER JOIN {$c} c ON c.id=g.category_id WHERE g.id=%d LIMIT 1",$groupId),ARRAY_A);
+        return is_array($r)?$r:null;
     }
 
-    public function swimmersByGroup(int $groupId): array
+    public function swimmersByGroup(int $groupId, int $seasonId): array
     {
         global $wpdb;
-
-        $swimmersTable = Config::table('swimmers');
-        $levelsTable = Config::table('swimmer_skill_levels');
-
-        $results = $wpdb->get_results(
-            $wpdb->prepare(
-                "SELECT
-                    swimmers.*,
-                    COALESCE(summary.in_progress_count, 0) AS in_progress_count,
-                    COALESCE(summary.acquired_count, 0) AS acquired_count,
-                    summary.last_evaluated_at
-                FROM {$swimmersTable} AS swimmers
-                LEFT JOIN (
-                    SELECT
-                        swimmer_id,
-                        SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) AS in_progress_count,
-                        SUM(CASE WHEN status = 'acquired' THEN 1 ELSE 0 END) AS acquired_count,
-                        MAX(evaluated_at) AS last_evaluated_at
-                    FROM {$levelsTable}
-                    GROUP BY swimmer_id
-                ) AS summary
-                    ON summary.swimmer_id = swimmers.id
-                WHERE swimmers.group_id = %d
-                AND swimmers.is_active = 1
-                ORDER BY swimmers.last_name ASC, swimmers.first_name ASC",
-                $groupId
-            ),
-            ARRAY_A
-        );
-
-        return is_array($results) ? $results : [];
+        $sw=Config::table('swimmers'); $lv=Config::table('swimmer_skill_levels'); $m=Config::table('swimmer_group_memberships');
+        $sql="SELECT swimmers.*,COALESCE(summary.in_progress_count,0) in_progress_count,
+                COALESCE(summary.acquired_count,0) acquired_count,summary.last_evaluated_at
+              FROM {$m} membership
+              INNER JOIN {$sw} swimmers ON swimmers.id=membership.swimmer_id
+              LEFT JOIN (
+                SELECT swimmer_id,SUM(CASE WHEN status='in_progress' THEN 1 ELSE 0 END) in_progress_count,
+                SUM(CASE WHEN status='acquired' THEN 1 ELSE 0 END) acquired_count,MAX(evaluated_at) last_evaluated_at
+                FROM {$lv} WHERE season_id=%d GROUP BY swimmer_id
+              ) summary ON summary.swimmer_id=swimmers.id
+              WHERE membership.group_id=%d AND membership.season_id=%d AND swimmers.is_active=1
+              ORDER BY swimmers.last_name,swimmers.first_name";
+        $r=$wpdb->get_results($wpdb->prepare($sql,$seasonId,$groupId,$seasonId),ARRAY_A);
+        return is_array($r)?$r:[];
     }
 
-    public function findSwimmerInGroup(int $swimmerId, int $groupId): ?array
+    public function findSwimmerInGroup(int $swimmerId,int $groupId,int $seasonId): ?array
     {
         global $wpdb;
-
-        $result = $wpdb->get_row(
-            $wpdb->prepare(
-                'SELECT *
-                FROM ' . Config::table('swimmers') . '
-                WHERE id = %d
-                AND group_id = %d
-                LIMIT 1',
-                $swimmerId,
-                $groupId
-            ),
-            ARRAY_A
-        );
-
-        return is_array($result) ? $result : null;
+        $sw=Config::table('swimmers'); $m=Config::table('swimmer_group_memberships');
+        $r=$wpdb->get_row($wpdb->prepare("SELECT swimmers.* FROM {$m} membership INNER JOIN {$sw} swimmers ON swimmers.id=membership.swimmer_id
+            WHERE swimmers.id=%d AND membership.group_id=%d AND membership.season_id=%d LIMIT 1",$swimmerId,$groupId,$seasonId),ARRAY_A);
+        return is_array($r)?$r:null;
     }
 
-    public function skillsByCategory(int $categoryId): array
+    public function skillsByCategory(int $categoryId,int $seasonId): array
     {
         global $wpdb;
-
-        $domainsTable = Config::table('skill_domains');
-        $skillsTable = Config::table('skills');
-
-        $results = $wpdb->get_results(
-            $wpdb->prepare(
-                "SELECT
-                    skills.*,
-                    domains.name AS domain_name,
-                    domains.sort_order AS domain_sort_order
-                FROM {$skillsTable} AS skills
-                INNER JOIN {$domainsTable} AS domains
-                    ON domains.id = skills.domain_id
-                WHERE domains.category_id = %d
-                AND domains.is_active = 1
-                AND skills.is_active = 1
-                ORDER BY
-                    domains.sort_order ASC,
-                    domains.name ASC,
-                    skills.sort_order ASC,
-                    skills.name ASC",
-                $categoryId
-            ),
-            ARRAY_A
-        );
-
-        return is_array($results) ? $results : [];
+        $d=Config::table('skill_domains'); $s=Config::table('skills'); $ss=Config::table('season_skills');
+        $r=$wpdb->get_results($wpdb->prepare("SELECT skills.*,domains.name domain_name,domains.sort_order domain_sort_order
+            FROM {$s} skills INNER JOIN {$d} domains ON domains.id=skills.domain_id
+            INNER JOIN {$ss} season_skills ON season_skills.skill_id=skills.id AND season_skills.season_id=%d AND season_skills.is_active=1
+            WHERE domains.category_id=%d AND domains.is_active=1 AND skills.is_active=1
+            ORDER BY domains.sort_order,domains.name,skills.sort_order,skills.name",$seasonId,$categoryId),ARRAY_A);
+        return is_array($r)?$r:[];
     }
 
-    public function levelsBySwimmer(int $swimmerId): array
+    public function levelsBySwimmer(int $swimmerId,int $seasonId): array
     {
         global $wpdb;
+        $l=Config::table('swimmer_skill_levels'); $u=$wpdb->users;
+        $r=$wpdb->get_results($wpdb->prepare("SELECT levels.*,users.display_name evaluator_name FROM {$l} levels
+            LEFT JOIN {$u} users ON users.ID=levels.evaluated_by WHERE levels.swimmer_id=%d AND levels.season_id=%d",$swimmerId,$seasonId),ARRAY_A);
+        if(!is_array($r)) return [];
+        $out=[]; foreach($r as $row)$out[(int)$row['skill_id']]=$row; return $out;
+    }
 
-        $levelsTable = Config::table('swimmer_skill_levels');
-        $usersTable = $wpdb->users;
-
-        $results = $wpdb->get_results(
-            $wpdb->prepare(
-                "SELECT
-                    levels.*,
-                    users.display_name AS evaluator_name
-                FROM {$levelsTable} AS levels
-                LEFT JOIN {$usersTable} AS users
-                    ON users.ID = levels.evaluated_by
-                WHERE levels.swimmer_id = %d",
-                $swimmerId
-            ),
-            ARRAY_A
-        );
-
-        if (!is_array($results)) {
-            return [];
+    public function saveLevels(int $swimmerId,int $seasonId,array $levels,int $userId): bool
+    {
+        global $wpdb; $t=Config::table('swimmer_skill_levels'); $now=current_time('mysql'); $wpdb->query('START TRANSACTION');
+        foreach($levels as $skillId=>$level){
+            $q=$wpdb->query($wpdb->prepare("INSERT INTO {$t} (swimmer_id,season_id,skill_id,status,evaluated_at,evaluated_by,notes,created_at,updated_at)
+                VALUES (%d,%d,%d,%s,%s,%d,%s,%s,%s)
+                ON DUPLICATE KEY UPDATE status=VALUES(status),evaluated_at=VALUES(evaluated_at),evaluated_by=VALUES(evaluated_by),notes=VALUES(notes),updated_at=VALUES(updated_at)",
+                $swimmerId,$seasonId,(int)$skillId,$level['status'],$now,$userId,$level['notes'],$now,$now));
+            if($q===false){$wpdb->query('ROLLBACK');return false;}
         }
-
-        $levels = [];
-
-        foreach ($results as $result) {
-            $levels[(int) $result['skill_id']] = $result;
-        }
-
-        return $levels;
-    }
-
-    public function saveLevels(
-        int $swimmerId,
-        array $levels,
-        int $userId
-    ): bool {
-        global $wpdb;
-
-        $table = Config::table('swimmer_skill_levels');
-        $now = current_time('mysql');
-
-        $wpdb->query('START TRANSACTION');
-
-        foreach ($levels as $skillId => $level) {
-            $result = $wpdb->query(
-                $wpdb->prepare(
-                    "INSERT INTO {$table} (
-                        swimmer_id,
-                        skill_id,
-                        status,
-                        evaluated_at,
-                        evaluated_by,
-                        notes,
-                        created_at,
-                        updated_at
-                    ) VALUES (%d, %d, %s, %s, %d, %s, %s, %s)
-                    ON DUPLICATE KEY UPDATE
-                        status = VALUES(status),
-                        evaluated_at = VALUES(evaluated_at),
-                        evaluated_by = VALUES(evaluated_by),
-                        notes = VALUES(notes),
-                        updated_at = VALUES(updated_at)",
-                    $swimmerId,
-                    (int) $skillId,
-                    $level['status'],
-                    $now,
-                    $userId,
-                    $level['notes'],
-                    $now,
-                    $now
-                )
-            );
-
-            if ($result === false) {
-                $wpdb->query('ROLLBACK');
-
-                return false;
-            }
-        }
-
-        $wpdb->query('COMMIT');
-
-        return true;
+        $wpdb->query('COMMIT'); return true;
     }
 }

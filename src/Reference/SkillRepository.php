@@ -82,6 +82,27 @@ class SkillRepository
             ]
         );
 
-        return $result !== false;
+        if ($result === false) {
+            return false;
+        }
+
+        $skillId = (int) $wpdb->insert_id;
+        $seasonId = (int) $wpdb->get_var(
+            'SELECT id FROM ' . Config::table('seasons') . ' WHERE is_current = 1 ORDER BY id DESC LIMIT 1'
+        );
+        if ($seasonId > 0) {
+            $wpdb->insert(
+                Config::table('season_skills'),
+                [
+                    'season_id' => $seasonId,
+                    'skill_id' => $skillId,
+                    'is_active' => 1,
+                    'created_at' => current_time('mysql'),
+                ],
+                ['%d', '%d', '%d', '%s']
+            );
+        }
+
+        return true;
     }
 }

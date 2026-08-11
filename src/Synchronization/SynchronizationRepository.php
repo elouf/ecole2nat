@@ -21,6 +21,8 @@ final class SynchronizationRepository
             'skills' => $wpdb->get_results('SELECT * FROM ' . Config::table('skills'), ARRAY_A) ?: [],
             'exercises' => $wpdb->get_results('SELECT * FROM ' . Config::table('exercises'), ARRAY_A) ?: [],
             'swimmers' => $wpdb->get_results('SELECT * FROM ' . Config::table('swimmers'), ARRAY_A) ?: [],
+            'season_skills' => $wpdb->get_results('SELECT * FROM ' . Config::table('season_skills'), ARRAY_A) ?: [],
+            'memberships' => $wpdb->get_results('SELECT * FROM ' . Config::table('swimmer_group_memberships'), ARRAY_A) ?: [],
         ];
     }
 
@@ -78,8 +80,9 @@ final class SynchronizationRepository
             $categoryIds = $this->syncCategories($data, $stats);
             $groupIds = $this->syncGroups($data['groups'], (int) $season['id'], $categoryIds, $stats);
             [$domainIds, $skillIds] = $this->syncReference($data['reference'], $categoryIds, $stats);
+            $this->syncSeasonSkills((int) $season['id'], $skillIds, $stats);
             $this->syncExercises($data['reference'], $skillIds, $stats);
-            $this->syncSwimmers($data['swimmers'], $groupIds, $stats);
+            $this->syncSwimmers($data['swimmers'], $groupIds, (int) $season['id'], $stats);
             $wpdb->query('COMMIT');
             $this->log($filename, $userId, 'success', $stats, []);
             return ['success' => true, 'stats' => $stats, 'errors' => []];
@@ -174,6 +177,25 @@ final class SynchronizationRepository
         return [$domainIds,$skillIds];
     }
 
+    private function syncSeasonSkills(int $seasonId, array $skillIds, array &$stats): void
+    {
+        global $wpdb;
+        $table=Config::table('season_skills');
+        foreach(array_unique(array_map('intval',array_values($skillIds))) as $skillId){
+            if($skillId<=0) continue;
+            $exists=(int)$wpdb->get_var($wpdb->prepare("SELECT id FROM {$table} WHERE season_id=%d AND skill_id=%d LIMIT 1",$seasonId,$skillId));
+            if($exists>0){
+                $wpdb->update($table,['is_active'=>1,'updated_at'=>current_time('mysql')],['id'=>$exists],['%d','%s'],['%d']);
+                $stats['season_skills']['unchanged']++;
+                continue;
+            }
+            if($wpdb->insert($table,['season_id'=>$seasonId,'skill_id'=>$skillId,'is_active'=>1,'created_at'=>current_time('mysql')],['%d','%d','%d','%s'])===false){
+                throw new \RuntimeException('Impossible d’associer une compétence à la saison : '.$wpdb->last_error);
+            }
+            $stats['season_skills']['created']++;
+        }
+    }
+
     private function syncExercises(array $rows, array $skillIds, array &$stats): void
     {
         global $wpdb; $table=Config::table('exercises'); $seen=[];
@@ -190,7 +212,7 @@ final class SynchronizationRepository
         }
     }
 
-    private function syncSwimmers(array $rows, array $groupIds, array &$stats): void
+    private function syncSwimmers(array $rows, array $groupIds, int $seasonId, array &$stats): void
     {
         global $wpdb; $table=Config::table('swimmers');
         foreach($rows as $row){
@@ -200,14 +222,19 @@ final class SynchronizationRepository
             if($row['licence_number']!=='') $existing=$wpdb->get_row($wpdb->prepare("SELECT * FROM {$table} WHERE licence_number=%s LIMIT 1",$row['licence_number']),ARRAY_A);
             if(!$existing && $row['birth_date']) $existing=$wpdb->get_row($wpdb->prepare("SELECT * FROM {$table} WHERE LOWER(last_name)=LOWER(%s) AND LOWER(first_name)=LOWER(%s) AND birth_date=%s LIMIT 1",$row['last_name'],$row['first_name'],$row['birth_date']),ARRAY_A);
             $payload=['group_id'=>$groupId?:null,'last_name'=>$row['last_name'],'first_name'=>$row['first_name'],'birth_date'=>$row['birth_date'],'gender'=>$row['gender'],'responsible_email'=>$row['responsible_email'],'responsible_phone'=>$row['responsible_phone'],'licence_number'=>$row['licence_number'],'medical_note'=>$row['medical_note'],'registration_date'=>current_time('Y-m-d'),'is_active'=>1];
-            if(!$existing){$payload['created_at']=current_time('mysql'); if($wpdb->insert($table,$payload)===false) throw new \RuntimeException('Impossible de créer '.$row['first_name'].' '.$row['last_name'].'.'); $stats['swimmers']['created']++;}
-            else { $payload['updated_at']=current_time('mysql'); $changed=false; foreach($payload as $k=>$v){if($k==='updated_at')continue;if((string)($existing[$k]??'')!==(string)($v??'')){$changed=true;break;}} if($changed){if($wpdb->update($table,$payload,['id'=>(int)$existing['id']])===false) throw new \RuntimeException('Impossible de mettre à jour '.$row['first_name'].' '.$row['last_name'].'.');$stats['swimmers']['updated']++;}else$stats['swimmers']['unchanged']++;}
+            if(!$existing){$payload['created_at']=current_time('mysql'); if($wpdb->insert($table,$payload)===false) throw new \RuntimeException('Impossible de créer '.$row['first_name'].' '.$row['last_name'].' : '.$wpdb->last_error); $swimmerId=(int)$wpdb->insert_id; $stats['swimmers']['created']++;}
+            else { $swimmerId=(int)$existing['id']; $payload['updated_at']=current_time('mysql'); $changed=false; foreach($payload as $k=>$v){if($k==='updated_at')continue;if((string)($existing[$k]??'')!==(string)($v??'')){$changed=true;break;}} if($changed){if($wpdb->update($table,$payload,['id'=>$swimmerId])===false) throw new \RuntimeException('Impossible de mettre à jour '.$row['first_name'].' '.$row['last_name'].' : '.$wpdb->last_error);$stats['swimmers']['updated']++;}else$stats['swimmers']['unchanged']++;}
+            if($groupId>0){
+                $membership=Config::table('swimmer_group_memberships');
+                $sql=$wpdb->prepare("INSERT INTO {$membership} (swimmer_id,season_id,group_id,created_at,updated_at) VALUES (%d,%d,%d,%s,%s) ON DUPLICATE KEY UPDATE group_id=VALUES(group_id),updated_at=VALUES(updated_at)",$swimmerId,$seasonId,$groupId,current_time('mysql'),current_time('mysql'));
+                if($wpdb->query($sql)===false) throw new \RuntimeException('Impossible d’historiser le groupe de '.$row['first_name'].' '.$row['last_name'].' : '.$wpdb->last_error);
+            }
         }
     }
 
     private function log(string $filename,int $userId,string $status,array $stats,array $errors):void
     { global $wpdb; $wpdb->insert(Config::table('synchronization_logs'),['filename'=>$filename,'status'=>$status,'summary'=>wp_json_encode($stats),'errors'=>wp_json_encode($errors),'created_by'=>$userId,'created_at'=>current_time('mysql')],['%s','%s','%s','%s','%d','%s']); }
-    private function emptyStats():array{ $keys=['seasons','categories','groups','domains','skills','exercises','swimmers'];$r=[];foreach($keys as $k)$r[$k]=['created'=>0,'updated'=>0,'unchanged'=>0];return$r; }
+    private function emptyStats():array{ $keys=['seasons','categories','groups','domains','skills','season_skills','exercises','swimmers'];$r=[];foreach($keys as $k)$r[$k]=['created'=>0,'updated'=>0,'unchanged'=>0];return$r; }
     private function key(string ...$parts):string{return implode('|',array_map([$this,'normalize'],$parts));}
     private function normalize(string $value):string{$value=remove_accents(mb_strtolower(trim($value)));return trim(preg_replace('/\s+/',' ',preg_replace('/[^a-z0-9]+/u',' ',$value)?:'')?:'');}
 }

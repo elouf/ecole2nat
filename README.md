@@ -101,3 +101,8 @@ Cette action est irréversible et exige une double confirmation explicite.
 ## Mise à jour du schéma
 
 Ecole2Nat' compare automatiquement la version de base installée à `E2N_DB_VERSION`. Les migrations `dbDelta()` nécessaires sont appliquées au chargement après une mise à jour ; il n'est plus nécessaire de désactiver/réactiver l'extension pour ajouter les nouvelles colonnes.
+
+
+## Saisons et historique pédagogique
+
+Depuis la v0.9.0, les évaluations, le référentiel actif et les affectations de groupe sont historisés par saison. Une synchronisation Excel associe son référentiel à la saison cible choisie dans le back-office. Le portail parents permet de consulter les saisons précédentes sans altérer les acquis historiques.

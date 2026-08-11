@@ -104,7 +104,8 @@ class ParentPortal
                 <?php $this->renderLogin($message); ?>
             <?php else : ?>
                 <?php
-                $report = $this->service->report($swimmerId);
+                $seasonId = isset($_GET['e2n_season']) ? absint($_GET['e2n_season']) : 0;
+                $report = $this->service->report($swimmerId, $seasonId);
 
                 if ($report === null) {
                     $this->service->clearAccessCookie();
@@ -183,6 +184,20 @@ class ParentPortal
                 <?php esc_html_e('Prévisualisation administrateur — aucun code parent n’a été utilisé.', 'ecole2nat'); ?>
             </div>
         <?php endif; ?>
+        <?php if (!empty($report['seasons']) && count($report['seasons']) > 1) : ?>
+            <nav class="e2n-parent-season-tabs" aria-label="<?php esc_attr_e('Saisons', 'ecole2nat'); ?>">
+                <?php foreach ($report['seasons'] as $season) : ?>
+                    <?php
+                    $url = add_query_arg('e2n_season', (int) $season['id']);
+                    $active = (int) $season['id'] === (int) $report['season']['id'];
+                    ?>
+                    <a href="<?php echo esc_url($url); ?>" class="<?php echo $active ? 'is-active' : ''; ?>">
+                        <?php echo esc_html($season['name']); ?>
+                    </a>
+                <?php endforeach; ?>
+            </nav>
+        <?php endif; ?>
+
         <header class="e2n-parent-report-header">
             <div>
                 <p class="e2n-parent-eyebrow">
@@ -199,9 +214,10 @@ class ParentPortal
                     <?php
                     echo esc_html(
                         sprintf(
-                            __('Groupe %s · Catégorie %s', 'ecole2nat'),
+                            __('Groupe %s · Catégorie %s · Saison %s', 'ecole2nat'),
                             $swimmer['group_name'] ?: __('Non affecté', 'ecole2nat'),
-                            $swimmer['category_name'] ?: __('Non définie', 'ecole2nat')
+                            $swimmer['category_name'] ?: __('Non définie', 'ecole2nat'),
+                            $swimmer['season_name'] ?: __('Non définie', 'ecole2nat')
                         )
                     );
                     ?>

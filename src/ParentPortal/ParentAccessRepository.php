@@ -134,16 +134,66 @@ class ParentAccessRepository
         );
     }
 
-    public function report(int $swimmerId): ?array
+    public function reportSeasons(int $swimmerId): array
+    {
+        global $wpdb;
+        $memberships = Config::table('swimmer_group_memberships');
+        $groups = Config::table('groups');
+        $seasons = Config::table('seasons');
+        $categories = Config::table('categories');
+        $results = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT seasons.id, seasons.name, seasons.start_date, seasons.end_date, seasons.is_current,
+                        groups.id AS group_id, groups.name AS group_name,
+                        categories.id AS category_id, categories.name AS category_name
+                 FROM {$memberships} membership
+                 INNER JOIN {$groups} groups ON groups.id = membership.group_id
+                 INNER JOIN {$seasons} seasons ON seasons.id = membership.season_id
+                 INNER JOIN {$categories} categories ON categories.id = groups.category_id
+                 WHERE membership.swimmer_id = %d
+                 ORDER BY seasons.is_current DESC, seasons.start_date DESC, seasons.id DESC",
+                $swimmerId
+            ),
+            ARRAY_A
+        );
+        return is_array($results) ? $results : [];
+    }
+
+    public function report(int $swimmerId, int $seasonId = 0): ?array
     {
         global $wpdb;
         $swimmer = $this->findSwimmer($swimmerId);
-        if ($swimmer === null || empty($swimmer['category_id'])) {
+        if ($swimmer === null) {
             return null;
         }
 
+        $seasons = $this->reportSeasons($swimmerId);
+        if ($seasons === []) {
+            return null;
+        }
+
+        $selectedSeason = null;
+        foreach ($seasons as $season) {
+            if ($seasonId > 0 && (int) $season['id'] === $seasonId) {
+                $selectedSeason = $season;
+                break;
+            }
+        }
+        if ($selectedSeason === null) {
+            $selectedSeason = $seasons[0];
+        }
+
+        $seasonId = (int) $selectedSeason['id'];
+        $categoryId = (int) $selectedSeason['category_id'];
+        $swimmer['group_name'] = $selectedSeason['group_name'];
+        $swimmer['category_id'] = $categoryId;
+        $swimmer['category_name'] = $selectedSeason['category_name'];
+        $swimmer['season_id'] = $seasonId;
+        $swimmer['season_name'] = $selectedSeason['name'];
+
         $domains = Config::table('skill_domains');
         $skills = Config::table('skills');
+        $seasonSkills = Config::table('season_skills');
         $levels = Config::table('swimmer_skill_levels');
         $rows = $wpdb->get_results(
             $wpdb->prepare(
@@ -153,13 +203,21 @@ class ParentAccessRepository
                         skills.description AS skill_description,
                         COALESCE(levels.status, 'not_observed') AS status,
                         levels.evaluated_at
-                 FROM {$domains} domains
-                 INNER JOIN {$skills} skills ON skills.domain_id = domains.id AND skills.is_active = 1
-                 LEFT JOIN {$levels} levels ON levels.skill_id = skills.id AND levels.swimmer_id = %d
-                 WHERE domains.category_id = %d AND domains.is_active = 1
+                 FROM {$seasonSkills} season_skills
+                 INNER JOIN {$skills} skills ON skills.id = season_skills.skill_id
+                 INNER JOIN {$domains} domains ON domains.id = skills.domain_id
+                 LEFT JOIN {$levels} levels
+                    ON levels.skill_id = skills.id
+                    AND levels.swimmer_id = %d
+                    AND levels.season_id = %d
+                 WHERE season_skills.season_id = %d
+                 AND season_skills.is_active = 1
+                 AND domains.category_id = %d
                  ORDER BY domains.sort_order ASC, domains.name ASC, skills.sort_order ASC, skills.name ASC",
                 $swimmerId,
-                (int) $swimmer['category_id']
+                $seasonId,
+                $seasonId,
+                $categoryId
             ),
             ARRAY_A
         );
@@ -199,6 +257,8 @@ class ParentAccessRepository
 
         return [
             'swimmer' => $swimmer,
+            'season' => $selectedSeason,
+            'seasons' => $seasons,
             'domains' => array_values($groupedDomains),
             'counts' => $counts,
             'total' => array_sum($counts),

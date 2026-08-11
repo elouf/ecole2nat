@@ -13,6 +13,7 @@ class Installer
     public static function activate(): void
     {
         self::createTables();
+        self::migrateSeasonHistory();
 
         update_option('e2n_version', E2N_VERSION);
         update_option('e2n_db_version', E2N_DB_VERSION);
@@ -34,6 +35,7 @@ class Installer
 
         if ($installedDbVersion !== E2N_DB_VERSION) {
             self::createTables();
+            self::migrateSeasonHistory();
             update_option('e2n_db_version', E2N_DB_VERSION);
         }
 
@@ -260,6 +262,7 @@ class Installer
         $sql = "CREATE TABLE {$tableName} (
             id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
             swimmer_id bigint(20) unsigned NOT NULL,
+            season_id bigint(20) unsigned NOT NULL DEFAULT 0,
             skill_id bigint(20) unsigned NOT NULL,
             status varchar(20) NOT NULL DEFAULT 'not_observed',
             evaluated_at datetime NULL,
@@ -268,10 +271,48 @@ class Installer
             created_at datetime NOT NULL,
             updated_at datetime NULL,
             PRIMARY KEY  (id),
-            UNIQUE KEY swimmer_skill (swimmer_id,skill_id),
+            UNIQUE KEY swimmer_season_skill (swimmer_id,season_id,skill_id),
             KEY swimmer_id (swimmer_id),
+            KEY season_id (season_id),
             KEY skill_id (skill_id),
             KEY status (status)
+        ) {$charsetCollate};";
+
+        dbDelta($sql);
+
+
+        $tableName = Config::table('season_skills');
+
+        $sql = "CREATE TABLE {$tableName} (
+            id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+            season_id bigint(20) unsigned NOT NULL,
+            skill_id bigint(20) unsigned NOT NULL,
+            is_active tinyint(1) NOT NULL DEFAULT 1,
+            created_at datetime NOT NULL,
+            updated_at datetime NULL,
+            PRIMARY KEY  (id),
+            UNIQUE KEY season_skill (season_id,skill_id),
+            KEY season_id (season_id),
+            KEY skill_id (skill_id),
+            KEY is_active (is_active)
+        ) {$charsetCollate};";
+
+        dbDelta($sql);
+
+        $tableName = Config::table('swimmer_group_memberships');
+
+        $sql = "CREATE TABLE {$tableName} (
+            id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+            swimmer_id bigint(20) unsigned NOT NULL,
+            season_id bigint(20) unsigned NOT NULL,
+            group_id bigint(20) unsigned NOT NULL,
+            created_at datetime NOT NULL,
+            updated_at datetime NULL,
+            PRIMARY KEY  (id),
+            UNIQUE KEY swimmer_season (swimmer_id,season_id),
+            KEY swimmer_id (swimmer_id),
+            KEY season_id (season_id),
+            KEY group_id (group_id)
         ) {$charsetCollate};";
 
         dbDelta($sql);
@@ -308,4 +349,74 @@ class Installer
 
         dbDelta($sql);
     }
+
+    /**
+     * Rattache les données historiques existantes à une saison lors du passage
+     * depuis les versions antérieures à 0.9.0. Cette migration est idempotente.
+     */
+    private static function migrateSeasonHistory(): void
+    {
+        global $wpdb;
+
+        $levels = Config::table('swimmer_skill_levels');
+        $swimmers = Config::table('swimmers');
+        $groups = Config::table('groups');
+        $seasons = Config::table('seasons');
+        $domains = Config::table('skill_domains');
+        $skills = Config::table('skills');
+        $seasonSkills = Config::table('season_skills');
+        $memberships = Config::table('swimmer_group_memberships');
+
+        $currentSeasonId = (int) $wpdb->get_var(
+            "SELECT id FROM {$seasons} WHERE is_current = 1 ORDER BY id DESC LIMIT 1"
+        );
+
+        $wpdb->query(
+            "UPDATE {$levels} levels
+             INNER JOIN {$swimmers} swimmers ON swimmers.id = levels.swimmer_id
+             LEFT JOIN {$groups} groups ON groups.id = swimmers.group_id
+             SET levels.season_id = COALESCE(groups.season_id, {$currentSeasonId})
+             WHERE levels.season_id = 0"
+        );
+
+        $oldIndex = $wpdb->get_var(
+            "SELECT INDEX_NAME FROM information_schema.STATISTICS
+             WHERE TABLE_SCHEMA = DATABASE()
+             AND TABLE_NAME = '" . esc_sql($levels) . "'
+             AND INDEX_NAME = 'swimmer_skill' LIMIT 1"
+        );
+        if ($oldIndex !== null) {
+            $wpdb->query("ALTER TABLE {$levels} DROP INDEX swimmer_skill");
+        }
+
+        $newIndex = $wpdb->get_var(
+            "SELECT INDEX_NAME FROM information_schema.STATISTICS
+             WHERE TABLE_SCHEMA = DATABASE()
+             AND TABLE_NAME = '" . esc_sql($levels) . "'
+             AND INDEX_NAME = 'swimmer_season_skill' LIMIT 1"
+        );
+        if ($newIndex === null) {
+            $wpdb->query(
+                "ALTER TABLE {$levels}
+                 ADD UNIQUE KEY swimmer_season_skill (swimmer_id, season_id, skill_id)"
+            );
+        }
+
+        $wpdb->query(
+            "INSERT IGNORE INTO {$memberships} (swimmer_id, season_id, group_id, created_at)
+             SELECT swimmers.id, groups.season_id, groups.id, NOW()
+             FROM {$swimmers} swimmers
+             INNER JOIN {$groups} groups ON groups.id = swimmers.group_id
+             WHERE swimmers.group_id IS NOT NULL"
+        );
+
+        $wpdb->query(
+            "INSERT IGNORE INTO {$seasonSkills} (season_id, skill_id, is_active, created_at)
+             SELECT DISTINCT groups.season_id, skills.id, 1, NOW()
+             FROM {$groups} groups
+             INNER JOIN {$domains} domains ON domains.category_id = groups.category_id
+             INNER JOIN {$skills} skills ON skills.domain_id = domains.id"
+        );
+    }
+
 }

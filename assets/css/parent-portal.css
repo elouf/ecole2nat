@@ -4,3 +4,6 @@
     margin-bottom: 18px;
     font-weight: 700;
 }
+
+
+.e2n-parent-season-tabs{display:flex;gap:.5rem;flex-wrap:wrap;margin:0 0 1rem}.e2n-parent-season-tabs a{display:inline-block;padding:.55rem .85rem;border-radius:999px;text-decoration:none;background:#eef3f0;color:#24513c;font-weight:600}.e2n-parent-season-tabs a.is-active{background:#24513c;color:#fff}@media print{.e2n-parent-season-tabs{display:none}}

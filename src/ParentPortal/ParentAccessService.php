@@ -187,9 +187,9 @@ class ParentAccessService
         );
     }
 
-    public function report(int $swimmerId): ?array
+    public function report(int $swimmerId, int $seasonId = 0): ?array
     {
-        return $this->repository->report($swimmerId);
+        return $this->repository->report($swimmerId, $seasonId);
     }
 
 

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.9.0 — Saisons & historique pédagogique
+
+- Historisation des évaluations par saison.
+- Référentiel actif associé à chaque saison via `season_skills`.
+- Historisation de l’affectation des nageurs aux groupes.
+- Synchronisation Excel : le référentiel importé est associé à la saison cible.
+- Portail parents : navigation entre les saisons disponibles.
+- Migration automatique des évaluations et affectations existantes.
+
 ## 0.8.2 - Distribution globale des accès parents
 
 - Vue Accès parents globale avec filtres multi-catégories, groupe, statut d'accès et présence d'email.

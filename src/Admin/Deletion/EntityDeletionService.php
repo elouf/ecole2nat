@@ -28,6 +28,7 @@ final class EntityDeletionService
             'skill' => $this->deleteRestricted('skills', $id, [
                 ['exercises', 'skill_id', __('des exercices', 'ecole2nat')],
                 ['swimmer_skill_levels', 'skill_id', __('des évaluations', 'ecole2nat')],
+                ['season_skills', 'skill_id', __('des référentiels saisonniers', 'ecole2nat')],
             ]),
             'exercise' => $this->deleteRestricted('exercises', $id, [
                 ['session_exercises', 'exercise_id', __('des séances', 'ecole2nat')],
@@ -35,6 +36,7 @@ final class EntityDeletionService
             'season' => $this->deleteSeason($id),
             'group' => $this->deleteRestricted('groups', $id, [
                 ['swimmers', 'group_id', __('des nageurs', 'ecole2nat')],
+                ['swimmer_group_memberships', 'group_id', __('des affectations historiques', 'ecole2nat')],
             ]),
             'swimmer' => $this->deleteSwimmer($id),
             'session' => $this->deleteSession($id),
@@ -87,6 +89,9 @@ final class EntityDeletionService
         }
         return $this->deleteRestricted('seasons', $id, [
             ['groups', 'season_id', __('des groupes', 'ecole2nat')],
+            ['season_skills', 'season_id', __('des compétences de référentiel', 'ecole2nat')],
+            ['swimmer_group_memberships', 'season_id', __('des affectations de nageurs', 'ecole2nat')],
+            ['swimmer_skill_levels', 'season_id', __('des évaluations', 'ecole2nat')],
         ]);
     }
 
@@ -96,6 +101,7 @@ final class EntityDeletionService
         $wpdb->query('START TRANSACTION');
         try {
             $wpdb->delete(Config::table('swimmer_skill_levels'), ['swimmer_id' => $id], ['%d']);
+            $wpdb->delete(Config::table('swimmer_group_memberships'), ['swimmer_id' => $id], ['%d']);
             $wpdb->delete(Config::table('parent_access_logs'), ['swimmer_id' => $id], ['%d']);
             $deleted = $wpdb->delete(Config::table('swimmers'), ['id' => $id], ['%d']);
             if ($deleted === false || $deleted === 0) {
