@@ -3,6 +3,7 @@
 namespace Ecole2Nat\Admin;
 
 use Ecole2Nat\Admin\Pages\CategoryPage;
+use Ecole2Nat\Admin\Pages\CoachPage;
 use Ecole2Nat\Admin\Pages\ExerciseListPage;
 use Ecole2Nat\Admin\Pages\ExercisePage;
 use Ecole2Nat\Admin\Pages\EvaluationPage;
@@ -34,6 +35,15 @@ class Menu
             [$this, 'renderDashboard'],
             'dashicons-swimming',
             26
+        );
+
+        add_submenu_page(
+            'ecole2nat',
+            __('Coachs', 'ecole2nat'),
+            __('Coachs', 'ecole2nat'),
+            'manage_options',
+            'ecole2nat-coaches',
+            [new CoachPage(), 'render']
         );
 
         add_submenu_page(

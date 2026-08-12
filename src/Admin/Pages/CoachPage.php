@@ -1,0 +1,13 @@
+<?php
+namespace Ecole2Nat\Admin\Pages;
+use Ecole2Nat\Coach\CoachAccessService; use Ecole2Nat\Group\GroupService;
+if(!defined('ABSPATH')){exit;}
+class CoachPage {
+ public function render():void {if(!current_user_can('manage_options'))wp_die(__('Accès refusé.','ecole2nat'));$svc=new CoachAccessService();$notice='';
+  if($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['e2n_coach_action'])){check_admin_referer('e2n_coach_admin');$uid=absint($_POST['user_id']??0);$action=sanitize_key($_POST['e2n_coach_action']);if($uid>0){$u=get_user_by('id',$uid);if($u){if($action==='enable'){$u->add_role('e2n_coach');$notice='saved';}elseif($action==='disable'){$u->remove_role('e2n_coach');$svc->saveAssignments($uid,[]);$notice='saved';}elseif($action==='groups'){$svc->saveAssignments($uid,(array)($_POST['group_ids']??[]));$notice='saved';}}}}
+  $users=get_users(['orderby'=>'display_name']);$groups=(new GroupService())->active(); ?>
+  <div class="wrap e2n-admin"><h1><?php esc_html_e('Coachs','ecole2nat');?></h1><?php if($notice):?><div class="notice notice-success"><p><?php esc_html_e('Modifications enregistrées.','ecole2nat');?></p></div><?php endif;?>
+  <p><?php esc_html_e('Tous les coachs peuvent consulter tous les groupes. Seuls les titulaires peuvent modifier les évaluations du groupe.','ecole2nat');?></p>
+  <table class="widefat striped"><thead><tr><th>Utilisateur</th><th>Statut</th><th>Groupes titulaires</th><th>Actions</th></tr></thead><tbody>
+  <?php foreach($users as $u): $is=in_array('e2n_coach',(array)$u->roles,true); $assigned=$svc->titularGroupIds((int)$u->ID);?><tr><td><strong><?php echo esc_html($u->display_name);?></strong><br><small><?php echo esc_html($u->user_email);?></small></td><td><?php echo $is?'Coach':'—';?></td><td><?php if($is):?><form method="post"><?php wp_nonce_field('e2n_coach_admin');?><input type="hidden" name="e2n_coach_action" value="groups"><input type="hidden" name="user_id" value="<?php echo (int)$u->ID;?>"><?php foreach($groups as $g):?><label style="display:block"><input type="checkbox" name="group_ids[]" value="<?php echo (int)$g['id'];?>" <?php checked(in_array((int)$g['id'],$assigned,true));?>> <?php echo esc_html($g['name']);?></label><?php endforeach;?><button class="button" type="submit">Enregistrer les groupes</button></form><?php endif;?></td><td><form method="post"><?php wp_nonce_field('e2n_coach_admin');?><input type="hidden" name="user_id" value="<?php echo (int)$u->ID;?>"><input type="hidden" name="e2n_coach_action" value="<?php echo $is?'disable':'enable';?>"><button class="button" type="submit"><?php echo $is?'Retirer le rôle Coach':'Définir comme Coach';?></button></form></td></tr><?php endforeach;?></tbody></table></div><?php }
+}

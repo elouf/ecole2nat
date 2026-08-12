@@ -22,6 +22,7 @@ class GroupRepository
             "SELECT
                 g.*,
                 s.name AS season_name,
+                s.is_active AS season_is_active,
                 c.name AS category_name
             FROM {$groupsTable} g
             INNER JOIN {$seasonsTable} s
@@ -153,14 +154,17 @@ class GroupRepository
     {
         global $wpdb;
 
-        $table = $wpdb->prefix . 'e2n_groups';
+        $table = Config::table('groups');
+        $seasons = Config::table('seasons');
 
         $results = $wpdb->get_results(
             "
-            SELECT *
-            FROM {$table}
-            WHERE is_active = 1
-            ORDER BY name ASC
+            SELECT g.*
+            FROM {$table} g
+            INNER JOIN {$seasons} s ON s.id = g.season_id
+            WHERE g.is_active = 1
+              AND s.is_active = 1
+            ORDER BY g.name ASC
             ",
             ARRAY_A
         );

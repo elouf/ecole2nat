@@ -1,4 +1,80 @@
+## 0.11.0 - 2026-08-12
+
+## 0.11.2
+
+- Enregistrement AJAX immédiat des présences dans le portail Coach.
+- Enregistrement AJAX immédiat des évaluations individuelles et collectives.
+- Autosave temporisé des notes de compétences.
+- Suppression des boutons de validation des présences et évaluations.
+- Indicateur visuel Enregistrement / Enregistré / erreur réseau.
+- File d’attente JavaScript par donnée afin que la dernière sélection du coach soit conservée.
+
+
+- Ajout de la **Séance terrain V1** dans le portail Coach.
+- Pointage Présent / Absent / Non pointé par groupe et par date.
+- Bouton « Tous présents » pour accélérer le pointage.
+- Une séance planifiée peut être marquée comme **Réalisée** puis repassée en **Prévue**.
+- La séance ouverte affiche également les nageurs du groupe et leur statut de présence.
+- Ajout d’une évaluation collective rapide : une compétence, tous les nageurs du groupe.
+- Les écritures terrain restent réservées aux coachs titulaires ; les autres coachs conservent la consultation.
+- Nouvelle table `e2n_attendance` et enrichissement de `e2n_scheduled_sessions`.
+
+## 0.10.6 - 2026-08-11
+
+- Ajout du champ `Droit à l’image` aux nageurs (Oui / Non / Non renseigné).
+- Synchronisation Excel : lecture de la colonne `Droit à l'image` (OUI/NON).
+- Synchronisation Excel : les notes médicales proviennent désormais uniquement de la colonne `Info médicale`; la colonne `Commentaire` est ignorée.
+- Portail parents : affichage du droit à l’image.
+- Portail Coach : indicateur de droit à l’image dans la liste du groupe et sur la fiche nageur.
+- Ajout du hover/focus sur les cartes nageurs du portail Coach.
+
+## 0.10.5 - 2026-08-11
+
+- Correction de l’ouverture d’un groupe depuis le planning Coach (alias SQL).
+- Ajout d’un hover et d’un focus clavier sur les créneaux du planning.
+
 # Changelog
+
+## 0.11.1 - UX terrain
+
+- remplacement des listes déroulantes de présence et d’évaluation par des boutons radio en ligne ;
+- sélection d’une compétence d’évaluation collective via une liste cliquable regroupée par domaine ;
+- hover/focus renforcé sur les lignes nageurs et les évaluations collectives ;
+- adaptation mobile/tablette des contrôles tactiles.
+
+## 0.10.4 - 2026-08-11
+
+- Corrige le planning Coach lorsque les groupes synchronisés n'ont pas de `weekday`/`start_time` structurés.
+- Déduit automatiquement le jour et l'heure depuis les noms de groupes (ex. `Dauphin Lundi 17h15`).
+- La synchronisation Excel persiste désormais ces créneaux et répare les groupes existants incomplets.
+- Les groupes dont le créneau reste indéterminable sont affichés explicitement au lieu de disparaître du planning.
+
+## 0.10.3
+- Corrige un conflit avec les thèmes qui appliquent `visibility: hidden` ou `opacity: 0` aux contenus animés du portail Coach.
+
+
+## 0.10.1
+- Correction du rendu du planning du portail coach.
+- Chargement du CSS directement par le shortcode pour éviter les problèmes d’ID de page.
+- Repli sur la saison active la plus récente si aucune saison courante n’est définie.
+- Message explicite lorsqu’aucun groupe actif n’est disponible.
+
+
+## 0.9.2
+
+- Ajuste à 10 px le padding vertical des titres de postboxes du back-office.
+- Ajoute un tri interactif commun aux tableaux statiques du back-office Ecole2Nat'.
+- Conserve le tri SQL/paginé existant de la liste des nageurs.
+- Le tri est accessible au clavier et gère texte, nombres et dates françaises.
+
+## 0.9.1
+
+- Corrige la mise en page responsive de la page Groupes.
+- Empêche les champs de formulaire de dépasser de leur postbox.
+- Uniformise l'espacement des titres H2 dans les postboxes Ecole2Nat'.
+- Ajoute un statut actif/inactif aux saisons.
+- Une saison inactive rend automatiquement ses groupes indisponibles sans écraser leur statut individuel.
+- Réactiver une saison restaure automatiquement la disponibilité des groupes qui étaient individuellement actifs.
 
 ## 0.9.0 — Saisons & historique pédagogique
 
@@ -77,3 +153,10 @@
 
 - parties, exercices, durées et consignes propres à la séance ;
 - réorganisation, duplication, impression A4 et durée totale automatique.
+
+## 0.10.0
+- Ajout du rôle Coach Ecole2Nat et du portail frontend mobile/tablette.
+- Consultation de tous les groupes actifs par tous les coachs.
+- Association Coach ↔ Groupe pour réserver les écritures aux titulaires.
+- Planning hebdomadaire, affectation d'une séance au prochain créneau, vue séance et nageurs prévus.
+- Fiche nageur avec informations médicales et évaluation express sécurisée.

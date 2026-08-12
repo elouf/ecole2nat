@@ -15,7 +15,8 @@ Plugin WordPress de suivi et de préparation pédagogique pour école de natatio
 - portail parents sécurisé ;
 - distribution groupée des accès parents par email, coupons ou CSV ;
 - synchronisation d’un classeur club avec saison cible ;
-- maintenance et purge contrôlée des données.
+- maintenance et purge contrôlée des données ;
+- portail Coach avec planning, séance terrain, présences et évaluations rapides.
 
 ## Portail parents
 
@@ -48,6 +49,22 @@ Le module permet de :
 ## Évaluations progressives
 
 Le module Évaluations permet de suivre le niveau courant de chaque nageur sur les compétences du référentiel de la catégorie de son groupe. Les trois états disponibles sont : Non observé, En cours et Acquis. Les évaluations sont mises à jour au fil de l'eau, sans campagne ni calendrier imposé.
+
+
+## Portail Coach et séance terrain
+
+Le shortcode `[e2n_coach_portal]` alimente l’espace frontend des coachs. Tous les coachs peuvent consulter les groupes actifs ; les modifications sont réservées aux coachs titulaires du groupe.
+
+Depuis un créneau, un titulaire peut :
+
+- affecter ou changer la séance prévue pour la date ;
+- marquer la séance comme réalisée ;
+- pointer rapidement les nageurs présents ou absents ;
+- ouvrir une fiche nageur avec ses informations utiles et ses acquis ;
+- évaluer individuellement un nageur ;
+- choisir une compétence et évaluer collectivement tout le groupe.
+
+Les présences sont historisées par date et ne modifient jamais l’affectation théorique du nageur à son groupe.
 
 ## Prérequis
 
@@ -106,3 +123,8 @@ Ecole2Nat' compare automatiquement la version de base installée à `E2N_DB_VERS
 ## Saisons et historique pédagogique
 
 Depuis la v0.9.0, les évaluations, le référentiel actif et les affectations de groupe sont historisés par saison. Une synchronisation Excel associe son référentiel à la saison cible choisie dans le back-office. Le portail parents permet de consulter les saisons précédentes sans altérer les acquis historiques.
+
+
+## Synchronisation des informations nageur
+
+Dans l’onglet `Inscriptions`, Ecole2Nat’ reconnaît notamment les colonnes `Info médicale` et `Droit à l'image`. Le droit à l’image accepte `OUI` ou `NON` (la cellule peut rester vide si l’information n’est pas connue). La colonne historique `Commentaire` n’est plus utilisée pour alimenter les informations médicales.

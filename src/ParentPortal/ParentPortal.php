@@ -222,6 +222,18 @@ class ParentPortal
                     );
                     ?>
                 </p>
+                <p class="e2n-parent-image-rights <?php echo !array_key_exists('image_rights', $swimmer) || $swimmer['image_rights'] === null ? 'is-unknown' : ((int) $swimmer['image_rights'] === 1 ? 'is-yes' : 'is-no'); ?>">
+                    <span aria-hidden="true">📷</span>
+                    <?php
+                    echo esc_html(
+                        !array_key_exists('image_rights', $swimmer) || $swimmer['image_rights'] === null
+                            ? __('Droit à l’image : non renseigné', 'ecole2nat')
+                            : ((int) $swimmer['image_rights'] === 1
+                                ? __('Droit à l’image : oui', 'ecole2nat')
+                                : __('Droit à l’image : non', 'ecole2nat'))
+                    );
+                    ?>
+                </p>
             </div>
 
             <div class="e2n-parent-actions">

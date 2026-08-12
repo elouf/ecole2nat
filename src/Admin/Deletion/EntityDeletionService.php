@@ -37,6 +37,8 @@ final class EntityDeletionService
             'group' => $this->deleteRestricted('groups', $id, [
                 ['swimmers', 'group_id', __('des nageurs', 'ecole2nat')],
                 ['swimmer_group_memberships', 'group_id', __('des affectations historiques', 'ecole2nat')],
+                ['scheduled_sessions', 'group_id', __('des séances planifiées', 'ecole2nat')],
+                ['attendance', 'group_id', __('des pointages de présence', 'ecole2nat')],
             ]),
             'swimmer' => $this->deleteSwimmer($id),
             'session' => $this->deleteSession($id),
@@ -103,6 +105,7 @@ final class EntityDeletionService
             $wpdb->delete(Config::table('swimmer_skill_levels'), ['swimmer_id' => $id], ['%d']);
             $wpdb->delete(Config::table('swimmer_group_memberships'), ['swimmer_id' => $id], ['%d']);
             $wpdb->delete(Config::table('parent_access_logs'), ['swimmer_id' => $id], ['%d']);
+            $wpdb->delete(Config::table('attendance'), ['swimmer_id' => $id], ['%d']);
             $deleted = $wpdb->delete(Config::table('swimmers'), ['id' => $id], ['%d']);
             if ($deleted === false || $deleted === 0) {
                 throw new \RuntimeException('delete');
@@ -124,6 +127,7 @@ final class EntityDeletionService
         ));
         $wpdb->query('START TRANSACTION');
         try {
+            $wpdb->delete(Config::table('scheduled_sessions'), ['session_id' => $id], ['%d']);
             foreach ($parts as $partId) {
                 $wpdb->delete(Config::table('session_exercises'), ['part_id' => (int) $partId], ['%d']);
             }

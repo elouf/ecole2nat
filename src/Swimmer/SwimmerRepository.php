@@ -53,6 +53,7 @@ class SwimmerRepository
                 'licence_number'     => $data['licence_number'],
                 'registration_date'  => $data['registration_date'],
                 'medical_note'       => $data['medical_note'],
+                'image_rights'       => $data['image_rights'],
                 'is_active'          => 1,
                 'created_at'         => current_time('mysql'),
             ],
@@ -68,6 +69,7 @@ class SwimmerRepository
                 '%s',
                 '%s',
                 '%s',
+                '%d',
                 '%d',
                 '%s',
             ]
@@ -194,6 +196,7 @@ public function update(int $id, array $data): bool
             'licence_number'     => $data['licence_number'],
             'registration_date'  => $data['registration_date'],
             'medical_note'       => $data['medical_note'],
+            'image_rights'       => $data['image_rights'],
             'updated_at'         => current_time('mysql'),
         ],
         [
@@ -211,6 +214,7 @@ public function update(int $id, array $data): bool
             '%s',
             '%s',
             '%s',
+            '%d',
             '%s',
         ],
         [

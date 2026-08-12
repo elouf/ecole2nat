@@ -7,3 +7,8 @@
 
 
 .e2n-parent-season-tabs{display:flex;gap:.5rem;flex-wrap:wrap;margin:0 0 1rem}.e2n-parent-season-tabs a{display:inline-block;padding:.55rem .85rem;border-radius:999px;text-decoration:none;background:#eef3f0;color:#24513c;font-weight:600}.e2n-parent-season-tabs a.is-active{background:#24513c;color:#fff}@media print{.e2n-parent-season-tabs{display:none}}
+
+.e2n-parent-image-rights { margin:.45rem 0 0; font-weight:600; display:flex; gap:.45rem; align-items:center; }
+.e2n-parent-image-rights.is-yes { color:#137333; }
+.e2n-parent-image-rights.is-no { color:#b32d2e; }
+.e2n-parent-image-rights.is-unknown { color:#646970; }

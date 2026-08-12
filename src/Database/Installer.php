@@ -14,6 +14,7 @@ class Installer
     {
         self::createTables();
         self::migrateSeasonHistory();
+        self::ensureCoachRoleAndPage();
 
         update_option('e2n_version', E2N_VERSION);
         update_option('e2n_db_version', E2N_DB_VERSION);
@@ -36,6 +37,7 @@ class Installer
         if ($installedDbVersion !== E2N_DB_VERSION) {
             self::createTables();
             self::migrateSeasonHistory();
+            self::ensureCoachRoleAndPage();
             update_option('e2n_db_version', E2N_DB_VERSION);
         }
 
@@ -59,10 +61,12 @@ class Installer
             start_date DATE NULL,
             end_date DATE NULL,
             is_current TINYINT(1) NOT NULL DEFAULT 0,
+            is_active TINYINT(1) NOT NULL DEFAULT 1,
             created_at DATETIME NOT NULL,
             updated_at DATETIME NULL,
             PRIMARY KEY  (id),
-            KEY is_current (is_current)
+            KEY is_current (is_current),
+            KEY is_active (is_active)
         ) {$charsetCollate};";
 
         dbDelta($sql);
@@ -165,6 +169,61 @@ class Installer
 
         dbDelta($sql);
 
+        $tableName = Config::table('group_coaches');
+
+        $sql = "CREATE TABLE {$tableName} (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            group_id BIGINT UNSIGNED NOT NULL,
+            user_id BIGINT UNSIGNED NOT NULL,
+            created_at DATETIME NOT NULL,
+            PRIMARY KEY  (id),
+            UNIQUE KEY group_user (group_id,user_id),
+            KEY group_id (group_id),
+            KEY user_id (user_id)
+        ) {$charsetCollate};";
+        dbDelta($sql);
+
+        $tableName = Config::table('scheduled_sessions');
+        $sql = "CREATE TABLE {$tableName} (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            group_id BIGINT UNSIGNED NOT NULL,
+            session_id BIGINT UNSIGNED NOT NULL,
+            session_date DATE NOT NULL,
+            status VARCHAR(20) NOT NULL DEFAULT 'planned',
+            created_by BIGINT UNSIGNED NULL,
+            completed_by BIGINT UNSIGNED NULL,
+            completed_at DATETIME NULL,
+            created_at DATETIME NOT NULL,
+            updated_at DATETIME NULL,
+            PRIMARY KEY  (id),
+            UNIQUE KEY group_date (group_id,session_date),
+            KEY group_id (group_id),
+            KEY session_id (session_id),
+            KEY session_date (session_date),
+            KEY status (status)
+        ) {$charsetCollate};";
+        dbDelta($sql);
+
+        $tableName = Config::table('attendance');
+        $sql = "CREATE TABLE {$tableName} (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            group_id BIGINT UNSIGNED NOT NULL,
+            swimmer_id BIGINT UNSIGNED NOT NULL,
+            session_date DATE NOT NULL,
+            status VARCHAR(20) NOT NULL DEFAULT 'present',
+            recorded_by BIGINT UNSIGNED NULL,
+            recorded_at DATETIME NULL,
+            created_at DATETIME NOT NULL,
+            updated_at DATETIME NULL,
+            PRIMARY KEY  (id),
+            UNIQUE KEY group_swimmer_date (group_id,swimmer_id,session_date),
+            KEY group_id (group_id),
+            KEY swimmer_id (swimmer_id),
+            KEY session_date (session_date),
+            KEY status (status)
+        ) {$charsetCollate};";
+        dbDelta($sql);
+
         $tableName = Config::table('swimmers');
 
         $sql = "CREATE TABLE {$tableName} (
@@ -180,6 +239,7 @@ class Installer
             licence_number VARCHAR(50) NULL,
             registration_date DATE NULL,
             medical_note TEXT NULL,
+            image_rights TINYINT(1) NULL,
             parent_message TEXT NULL,
             parent_access_code_hash CHAR(64) NULL,
             parent_access_enabled TINYINT(1) NOT NULL DEFAULT 0,
@@ -417,6 +477,34 @@ class Installer
              INNER JOIN {$domains} domains ON domains.category_id = groups.category_id
              INNER JOIN {$skills} skills ON skills.domain_id = domains.id"
         );
+    }
+
+
+    private static function ensureCoachRoleAndPage(): void
+    {
+        $role = get_role('e2n_coach');
+        if ($role === null) {
+            $role = add_role('e2n_coach', __('Coach Ecole2Nat', 'ecole2nat'), ['read' => true, 'e2n_coach_access' => true]);
+        } elseif (!$role->has_cap('e2n_coach_access')) {
+            $role->add_cap('e2n_coach_access');
+        }
+
+        $pageId = (int) get_option('e2n_coach_page_id', 0);
+        if ($pageId <= 0 || get_post_status($pageId) === false) {
+            $existing = get_page_by_path('espace-coach');
+            if ($existing instanceof \WP_Post) {
+                $pageId = (int) $existing->ID;
+            } else {
+                $pageId = (int) wp_insert_post([
+                    'post_title' => __('Espace coach', 'ecole2nat'),
+                    'post_name' => 'espace-coach',
+                    'post_content' => '[e2n_coach_portal]',
+                    'post_status' => 'publish',
+                    'post_type' => 'page',
+                ]);
+            }
+            if ($pageId > 0) update_option('e2n_coach_page_id', $pageId);
+        }
     }
 
 }

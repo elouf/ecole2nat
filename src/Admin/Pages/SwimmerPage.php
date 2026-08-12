@@ -611,6 +611,28 @@ class SwimmerPage
 
                     <tr>
                         <th scope="row">
+                            <label for="image_rights">
+                                <?php esc_html_e('Droit à l’image', 'ecole2nat'); ?>
+                            </label>
+                        </th>
+
+                        <td>
+                            <select id="image_rights" name="image_rights">
+                                <option value="" <?php selected($this->fieldValue('image_rights'), ''); ?>>
+                                    <?php esc_html_e('Non renseigné', 'ecole2nat'); ?>
+                                </option>
+                                <option value="1" <?php selected($this->fieldValue('image_rights'), '1'); ?>>
+                                    <?php esc_html_e('Oui', 'ecole2nat'); ?>
+                                </option>
+                                <option value="0" <?php selected($this->fieldValue('image_rights'), '0'); ?>>
+                                    <?php esc_html_e('Non', 'ecole2nat'); ?>
+                                </option>
+                            </select>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th scope="row">
                             <label for="medical_note">
                                 <?php esc_html_e('Notes médicales', 'ecole2nat'); ?>
                             </label>
@@ -739,7 +761,7 @@ class SwimmerPage
                 <?php if ($swimmers === []) : ?>
                     <p><?php esc_html_e('Aucun nageur ne correspond aux critères.', 'ecole2nat'); ?></p>
                 <?php else : ?>
-                    <table class="wp-list-table widefat fixed striped">
+                    <table class="wp-list-table widefat fixed striped" data-e2n-sort="server">
                         <thead><tr>
                             <?php $this->renderSortableHeader('Nom', 'last_name', $criteria, $baseArguments); ?>
                             <?php $this->renderSortableHeader('Prénom', 'first_name', $criteria, $baseArguments); ?>
@@ -886,6 +908,10 @@ class SwimmerPage
                 : current_time('Y-m-d'),
 
             'medical_note' => sanitize_textarea_field($_POST['medical_note'] ?? ''),
+
+            'image_rights' => isset($_POST['image_rights']) && $_POST['image_rights'] !== ''
+                ? ((int) $_POST['image_rights'] === 1 ? 1 : 0)
+                : null,
         ];
     }
 

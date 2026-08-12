@@ -60,7 +60,15 @@ Colonnes principales :
 - `evaluated_at` : date de dernière évaluation ;
 - `notes` : remarque interne facultative du coach.
 
-La contrainte unique `(swimmer_id, skill_id)` garantit qu'un nageur ne possède qu'un niveau courant par compétence. La V1 ne conserve pas l'historique des anciennes valeurs.
+La contrainte unique `(swimmer_id, season_id, skill_id)` garantit un niveau courant par compétence et par saison. Les saisons précédentes restent consultables.
+
+
+## Séance terrain et présences
+
+- `e2n_scheduled_sessions` associe un groupe, une date et une séance type. Son champ `status` vaut `planned` ou `completed`; `completed_at` et `completed_by` mémorisent la validation terrain.
+- `e2n_attendance` mémorise le pointage d'un nageur pour un groupe et une date. Les statuts utiles sont `present` et `absent`; l'absence de ligne correspond à « Non pointé ».
+
+La contrainte unique `(group_id, swimmer_id, session_date)` empêche plusieurs pointages concurrents pour le même nageur sur le même créneau daté.
 
 ## Journal des accès parents
 

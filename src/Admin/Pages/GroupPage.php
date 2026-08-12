@@ -58,15 +58,7 @@ class GroupPage
 
             <?php $this->renderNotice(); ?>
 
-            <div
-                style="
-                    display: grid;
-                    grid-template-columns: minmax(300px, 420px) minmax(500px, 1fr);
-                    gap: 24px;
-                    align-items: start;
-                    margin-top: 20px;
-                "
-            >
+            <div class="e2n-group-layout">
                 <div class="postbox">
                     <div class="postbox-header">
                         <h2 class="hndle">
@@ -501,6 +493,8 @@ class GroupPage
                         : 0;
 
                     $isActive = (int) $group['is_active'] === 1;
+                    $seasonIsActive = (int) ($group['season_is_active'] ?? 1) === 1;
+                    $isEffectivelyActive = $isActive && $seasonIsActive;
                     ?>
                     <tr>
                         <td>
@@ -550,38 +544,27 @@ class GroupPage
                         </td>
 
                         <td>
-                            <?php echo wp_kses_post(Badge::status($isActive)); ?>
+                            <?php echo wp_kses_post(Badge::status($isEffectivelyActive)); ?>
+                            <?php if (!$seasonIsActive) : ?>
+                                <span class="description e2n-status-note"><?php esc_html_e('Saison inactive', 'ecole2nat'); ?></span>
+                            <?php endif; ?>
                         </td>
 
                         <td>
-                            <form method="post">
-                                <?php wp_nonce_field('e2n_toggle_group'); ?>
+                            <?php if ($seasonIsActive) : ?>
+                                <form method="post">
+                                    <?php wp_nonce_field('e2n_toggle_group'); ?>
 
-                                <input
-                                    type="hidden"
-                                    name="e2n_action"
-                                    value="toggle_group"
-                                >
+                                    <input type="hidden" name="e2n_action" value="toggle_group">
+                                    <input type="hidden" name="group_id" value="<?php echo esc_attr((string) $group['id']); ?>">
 
-                                <input
-                                    type="hidden"
-                                    name="group_id"
-                                    value="<?php echo esc_attr((string) $group['id']); ?>"
-                                >
-
-                                <button
-                                    type="submit"
-                                    class="button button-small"
-                                >
-                                    <?php
-                                    echo esc_html(
-                                        $isActive
-                                            ? __('Désactiver', 'ecole2nat')
-                                            : __('Activer', 'ecole2nat')
-                                    );
-                                    ?>
-                                </button>
-                            </form>
+                                    <button type="submit" class="button button-small">
+                                        <?php echo esc_html($isActive ? __('Désactiver', 'ecole2nat') : __('Activer', 'ecole2nat')); ?>
+                                    </button>
+                                </form>
+                            <?php else : ?>
+                                <span class="description"><?php esc_html_e('Géré par la saison', 'ecole2nat'); ?></span>
+                            <?php endif; ?>
                             <?php
                             $deleteUrl = DeletionController::url(
                                 'group',

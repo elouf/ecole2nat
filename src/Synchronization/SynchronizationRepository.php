@@ -135,12 +135,46 @@ final class SynchronizationRepository
             $categoryId = $categoryIds[$this->normalize($row['category'])] ?? 0;
             $key = $this->key($row['category'], $row['name']);
             $existing = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$table} WHERE season_id=%d AND category_id=%d AND LOWER(name)=LOWER(%s) LIMIT 1", $seasonId, $categoryId, $row['name']), ARRAY_A);
+            $weekday = isset($row['weekday']) && $row['weekday'] !== null ? (int) $row['weekday'] : null;
+            $startTime = !empty($row['startTime']) ? (string) $row['startTime'] : null;
+
             if (!$existing) {
-                if ($wpdb->insert($table, ['season_id'=>$seasonId,'category_id'=>$categoryId,'name'=>$row['name'],'color'=>null,'weekday'=>null,'start_time'=>null,'end_time'=>null,'is_active'=>1,'created_at'=>current_time('mysql')], ['%d','%d','%s','%s','%d','%s','%s','%d','%s']) === false) {
+                if ($wpdb->insert($table, [
+                    'season_id'=>$seasonId,
+                    'category_id'=>$categoryId,
+                    'name'=>$row['name'],
+                    'color'=>null,
+                    'weekday'=>$weekday,
+                    'start_time'=>$startTime,
+                    'end_time'=>null,
+                    'is_active'=>1,
+                    'created_at'=>current_time('mysql')
+                ], ['%d','%d','%s','%s','%d','%s','%s','%d','%s']) === false) {
                     throw new \RuntimeException('Impossible de créer le groupe ' . $row['name'] . ' : ' . $wpdb->last_error);
                 }
                 $id=(int)$wpdb->insert_id; $stats['groups']['created']++;
-            } else { $id=(int)$existing['id']; $stats['groups']['unchanged']++; }
+            } else {
+                $id=(int)$existing['id'];
+                $needsScheduleRepair = (empty($existing['weekday']) || empty($existing['start_time']))
+                    && ($weekday !== null || $startTime !== null);
+
+                if ($needsScheduleRepair) {
+                    $wpdb->update(
+                        $table,
+                        [
+                            'weekday' => $weekday,
+                            'start_time' => $startTime,
+                            'updated_at' => current_time('mysql'),
+                        ],
+                        ['id' => $id],
+                        ['%d','%s','%s'],
+                        ['%d']
+                    );
+                    $stats['groups']['updated']++;
+                } else {
+                    $stats['groups']['unchanged']++;
+                }
+            }
             $ids[$key]=$id;
             $ids[$this->key($row['category'], $row['name'])]=$id;
         }
@@ -221,7 +255,7 @@ final class SynchronizationRepository
             $existing=null;
             if($row['licence_number']!=='') $existing=$wpdb->get_row($wpdb->prepare("SELECT * FROM {$table} WHERE licence_number=%s LIMIT 1",$row['licence_number']),ARRAY_A);
             if(!$existing && $row['birth_date']) $existing=$wpdb->get_row($wpdb->prepare("SELECT * FROM {$table} WHERE LOWER(last_name)=LOWER(%s) AND LOWER(first_name)=LOWER(%s) AND birth_date=%s LIMIT 1",$row['last_name'],$row['first_name'],$row['birth_date']),ARRAY_A);
-            $payload=['group_id'=>$groupId?:null,'last_name'=>$row['last_name'],'first_name'=>$row['first_name'],'birth_date'=>$row['birth_date'],'gender'=>$row['gender'],'responsible_email'=>$row['responsible_email'],'responsible_phone'=>$row['responsible_phone'],'licence_number'=>$row['licence_number'],'medical_note'=>$row['medical_note'],'registration_date'=>current_time('Y-m-d'),'is_active'=>1];
+            $payload=['group_id'=>$groupId?:null,'last_name'=>$row['last_name'],'first_name'=>$row['first_name'],'birth_date'=>$row['birth_date'],'gender'=>$row['gender'],'responsible_email'=>$row['responsible_email'],'responsible_phone'=>$row['responsible_phone'],'licence_number'=>$row['licence_number'],'medical_note'=>$row['medical_note'],'image_rights'=>$row['image_rights'],'registration_date'=>current_time('Y-m-d'),'is_active'=>1];
             if(!$existing){$payload['created_at']=current_time('mysql'); if($wpdb->insert($table,$payload)===false) throw new \RuntimeException('Impossible de créer '.$row['first_name'].' '.$row['last_name'].' : '.$wpdb->last_error); $swimmerId=(int)$wpdb->insert_id; $stats['swimmers']['created']++;}
             else { $swimmerId=(int)$existing['id']; $payload['updated_at']=current_time('mysql'); $changed=false; foreach($payload as $k=>$v){if($k==='updated_at')continue;if((string)($existing[$k]??'')!==(string)($v??'')){$changed=true;break;}} if($changed){if($wpdb->update($table,$payload,['id'=>$swimmerId])===false) throw new \RuntimeException('Impossible de mettre à jour '.$row['first_name'].' '.$row['last_name'].' : '.$wpdb->last_error);$stats['swimmers']['updated']++;}else$stats['swimmers']['unchanged']++;}
             if($groupId>0){

@@ -14,7 +14,7 @@ class EvaluationRepository
         $g=Config::table('groups'); $s=Config::table('seasons'); $c=Config::table('categories');
         $r=$wpdb->get_results("SELECT g.*, s.name season_name, s.is_current, c.name category_name
             FROM {$g} g INNER JOIN {$s} s ON s.id=g.season_id INNER JOIN {$c} c ON c.id=g.category_id
-            WHERE g.is_active=1 ORDER BY s.is_current DESC,s.start_date DESC,c.sort_order ASC,g.name ASC",ARRAY_A);
+            WHERE g.is_active=1 AND s.is_active=1 ORDER BY s.is_current DESC,s.start_date DESC,c.sort_order ASC,g.name ASC",ARRAY_A);
         return is_array($r)?$r:[];
     }
 
@@ -89,4 +89,60 @@ class EvaluationRepository
         }
         $wpdb->query('COMMIT'); return true;
     }
+    public function levelsBySkillForSwimmers(int $skillId, int $seasonId, array $swimmerIds): array
+    {
+        global $wpdb;
+        $swimmerIds = array_values(array_filter(array_map('intval', $swimmerIds)));
+        if ($swimmerIds === []) return [];
+        $t = Config::table('swimmer_skill_levels');
+        $placeholders = implode(',', array_fill(0, count($swimmerIds), '%d'));
+        $params = array_merge([$skillId, $seasonId], $swimmerIds);
+        $sql = "SELECT swimmer_id,status,notes,evaluated_at FROM {$t} WHERE skill_id=%d AND season_id=%d AND swimmer_id IN ({$placeholders})";
+        $rows = $wpdb->get_results($wpdb->prepare($sql, ...$params), ARRAY_A);
+        $out=[];
+        foreach (is_array($rows) ? $rows : [] as $row) $out[(int)$row['swimmer_id']]=$row;
+        return $out;
+    }
+
+    public function saveStatusOnly(int $swimmerId,int $seasonId,int $skillId,string $status,int $userId): bool
+    {
+        global $wpdb;
+        $t=Config::table('swimmer_skill_levels');
+        $now=current_time('mysql');
+        $sql="INSERT INTO {$t} (swimmer_id,season_id,skill_id,status,evaluated_at,evaluated_by,notes,created_at,updated_at)
+            VALUES (%d,%d,%d,%s,%s,%d,'',%s,%s)
+            ON DUPLICATE KEY UPDATE status=VALUES(status),evaluated_at=VALUES(evaluated_at),evaluated_by=VALUES(evaluated_by),updated_at=VALUES(updated_at)";
+        return $wpdb->query($wpdb->prepare($sql,$swimmerId,$seasonId,$skillId,$status,$now,$userId,$now,$now))!==false;
+    }
+
+    public function saveNoteOnly(int $swimmerId,int $seasonId,int $skillId,string $note,int $userId): bool
+    {
+        global $wpdb;
+        $t=Config::table('swimmer_skill_levels');
+        $now=current_time('mysql');
+        $sql="INSERT INTO {$t} (swimmer_id,season_id,skill_id,status,evaluated_at,evaluated_by,notes,created_at,updated_at)
+            VALUES (%d,%d,%d,'not_observed',%s,%d,%s,%s,%s)
+            ON DUPLICATE KEY UPDATE notes=VALUES(notes),evaluated_at=VALUES(evaluated_at),evaluated_by=VALUES(evaluated_by),updated_at=VALUES(updated_at)";
+        return $wpdb->query($wpdb->prepare($sql,$swimmerId,$seasonId,$skillId,$now,$userId,$note,$now,$now))!==false;
+    }
+
+    public function saveCollectiveSkill(int $seasonId, int $skillId, array $statuses, int $userId): bool
+    {
+        global $wpdb;
+        $t=Config::table('swimmer_skill_levels');
+        $now=current_time('mysql');
+        $wpdb->query('START TRANSACTION');
+        foreach($statuses as $swimmerId=>$status){
+            $swimmerId=(int)$swimmerId;
+            if($swimmerId<=0) continue;
+            $sql="INSERT INTO {$t} (swimmer_id,season_id,skill_id,status,evaluated_at,evaluated_by,notes,created_at,updated_at)
+                VALUES (%d,%d,%d,%s,%s,%d,'',%s,%s)
+                ON DUPLICATE KEY UPDATE status=VALUES(status),evaluated_at=VALUES(evaluated_at),evaluated_by=VALUES(evaluated_by),updated_at=VALUES(updated_at)";
+            $ok=$wpdb->query($wpdb->prepare($sql,$swimmerId,$seasonId,$skillId,$status,$now,$userId,$now,$now));
+            if($ok===false){$wpdb->query('ROLLBACK');return false;}
+        }
+        $wpdb->query('COMMIT');
+        return true;
+    }
+
 }

@@ -6,6 +6,7 @@ use Ecole2Nat\Admin\Menu;
 use Ecole2Nat\Admin\Deletion\DeletionController;
 use Ecole2Nat\Support\Config;
 use Ecole2Nat\ParentPortal\ParentPortal;
+use Ecole2Nat\Coach\CoachPortal;
 use Ecole2Nat\Admin\ParentDistribution\ParentDistributionController;
 
 if (!defined('ABSPATH')) {
@@ -18,6 +19,8 @@ class Application
     {
         $parentPortal = new ParentPortal();
         $parentPortal->register();
+
+        (new CoachPortal())->register();
 
         if (is_admin()) {
             add_action('admin_menu', [$this, 'registerAdminMenu']);
@@ -39,6 +42,14 @@ class Application
             Config::pluginUrl() . 'assets/css/admin.css',
             [],
             Config::version()
+        );
+
+        wp_enqueue_script(
+            'ecole2nat-admin',
+            Config::pluginUrl() . 'assets/js/admin.js',
+            [],
+            Config::version(),
+            true
         );
     }
 

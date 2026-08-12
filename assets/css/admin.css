@@ -118,3 +118,87 @@
         padding: 8mm;
     }
 }
+
+/* Shared Ecole2Nat admin layout */
+.postbox .postbox-header .hndle {
+    margin: 0;
+    padding: 10px 14px;
+}
+
+.e2n-group-layout {
+    display: grid;
+    grid-template-columns: minmax(300px, 420px) minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+    margin-top: 20px;
+}
+
+.e2n-group-layout > .postbox {
+    min-width: 0;
+}
+
+.e2n-group-layout .form-table {
+    width: 100%;
+    table-layout: fixed;
+}
+
+.e2n-group-layout .form-table th {
+    width: 92px;
+}
+
+.e2n-group-layout .form-table td {
+    min-width: 0;
+}
+
+.e2n-group-layout .form-table select.regular-text,
+.e2n-group-layout .form-table input.regular-text {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.e2n-status-note {
+    display: block;
+    margin-top: 4px;
+}
+
+@media screen and (max-width: 1280px) {
+    .e2n-group-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media screen and (max-width: 782px) {
+    .e2n-group-layout .form-table,
+    .e2n-group-layout .form-table tbody,
+    .e2n-group-layout .form-table tr,
+    .e2n-group-layout .form-table th,
+    .e2n-group-layout .form-table td {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+    }
+}
+
+
+/* Shared sortable admin tables */
+.e2n-sortable-table thead th[data-e2n-sortable="1"] {
+    cursor: pointer;
+    user-select: none;
+}
+
+.e2n-sortable-table thead th[data-e2n-sortable="1"]:hover {
+    color: #135e96;
+}
+
+.e2n-sortable-table thead th[data-e2n-sortable="1"] .e2n-sort-indicator {
+    display: inline-block;
+    margin-left: 5px;
+    color: #646970;
+    font-size: 11px;
+}
+
+.e2n-sortable-table thead th[aria-sort="ascending"] .e2n-sort-indicator,
+.e2n-sortable-table thead th[aria-sort="descending"] .e2n-sort-indicator {
+    color: #135e96;
+}

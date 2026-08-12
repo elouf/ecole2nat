@@ -5,6 +5,7 @@ namespace Ecole2Nat\Synchronization;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
+use Ecole2Nat\Support\GroupScheduleParser;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -115,7 +116,19 @@ final class WorkbookReader
                 $errors[] = sprintf('Groupe dupliqué : %s (%s).', $name, $category);
                 continue;
             }
-            $groups[$key] = compact('name', 'category', 'code');
+
+            $schedule = GroupScheduleParser::parse($name);
+            $weekday = $schedule['weekday'];
+            $startTime = $schedule['start_time'];
+
+            if ($weekday === null || $startTime === null) {
+                $warnings[] = sprintf(
+                    'Groupe « %s » : jour ou heure non reconnus dans le nom. Le groupe sera importé, mais son créneau devra être complété dans le back-office.',
+                    $name
+                );
+            }
+
+            $groups[$key] = compact('name', 'category', 'code', 'weekday', 'startTime');
         }
         return array_values($groups);
     }
@@ -174,7 +187,25 @@ final class WorkbookReader
             $gender = in_array($genderValue, ['femme', 'feminin', 'f'], true) ? 'F' : (in_array($genderValue, ['homme', 'masculin', 'm'], true) ? 'M' : '');
             $email = sanitize_email($this->string($row, ['email', 'e-mail']));
             $phone = $this->string($row, ['telephone', 'tel']);
-            $comment = $this->string($row, ['commentaire']);
+            $medicalNote = $this->string($row, ['info médicale', 'information médicale']);
+
+            $imageRightsRaw = $this->normalize(
+                $this->string($row, ["droit à l'image", 'droit image'])
+            );
+            $imageRights = null;
+            if (in_array($imageRightsRaw, ['oui', 'o', 'yes', '1'], true)) {
+                $imageRights = 1;
+            } elseif (in_array($imageRightsRaw, ['non', 'n', 'no', '0'], true)) {
+                $imageRights = 0;
+            } elseif ($imageRightsRaw !== '') {
+                $warnings[] = sprintf(
+                    '%s %s : valeur de droit à l’image non reconnue « %s » (OUI ou NON attendu).',
+                    $firstName,
+                    $lastName,
+                    $this->string($row, ["droit à l'image", 'droit image'])
+                );
+            }
+
             $groupName = trim($category . ' ' . $slot);
             $swimmers[] = [
                 'last_name' => $lastName,
@@ -184,7 +215,8 @@ final class WorkbookReader
                 'licence_number' => $licence,
                 'responsible_email' => $email,
                 'responsible_phone' => $phone,
-                'medical_note' => $comment,
+                'medical_note' => $medicalNote,
+                'image_rights' => $imageRights,
                 'category' => $category,
                 'slot' => $slot,
                 'group_name' => $groupName,
