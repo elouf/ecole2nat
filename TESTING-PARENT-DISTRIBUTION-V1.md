@@ -46,7 +46,7 @@
 
 ## Migration
 
-Après activation de la version, vérifier dans `e2n_swimmers` la présence de :
+Après la mise à jour et le chargement d’une page WordPress, vérifier dans `e2n_swimmers` la présence de :
 
 - `parent_access_distributed_at`
 - `parent_access_distribution_method`

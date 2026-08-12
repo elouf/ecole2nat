@@ -1,6 +1,12 @@
-## 0.11.0 - 2026-08-12
+# Changelog
 
-## 0.11.2
+## Non publié
+
+- Incrémente la version technique du schéma à `0.8.1` afin de rejouer de façon idempotente les migrations sur les installations existantes.
+- Complète la documentation du modèle de données et harmonise les recettes de migration automatique.
+- Remet les versions de ce changelog dans l’ordre chronologique.
+
+## 0.11.2 - 2026-08-12
 
 - Enregistrement AJAX immédiat des présences dans le portail Coach.
 - Enregistrement AJAX immédiat des évaluations individuelles et collectives.
@@ -9,6 +15,14 @@
 - Indicateur visuel Enregistrement / Enregistré / erreur réseau.
 - File d’attente JavaScript par donnée afin que la dernière sélection du coach soit conservée.
 
+## 0.11.1 - 2026-08-12
+
+- Remplacement des listes déroulantes de présence et d’évaluation par des boutons radio en ligne.
+- Sélection d’une compétence d’évaluation collective via une liste cliquable regroupée par domaine.
+- Hover/focus renforcé sur les lignes nageurs et les évaluations collectives.
+- Adaptation mobile/tablette des contrôles tactiles.
+
+## 0.11.0 - 2026-08-12
 
 - Ajout de la **Séance terrain V1** dans le portail Coach.
 - Pointage Présent / Absent / Non pointé par groupe et par date.
@@ -33,15 +47,6 @@
 - Correction de l’ouverture d’un groupe depuis le planning Coach (alias SQL).
 - Ajout d’un hover et d’un focus clavier sur les créneaux du planning.
 
-# Changelog
-
-## 0.11.1 - UX terrain
-
-- remplacement des listes déroulantes de présence et d’évaluation par des boutons radio en ligne ;
-- sélection d’une compétence d’évaluation collective via une liste cliquable regroupée par domaine ;
-- hover/focus renforcé sur les lignes nageurs et les évaluations collectives ;
-- adaptation mobile/tablette des contrôles tactiles.
-
 ## 0.10.4 - 2026-08-11
 
 - Corrige le planning Coach lorsque les groupes synchronisés n'ont pas de `weekday`/`start_time` structurés.
@@ -50,15 +55,28 @@
 - Les groupes dont le créneau reste indéterminable sont affichés explicitement au lieu de disparaître du planning.
 
 ## 0.10.3
+
 - Corrige un conflit avec les thèmes qui appliquent `visibility: hidden` ou `opacity: 0` aux contenus animés du portail Coach.
 
+## 0.10.2
+
+- Remplace le conteneur `<main>` interne du shortcode Coach par un `<div>` neutre pour éviter les conflits avec les thèmes WordPress.
+- Force l’affichage du conteneur du portail après le chargement de la page.
 
 ## 0.10.1
+
 - Correction du rendu du planning du portail coach.
 - Chargement du CSS directement par le shortcode pour éviter les problèmes d’ID de page.
 - Repli sur la saison active la plus récente si aucune saison courante n’est définie.
 - Message explicite lorsqu’aucun groupe actif n’est disponible.
 
+## 0.10.0
+
+- Ajout du rôle Coach Ecole2Nat et du portail frontend mobile/tablette.
+- Consultation de tous les groupes actifs par tous les coachs.
+- Association Coach ↔ Groupe pour réserver les écritures aux titulaires.
+- Planning hebdomadaire, affectation d'une séance au prochain créneau, vue séance et nageurs prévus.
+- Fiche nageur avec informations médicales et évaluation express sécurisée.
 
 ## 0.9.2
 
@@ -153,10 +171,3 @@
 
 - parties, exercices, durées et consignes propres à la séance ;
 - réorganisation, duplication, impression A4 et durée totale automatique.
-
-## 0.10.0
-- Ajout du rôle Coach Ecole2Nat et du portail frontend mobile/tablette.
-- Consultation de tous les groupes actifs par tous les coachs.
-- Association Coach ↔ Groupe pour réserver les écritures aux titulaires.
-- Planning hebdomadaire, affectation d'une séance au prochain créneau, vue séance et nageurs prévus.
-- Fiche nageur avec informations médicales et évaluation express sécurisée.

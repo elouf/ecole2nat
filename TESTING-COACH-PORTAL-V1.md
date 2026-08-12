@@ -1,6 +1,6 @@
 # Recette — Portail Coach V1
 
-1. Mettre à jour le plugin vers 0.10.0 puis recharger WordPress : les tables `e2n_group_coaches` et `e2n_scheduled_sessions` sont créées automatiquement.
+1. Mettre à jour le plugin vers 0.10.0 puis recharger une page WordPress pour déclencher `maybeUpgrade()` : les tables `e2n_group_coaches` et `e2n_scheduled_sessions` sont créées automatiquement, sans réactivation du plugin.
 2. Vérifier qu'une page publiée « Espace coach » existe avec le shortcode `[e2n_coach_portal]`.
 3. Dans Ecole2Nat' > Coachs, choisir deux utilisateurs WordPress : les définir comme Coach. Affecter seulement le premier comme titulaire d'un groupe actif.
 4. Se connecter avec le coach titulaire : après connexion, vérifier la redirection vers Espace coach, le planning hebdomadaire et le badge Titulaire.

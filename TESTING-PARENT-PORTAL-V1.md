@@ -2,7 +2,7 @@
 
 ## 1. Migration
 
-1. Désactiver puis réactiver l'extension.
+1. Mettre à jour l’extension puis recharger une page WordPress afin de déclencher la migration automatique `maybeUpgrade()`.
 2. Vérifier les nouvelles colonnes de `e2n_swimmers` :
    - `parent_message`
    - `parent_access_code_hash`

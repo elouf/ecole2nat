@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
 }
 
 define('E2N_VERSION', '0.11.2');
-define('E2N_DB_VERSION', '0.8.0');
+define('E2N_DB_VERSION', '0.8.1');
 define('E2N_PLUGIN_FILE', __FILE__);
 define('E2N_PLUGIN_PATH', plugin_dir_path(__FILE__));
 define('E2N_PLUGIN_URL', plugin_dir_url(__FILE__));

@@ -4,7 +4,7 @@
 
 1. Remplacer le plugin par le contenu de l’archive.
 2. Exécuter `composer install` puis `composer dump-autoload -o`.
-3. Désactiver puis réactiver le plugin afin de créer la table `e2n_swimmer_skill_levels`.
+3. Recharger une page WordPress afin de déclencher la migration automatique `maybeUpgrade()` et la création de `e2n_swimmer_skill_levels`.
 4. Vérifier dans la base que la table existe.
 
 ## Préconditions

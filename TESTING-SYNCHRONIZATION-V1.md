@@ -4,7 +4,7 @@
 
 1. Remplacer le plugin par ce lot.
 2. Exécuter `composer install` puis `composer dump-autoload -o`.
-3. Désactiver puis réactiver le plugin.
+3. Recharger une page WordPress afin de déclencher la migration automatique `maybeUpgrade()`.
 4. Vérifier la table `<prefix>_e2n_synchronization_logs`.
 
 ## Analyse
