@@ -7,12 +7,12 @@ class CoachPortalRepository {
  public function groups():array {
   global $wpdb;
   $g=Config::table('groups');$s=Config::table('seasons');$c=Config::table('categories');
-  $seasonId=(int)$wpdb->get_var("SELECT id FROM {$s} WHERE is_active=1 AND is_current=1 ORDER BY id DESC LIMIT 1");
-  if($seasonId<=0){
-   $seasonId=(int)$wpdb->get_var("SELECT id FROM {$s} WHERE is_active=1 ORDER BY start_date DESC,id DESC LIMIT 1");
-  }
-  if($seasonId<=0)return [];
-  $rows=$wpdb->get_results($wpdb->prepare("SELECT g.*,c.name category_name,s.name season_name FROM {$g} g INNER JOIN {$s} s ON s.id=g.season_id INNER JOIN {$c} c ON c.id=g.category_id WHERE g.is_active=1 AND s.is_active=1 AND g.season_id=%d ORDER BY g.weekday,g.start_time,g.name",$seasonId),ARRAY_A);
+  $rows=$wpdb->get_results("SELECT g.*,c.name category_name,s.name season_name,s.is_current
+      FROM {$g} g
+      INNER JOIN {$s} s ON s.id=g.season_id
+      INNER JOIN {$c} c ON c.id=g.category_id
+      WHERE g.is_active=1 AND s.is_active=1
+      ORDER BY s.is_current DESC,s.start_date DESC,g.weekday,g.start_time,g.name",ARRAY_A);
   if (!is_array($rows)) return [];
   foreach ($rows as &$row) { $this->enrichSchedule($row); }
   unset($row);
@@ -20,7 +20,9 @@ class CoachPortalRepository {
    $aw=(int)($a['weekday']??99); $bw=(int)($b['weekday']??99);
    if($aw!==$bw) return $aw<=>$bw;
    $at=(string)($a['start_time']??'99:99:99'); $bt=(string)($b['start_time']??'99:99:99');
-   return $at!==$bt ? strcmp($at,$bt) : strcasecmp((string)$a['name'],(string)$b['name']);
+   if($at!==$bt) return strcmp($at,$bt);
+   $seasonOrder=(int)($b['is_current']??0)<=>(int)($a['is_current']??0);
+   return $seasonOrder!==0 ? $seasonOrder : strcasecmp((string)$a['name'],(string)$b['name']);
   });
   return $rows;
  }

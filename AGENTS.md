@@ -133,8 +133,9 @@ repositories. Éviter d’ajouter de la logique métier aux classes de rendu.
 
 - Les administrateurs peuvent consulter et modifier tous les groupes.
 - Les coachs peuvent consulter tous les groupes actifs.
-- Seuls les administrateurs et les coachs titulaires peuvent modifier un
-  groupe.
+- Les administrateurs et les coachs titulaires peuvent modifier un groupe.
+- Un remplaçant daté peut préparer la séance en amont ; ses droits terrain
+  ne sont actifs que le jour prévu.
 - Les contrôles de droits doivent être appliqués côté serveur, y compris
   pour AJAX ; masquer un contrôle dans l’interface ne suffit pas.
 - Les présences persistées sont `present` ou `absent`.

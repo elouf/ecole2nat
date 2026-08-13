@@ -5,3 +5,5 @@
 3. Ouvrir un groupe et vérifier que la date de prochaine séance est cohérente.
 4. Relancer une synchronisation Excel : les groupes existants sans créneau structuré doivent recevoir automatiquement `weekday` et `start_time`.
 5. Vérifier qu'un nom de groupe sans jour/heure reconnu apparaît dans « Groupes sans créneau reconnu » plutôt que de disparaître.
+6. Avec plusieurs saisons actives, vérifier que leurs groupes actifs apparaissent tous dans le planning.
+7. Affecter un coach comme titulaire d’un groupe d’une saison active non courante : le groupe doit rester visible et modifiable par ce titulaire.

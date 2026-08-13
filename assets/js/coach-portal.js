@@ -147,6 +147,7 @@
                     group_id: input.dataset.groupId,
                     swimmer_id: input.dataset.swimmerId,
                     skill_id: input.dataset.skillId,
+                    session_date: input.dataset.sessionDate,
                     status: input.value
                 },
                 input
@@ -171,6 +172,7 @@
                     group_id: field.dataset.groupId,
                     swimmer_id: field.dataset.swimmerId,
                     skill_id: field.dataset.skillId,
+                    session_date: field.dataset.sessionDate,
                     note: field.value
                 },
                 field

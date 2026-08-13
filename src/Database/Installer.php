@@ -183,6 +183,23 @@ class Installer
         ) {$charsetCollate};";
         dbDelta($sql);
 
+        $tableName = Config::table('group_substitutions');
+
+        $sql = "CREATE TABLE {$tableName} (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            group_id BIGINT UNSIGNED NOT NULL,
+            user_id BIGINT UNSIGNED NOT NULL,
+            substitution_date DATE NOT NULL,
+            created_by BIGINT UNSIGNED NULL,
+            created_at DATETIME NOT NULL,
+            PRIMARY KEY  (id),
+            UNIQUE KEY group_user_date (group_id,user_id,substitution_date),
+            KEY group_id (group_id),
+            KEY user_id (user_id),
+            KEY substitution_date (substitution_date)
+        ) {$charsetCollate};";
+        dbDelta($sql);
+
         $tableName = Config::table('scheduled_sessions');
         $sql = "CREATE TABLE {$tableName} (
             id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,

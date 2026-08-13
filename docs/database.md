@@ -68,10 +68,13 @@ La contrainte unique `(swimmer_id, season_id, skill_id)` garantit un seul niveau
 ## Coachs, planning et terrain
 
 - `e2n_group_coaches` : affectation des utilisateurs WordPress titulaires d’un groupe.
+- `e2n_group_substitutions` : affectation temporaire d’un coach remplaçant à un groupe pour une date précise.
 - `e2n_scheduled_sessions` : séance type prévue pour un groupe et une date.
 - `e2n_attendance` : pointage d’un nageur pour un groupe et une date.
 
 La contrainte unique `(group_id, user_id)` de `e2n_group_coaches` empêche une double affectation du même coach au même groupe.
+
+La contrainte unique `(group_id, user_id, substitution_date)` de `e2n_group_substitutions` empêche de dupliquer un même remplacement. L’affectation permet de préparer la séance jusqu’à la date prévue. Les droits terrain ne sont actifs que lorsque `substitution_date` correspond à la date courante WordPress. Elle ne modifie pas les titulaires permanents. `created_by` conserve l’administrateur ayant enregistré le remplacement.
 
 Dans `e2n_scheduled_sessions`, `status` vaut `planned` ou `completed`. `completed_at` et `completed_by` mémorisent la validation terrain. La contrainte unique `(group_id, session_date)` autorise une seule séance planifiée par groupe et par date.
 

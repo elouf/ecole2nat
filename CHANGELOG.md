@@ -1,7 +1,13 @@
 # Changelog
 
-## Non publié
+## Non publié — 0.12.0
 
+- Corrige le planning Coach afin qu’il affiche tous les groupes des saisons actives, et non uniquement ceux d’une saison arbitrairement sélectionnée.
+- Rétablit une section explicite pour les groupes dont le créneau reste impossible à déduire.
+- Ajoute les remplacements Coach datés : un administrateur peut autoriser un coach à modifier un groupe uniquement le jour prévu.
+- Autorise un remplaçant futur à affecter ou changer la séance en amont, sans ouvrir les droits terrain avant la date prévue.
+- Applique cette autorisation temporaire aux séances, présences et évaluations, y compris aux enregistrements AJAX.
+- Ajoute la table `e2n_group_substitutions` et porte la version technique du schéma à `0.8.2`.
 - Incrémente la version technique du schéma à `0.8.1` afin de rejouer de façon idempotente les migrations sur les installations existantes.
 - Complète la documentation du modèle de données et harmonise les recettes de migration automatique.
 - Remet les versions de ce changelog dans l’ordre chronologique.

@@ -29,6 +29,7 @@
 - Exercice utilisé dans une séance : suppression refusée.
 - Saison courante ou contenant des groupes : suppression refusée.
 - Groupe contenant des nageurs : suppression refusée.
+- Groupe lié à un coach titulaire ou à un remplacement daté : suppression refusée.
 
 ## Suppressions autorisées
 

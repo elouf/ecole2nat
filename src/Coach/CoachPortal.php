@@ -138,20 +138,43 @@ class CoachPortal
                             <h2><?php echo esc_html($label); ?></h2>
                             <?php foreach ($rows as $g) :
                                 $date = $this->nextDate((int) $g['weekday']);
-                                $planned = $this->repo->planned((int) $g['id'], $date);
+                                $groupId = (int) $g['id'];
+                                $planned = $this->repo->planned($groupId, $date);
+                                $isSubstitute = $this->access->isSubstituteForDate($groupId, $date);
                             ?>
-                                <a class="e2n-slot" href="<?php echo esc_url($this->base(['e2n_group' => (int) $g['id'], 'e2n_date' => $date])); ?>">
+                                <a class="e2n-slot" href="<?php echo esc_url($this->base(['e2n_group' => $groupId, 'e2n_date' => $date])); ?>">
                                     <time><?php echo esc_html(!empty($g['start_time']) ? substr((string) $g['start_time'], 0, 5) : '—'); ?></time>
                                     <span>
                                         <strong><?php echo esc_html($g['name']); ?></strong>
-                                        <small><?php echo esc_html($g['category_name']); ?><?php if ($planned) echo ' · ' . esc_html($planned['session_name']); ?></small>
+                                        <small><?php echo esc_html($g['category_name'] . ' · ' . $g['season_name']); ?><?php if ($planned) echo ' · ' . esc_html($planned['session_name']); ?></small>
                                     </span>
-                                    <?php if ($planned && ($planned['status'] ?? 'planned') === 'completed') : ?><em class="e2n-pill done"><?php esc_html_e('Réalisée', 'ecole2nat'); ?></em><?php elseif (in_array((int) $g['id'], $titular, true)) : ?><em><?php esc_html_e('Titulaire', 'ecole2nat'); ?></em><?php endif; ?>
+                                    <?php if ($planned && ($planned['status'] ?? 'planned') === 'completed') : ?><em class="e2n-pill done"><?php esc_html_e('Réalisée', 'ecole2nat'); ?></em><?php elseif (in_array($groupId, $titular, true)) : ?><em><?php esc_html_e('Titulaire', 'ecole2nat'); ?></em><?php elseif ($isSubstitute) : ?><em><?php echo esc_html($date === current_time('Y-m-d') ? __('Remplaçant', 'ecole2nat') : __('Remplaçant prévu', 'ecole2nat')); ?></em><?php endif; ?>
                                 </a>
                             <?php endforeach; ?>
                         </section>
                     <?php endforeach; ?>
                 </div>
+                <?php
+                $unrecognized = array_values(array_filter(
+                    $groups,
+                    static fn(array $group): bool => (int) ($group['weekday'] ?? 0) < 1
+                        || (int) ($group['weekday'] ?? 0) > 7
+                ));
+                if ($unrecognized !== []) :
+                ?>
+                    <section class="e2n-card">
+                        <h2><?php esc_html_e('Groupes sans créneau reconnu', 'ecole2nat'); ?></h2>
+                        <p><?php esc_html_e('Ces groupes restent accessibles, mais leur jour ou leur heure doit être complété dans l’administration.', 'ecole2nat'); ?></p>
+                        <div class="e2n-swimmers">
+                            <?php foreach ($unrecognized as $group) : ?>
+                                <a href="<?php echo esc_url($this->base(['e2n_group' => (int) $group['id'], 'e2n_date' => current_time('Y-m-d')])); ?>">
+                                    <strong><?php echo esc_html($group['name']); ?></strong>
+                                    <span><?php echo esc_html($group['category_name'] . ' · ' . $group['season_name']); ?></span>
+                                </a>
+                            <?php endforeach; ?>
+                        </div>
+                    </section>
+                <?php endif; ?>
             <?php endif; ?>
         </div>
         <?php
@@ -163,7 +186,8 @@ class CoachPortal
         if (!$g) { echo '<p>' . esc_html__('Groupe introuvable.', 'ecole2nat') . '</p>'; return; }
 
         $date = $requestedDate ?: $this->nextDate((int) $g['weekday']);
-        $can = $this->access->canEditGroup($gid);
+        $canPrepare = $this->access->canPrepareGroup($gid, $date);
+        $canOperate = $this->access->canOperateGroup($gid, $date);
         $swimmers = $this->repo->swimmers($gid, (int) $g['season_id']);
         $sessions = $this->repo->sessionsForCategory((int) $g['category_id']);
         $planned = $this->repo->planned($gid, $date);
@@ -179,7 +203,7 @@ class CoachPortal
         <h1><?php echo esc_html($g['name']); ?></h1>
         <p>
             <?php echo esc_html($g['category_name'] . ' · ' . $g['season_name']); ?>
-            <?php echo $can ? '<span class="e2n-pill">' . esc_html__('Titulaire · édition autorisée', 'ecole2nat') . '</span>' : '<span class="e2n-pill muted">' . esc_html__('Consultation', 'ecole2nat') . '</span>'; ?>
+            <span class="e2n-pill<?php echo ($canPrepare || $canOperate) ? '' : ' muted'; ?>"><?php echo esc_html($this->access->accessLabel($gid, $date)); ?></span>
         </p>
 
         <section class="e2n-card">
@@ -194,7 +218,7 @@ class CoachPortal
                     </div>
                     <a class="e2n-btn" href="<?php echo esc_url($this->base(['e2n_group' => $gid, 'e2n_session' => (int) $planned['session_id'], 'e2n_date' => $date])); ?>"><?php esc_html_e('Ouvrir la séance', 'ecole2nat'); ?></a>
                 </div>
-                <?php if ($can) : ?>
+                <?php if ($canOperate) : ?>
                     <form method="post" class="e2n-inline">
                         <input type="hidden" name="e2n_action" value="complete_session">
                         <input type="hidden" name="group_id" value="<?php echo (int) $gid; ?>">
@@ -210,7 +234,7 @@ class CoachPortal
                 <p><?php esc_html_e('Aucune séance affectée à ce créneau.', 'ecole2nat'); ?></p>
             <?php endif; ?>
 
-            <?php if ($can && $sessions) : ?>
+            <?php if ($canPrepare && $sessions) : ?>
                 <form method="post" class="e2n-inline">
                     <input type="hidden" name="e2n_action" value="schedule">
                     <input type="hidden" name="group_id" value="<?php echo (int) $gid; ?>">
@@ -226,9 +250,9 @@ class CoachPortal
 
         <section class="e2n-card">
             <h2><?php esc_html_e('Présences', 'ecole2nat'); ?> <small data-e2n-attendance-summary data-total="<?php echo (int) count($swimmers); ?>"><?php echo esc_html(sprintf(__('%1$d présents · %2$d absents · %3$d prévus', 'ecole2nat'), $present, $absent, count($swimmers))); ?></small></h2>
-            <?php if (!$can) : ?><p class="e2n-info"><?php esc_html_e('Consultation uniquement : seul un coach titulaire peut modifier le pointage.', 'ecole2nat'); ?></p><?php endif; ?>
+            <?php if (!$canOperate) : ?><p class="e2n-info"><?php echo esc_html($canPrepare ? __('Les présences deviennent modifiables le jour du remplacement.', 'ecole2nat') : __('Consultation uniquement : vous n’avez pas de droit terrain pour ce groupe à cette date.', 'ecole2nat')); ?></p><?php endif; ?>
             <div class="e2n-attendance-form">
-                <?php if ($can) : ?><button type="button" class="e2n-link-button" data-e2n-all-present data-group-id="<?php echo (int) $gid; ?>" data-session-date="<?php echo esc_attr($date); ?>"><?php esc_html_e('Tous présents', 'ecole2nat'); ?></button><?php endif; ?>
+                <?php if ($canOperate) : ?><button type="button" class="e2n-link-button" data-e2n-all-present data-group-id="<?php echo (int) $gid; ?>" data-session-date="<?php echo esc_attr($date); ?>"><?php esc_html_e('Tous présents', 'ecole2nat'); ?></button><?php endif; ?>
                 <div class="e2n-autosave-status" data-e2n-save-status aria-live="polite"></div>
                 <div class="e2n-attendance-list">
                     <?php foreach ($swimmers as $x) :
@@ -250,7 +274,7 @@ class CoachPortal
                                     'absent' => __('Absent', 'ecole2nat'),
                                 ] as $value => $label) : ?>
                                     <label class="e2n-choice e2n-choice--<?php echo esc_attr($value); ?>">
-                                        <input type="radio" name="attendance[<?php echo $sid; ?>]" value="<?php echo esc_attr($value); ?>" data-e2n-kind="attendance" data-group-id="<?php echo (int) $gid; ?>" data-swimmer-id="<?php echo (int) $sid; ?>" data-session-date="<?php echo esc_attr($date); ?>" <?php checked($status, $value); ?> <?php disabled(!$can); ?>>
+                                        <input type="radio" name="attendance[<?php echo $sid; ?>]" value="<?php echo esc_attr($value); ?>" data-e2n-kind="attendance" data-group-id="<?php echo (int) $gid; ?>" data-swimmer-id="<?php echo (int) $sid; ?>" data-session-date="<?php echo esc_attr($date); ?>" <?php checked($status, $value); ?> <?php disabled(!$canOperate); ?>>
                                         <span><?php echo esc_html($label); ?></span>
                                     </label>
                                 <?php endforeach; ?>
@@ -288,14 +312,15 @@ class CoachPortal
     {
         $data = $this->eval->collectiveEvaluation($gid, $skillId);
         if (!$data) { echo '<p>' . esc_html__('Compétence ou groupe introuvable.', 'ecole2nat') . '</p>'; return; }
-        $can = $this->access->canEditGroup($gid);
+        $sessionDate = $date ?? '';
+        $can = $this->access->canOperateGroup($gid, $sessionDate);
         ?>
         <a class="e2n-back" href="<?php echo esc_url($this->base(['e2n_group' => $gid, 'e2n_date' => $date])); ?>">← <?php esc_html_e('Groupe', 'ecole2nat'); ?></a>
         <h1><?php echo esc_html($data['skill']['name']); ?></h1>
         <p><?php echo esc_html($data['skill']['domain_name'] . ' · ' . $data['group']['name']); ?></p>
         <section class="e2n-card">
             <h2><?php esc_html_e('Évaluation collective', 'ecole2nat'); ?></h2>
-            <?php if (!$can) : ?><p class="e2n-info"><?php esc_html_e('Consultation uniquement : vous n’êtes pas titulaire de ce groupe.', 'ecole2nat'); ?></p><?php endif; ?>
+            <?php if (!$can) : ?><p class="e2n-info"><?php esc_html_e('Consultation uniquement : vous n’avez pas de droit d’écriture pour ce groupe à cette date.', 'ecole2nat'); ?></p><?php endif; ?>
             <div class="e2n-autosave-scope">
                 <div class="e2n-autosave-status" data-e2n-save-status aria-live="polite"></div>
                 <div class="e2n-collective-list">
@@ -305,7 +330,7 @@ class CoachPortal
                             <div class="e2n-choice-group e2n-choice-group--evaluation" role="radiogroup" aria-label="<?php echo esc_attr(sprintf(__('Évaluation de %s', 'ecole2nat'), $sw['first_name'] . ' ' . $sw['last_name'])); ?>">
                                 <?php foreach ($this->eval->statuses() as $value => $label) : ?>
                                     <label class="e2n-choice e2n-choice--<?php echo esc_attr($value); ?>">
-                                        <input type="radio" name="status[<?php echo (int) $sw['id']; ?>]" value="<?php echo esc_attr($value); ?>" data-e2n-kind="evaluation" data-group-id="<?php echo (int) $gid; ?>" data-swimmer-id="<?php echo (int) $sw['id']; ?>" data-skill-id="<?php echo (int) $skillId; ?>" <?php checked($sw['status'], $value); ?> <?php disabled(!$can); ?>>
+                                        <input type="radio" name="status[<?php echo (int) $sw['id']; ?>]" value="<?php echo esc_attr($value); ?>" data-e2n-kind="evaluation" data-group-id="<?php echo (int) $gid; ?>" data-swimmer-id="<?php echo (int) $sw['id']; ?>" data-skill-id="<?php echo (int) $skillId; ?>" data-session-date="<?php echo esc_attr($sessionDate); ?>" <?php checked($sw['status'], $value); ?> <?php disabled(!$can); ?>>
                                         <span><?php echo esc_html($label); ?></span>
                                     </label>
                                 <?php endforeach; ?>
@@ -322,7 +347,8 @@ class CoachPortal
     {
         $data = $this->eval->swimmerEvaluation($gid, $sid);
         if (!$data) { echo '<p>' . esc_html__('Nageur introuvable dans ce groupe.', 'ecole2nat') . '</p>'; return; }
-        $can = $this->access->canEditGroup($gid);
+        $sessionDate = $date ?? '';
+        $can = $this->access->canOperateGroup($gid, $sessionDate);
         ?>
         <a class="e2n-back" href="<?php echo esc_url($this->base(['e2n_group' => $gid, 'e2n_date' => $date])); ?>">← <?php esc_html_e('Groupe', 'ecole2nat'); ?></a>
         <h1><?php echo esc_html($data['swimmer']['first_name'] . ' ' . $data['swimmer']['last_name']); ?></h1>
@@ -330,7 +356,7 @@ class CoachPortal
         <?php if (!empty($data['swimmer']['medical_note'])) : ?><div class="e2n-alert"><strong><?php esc_html_e('Information médicale', 'ecole2nat'); ?></strong><p><?php echo nl2br(esc_html($data['swimmer']['medical_note'])); ?></p></div><?php endif; ?>
         <section class="e2n-card">
             <h2><?php esc_html_e('Compétences', 'ecole2nat'); ?></h2>
-            <?php if (!$can) : ?><p class="e2n-info"><?php esc_html_e('Consultation uniquement : vous n’êtes pas titulaire de ce groupe.', 'ecole2nat'); ?></p><?php endif; ?>
+            <?php if (!$can) : ?><p class="e2n-info"><?php esc_html_e('Consultation uniquement : vous n’avez pas de droit d’écriture pour ce groupe à cette date.', 'ecole2nat'); ?></p><?php endif; ?>
             <div class="e2n-autosave-scope">
                 <div class="e2n-autosave-status" data-e2n-save-status aria-live="polite"></div>
                 <div class="e2n-skills">
@@ -342,12 +368,12 @@ class CoachPortal
                             <div class="e2n-choice-group e2n-choice-group--evaluation" role="radiogroup" aria-label="<?php echo esc_attr($skill['name']); ?>">
                                 <?php foreach ($this->eval->statuses() as $v => $lab) : ?>
                                     <label class="e2n-choice e2n-choice--<?php echo esc_attr($v); ?>">
-                                        <input type="radio" name="status[<?php echo (int) $skill['id']; ?>]" value="<?php echo esc_attr($v); ?>" data-e2n-kind="evaluation" data-group-id="<?php echo (int) $gid; ?>" data-swimmer-id="<?php echo (int) $sid; ?>" data-skill-id="<?php echo (int) $skill['id']; ?>" <?php checked($skill['status'], $v); ?> <?php disabled(!$can); ?>>
+                                        <input type="radio" name="status[<?php echo (int) $skill['id']; ?>]" value="<?php echo esc_attr($v); ?>" data-e2n-kind="evaluation" data-group-id="<?php echo (int) $gid; ?>" data-swimmer-id="<?php echo (int) $sid; ?>" data-skill-id="<?php echo (int) $skill['id']; ?>" data-session-date="<?php echo esc_attr($sessionDate); ?>" <?php checked($skill['status'], $v); ?> <?php disabled(!$can); ?>>
                                         <span><?php echo esc_html($lab); ?></span>
                                     </label>
                                 <?php endforeach; ?>
                             </div>
-                            <textarea name="notes[<?php echo (int) $skill['id']; ?>]" data-e2n-kind="note" data-group-id="<?php echo (int) $gid; ?>" data-swimmer-id="<?php echo (int) $sid; ?>" data-skill-id="<?php echo (int) $skill['id']; ?>" placeholder="<?php esc_attr_e('Note', 'ecole2nat'); ?>" <?php disabled(!$can); ?>><?php echo esc_textarea($skill['notes']); ?></textarea>
+                            <textarea name="notes[<?php echo (int) $skill['id']; ?>]" data-e2n-kind="note" data-group-id="<?php echo (int) $gid; ?>" data-swimmer-id="<?php echo (int) $sid; ?>" data-skill-id="<?php echo (int) $skill['id']; ?>" data-session-date="<?php echo esc_attr($sessionDate); ?>" placeholder="<?php esc_attr_e('Note', 'ecole2nat'); ?>" <?php disabled(!$can); ?>><?php echo esc_textarea($skill['notes']); ?></textarea>
                         </div>
                     <?php endforeach; ?>
                 </div>
@@ -362,12 +388,17 @@ class CoachPortal
         $g = $this->repo->group($gid);
         if (!$s || !$g) { echo '<p>' . esc_html__('Séance introuvable.', 'ecole2nat') . '</p>'; return; }
         $date = $date ?: $this->nextDate((int)$g['weekday']);
+        $canPrepare = $this->access->canPrepareGroup($gid, $date);
+        $canOperate = $this->access->canOperateGroup($gid, $date);
         $swimmers=$this->repo->swimmers($gid,(int)$g['season_id']);
         $attendance=$this->field->attendance($gid,$date);
         ?>
         <a class="e2n-back" href="<?php echo esc_url($this->base(['e2n_group' => $gid, 'e2n_date' => $date])); ?>">← <?php esc_html_e('Groupe', 'ecole2nat'); ?></a>
         <h1><?php echo esc_html($s['name']); ?></h1>
-        <p><?php echo esc_html(sprintf(__('Séance du %s', 'ecole2nat'),wp_date('d/m/Y',strtotime($date)))); ?></p>
+        <p>
+            <?php echo esc_html(sprintf(__('Séance du %s', 'ecole2nat'),wp_date('d/m/Y',strtotime($date)))); ?>
+            <span class="e2n-pill<?php echo ($canPrepare || $canOperate) ? '' : ' muted'; ?>"><?php echo esc_html($this->access->accessLabel($gid, $date)); ?></span>
+        </p>
         <?php if ($s['objectives']) : ?><p><?php echo nl2br(esc_html($s['objectives'])); ?></p><?php endif; ?>
         <?php foreach ($s['parts'] as $p) : ?>
             <section class="e2n-card"><h2><?php echo esc_html($p['title']); ?></h2>
@@ -395,10 +426,10 @@ class CoachPortal
     {
         check_ajax_referer('e2n_coach_ajax', 'nonce');
         $gid = absint($_POST['group_id'] ?? 0);
-        if (!$this->access->canEditGroup($gid)) {
+        $date = sanitize_text_field(wp_unslash((string) ($_POST['session_date'] ?? '')));
+        if (!$this->access->canOperateGroup($gid, $date)) {
             wp_send_json_error(['message' => __('Modification non autorisée.', 'ecole2nat')], 403);
         }
-        $date = sanitize_text_field(wp_unslash((string) ($_POST['session_date'] ?? '')));
         $statuses = isset($_POST['statuses']) && is_array($_POST['statuses']) ? wp_unslash($_POST['statuses']) : [];
         if ($statuses === [] && isset($_POST['swimmer_id'], $_POST['status'])) {
             $statuses = [absint($_POST['swimmer_id']) => sanitize_key(wp_unslash((string) $_POST['status']))];
@@ -413,7 +444,8 @@ class CoachPortal
     {
         check_ajax_referer('e2n_coach_ajax', 'nonce');
         $gid = absint($_POST['group_id'] ?? 0);
-        if (!$this->access->canEditGroup($gid)) {
+        $date = sanitize_text_field(wp_unslash((string) ($_POST['session_date'] ?? '')));
+        if (!$this->access->canOperateGroup($gid, $date)) {
             wp_send_json_error(['message' => __('Modification non autorisée.', 'ecole2nat')], 403);
         }
         $result = $this->eval->saveSingleStatus(
@@ -433,7 +465,8 @@ class CoachPortal
     {
         check_ajax_referer('e2n_coach_ajax', 'nonce');
         $gid = absint($_POST['group_id'] ?? 0);
-        if (!$this->access->canEditGroup($gid)) {
+        $date = sanitize_text_field(wp_unslash((string) ($_POST['session_date'] ?? '')));
+        if (!$this->access->canOperateGroup($gid, $date)) {
             wp_send_json_error(['message' => __('Modification non autorisée.', 'ecole2nat')], 403);
         }
         $result = $this->eval->saveSingleNote(
@@ -455,16 +488,20 @@ class CoachPortal
 
         check_admin_referer('e2n_coach_write');
         $gid = absint($_POST['group_id'] ?? 0);
-        if (!$this->access->canEditGroup($gid)) {
-            wp_die(esc_html__('Vous n’êtes pas autorisé à modifier ce groupe.', 'ecole2nat'));
+        $date = sanitize_text_field(wp_unslash((string) ($_POST['session_date'] ?? '')));
+        $action = sanitize_key((string) $_POST['e2n_action']);
+        if ($action === 'schedule') {
+            if (!$this->access->canPrepareGroup($gid, $date)) {
+                wp_die(esc_html__('Vous n’êtes pas autorisé à préparer ce groupe à cette date.', 'ecole2nat'));
+            }
+            $this->repo->schedule($gid, absint($_POST['session_id'] ?? 0), $date, get_current_user_id());
+        } else {
+            if (!$this->access->canOperateGroup($gid, $date)) {
+                wp_die(esc_html__('Vous n’êtes pas autorisé à modifier ce groupe à cette date.', 'ecole2nat'));
+            }
         }
 
-        $action = sanitize_key((string) $_POST['e2n_action']);
-        $date = sanitize_text_field((string) ($_POST['session_date'] ?? ''));
-
-        if ($action === 'schedule') {
-            $this->repo->schedule($gid, absint($_POST['session_id'] ?? 0), $date, get_current_user_id());
-        } elseif ($action === 'complete_session') {
+        if ($action === 'complete_session') {
             $this->field->markSessionCompleted($gid, $date, get_current_user_id(), absint($_POST['completed'] ?? 0) === 1);
         } elseif ($action === 'attendance') {
             $this->field->saveAttendance($gid, $date, (array) ($_POST['attendance'] ?? []), get_current_user_id());

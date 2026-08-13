@@ -37,6 +37,8 @@ final class EntityDeletionService
             'group' => $this->deleteRestricted('groups', $id, [
                 ['swimmers', 'group_id', __('des nageurs', 'ecole2nat')],
                 ['swimmer_group_memberships', 'group_id', __('des affectations historiques', 'ecole2nat')],
+                ['group_coaches', 'group_id', __('des coachs titulaires', 'ecole2nat')],
+                ['group_substitutions', 'group_id', __('des remplacements de coachs', 'ecole2nat')],
                 ['scheduled_sessions', 'group_id', __('des séances planifiées', 'ecole2nat')],
                 ['attendance', 'group_id', __('des pointages de présence', 'ecole2nat')],
             ]),
