@@ -7,6 +7,7 @@
 
     var queues = new Map();
     var noteTimers = new WeakMap();
+    var editorTimers = new WeakMap();
 
     function saveStatus(element, state, message) {
         if (!element) return;
@@ -157,6 +158,38 @@
 
     document.addEventListener('input', function (event) {
         var field = event.target;
+        if (!(field instanceof HTMLInputElement) && !(field instanceof HTMLTextAreaElement)) return;
+
+        var editorKind = field.getAttribute('data-e2n-editor-field');
+        if (editorKind) {
+            var editorPrevious = editorTimers.get(field);
+            if (editorPrevious) window.clearTimeout(editorPrevious);
+            saveStatus(statusFor(field), 'saving', e2nCoachAjax.saving);
+            editorTimers.set(field, window.setTimeout(function () {
+                var scope = editorKind === 'general' ? field.closest('.e2n-editor-general') : field.closest('.e2n-editor-part, .e2n-editor-exercise');
+                var payload = {
+                    action: 'e2n_coach_session_action',
+                    editor_action: editorKind === 'general' ? 'save_general' : (editorKind === 'part' ? 'save_part' : 'save_exercise'),
+                    group_id: field.dataset.groupId,
+                    session_id: field.dataset.sessionId,
+                    session_date: field.dataset.sessionDate
+                };
+                if (editorKind === 'general') {
+                    payload.name = scope.querySelector('[data-field="name"]').value;
+                    payload.objectives = scope.querySelector('[data-field="objectives"]').value;
+                } else if (editorKind === 'part') {
+                    payload.part_id = field.dataset.partId;
+                    payload.title = field.value;
+                } else {
+                    payload.item_id = field.dataset.itemId;
+                    payload.duration = scope.querySelector('[data-field="duration"]').value;
+                    payload.notes = scope.querySelector('[data-field="notes"]').value;
+                }
+                queueSave('session:' + editorKind + ':' + (field.dataset.itemId || field.dataset.partId || field.dataset.sessionId), payload, field);
+            }, 700));
+            return;
+        }
+
         if (!(field instanceof HTMLTextAreaElement) || field.getAttribute('data-e2n-kind') !== 'note') return;
 
         var previous = noteTimers.get(field);
@@ -178,6 +211,30 @@
                 field
             );
         }, 900));
+    });
+
+    document.addEventListener('submit', function (event) {
+        var form = event.target.closest('[data-e2n-session-action]');
+        if (!form) return;
+        event.preventDefault();
+        var confirmation = form.getAttribute('data-confirm');
+        if (confirmation && !window.confirm(confirmation)) return;
+
+        var payload = { action: 'e2n_coach_session_action' };
+        new FormData(form).forEach(function (value, key) { payload[key] = value; });
+        var indicator = form.querySelector('[data-e2n-save-status]') || statusFor(form);
+        saveStatus(indicator, 'saving', e2nCoachAjax.saving);
+        form.querySelectorAll('button').forEach(function (button) { button.disabled = true; });
+        post(payload).then(function (json) {
+            if (json.data && json.data.redirect) {
+                window.location.assign(json.data.redirect);
+                return;
+            }
+            window.location.reload();
+        }).catch(function (error) {
+            saveStatus(indicator, 'error', error.message || e2nCoachAjax.error);
+            form.querySelectorAll('button').forEach(function (button) { button.disabled = false; });
+        });
     });
 
     document.addEventListener('click', function (event) {

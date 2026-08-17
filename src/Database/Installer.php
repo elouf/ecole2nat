@@ -210,6 +210,7 @@ class Installer
             created_by BIGINT UNSIGNED NULL,
             completed_by BIGINT UNSIGNED NULL,
             completed_at DATETIME NULL,
+            coach_editable_copy TINYINT(1) NOT NULL DEFAULT 0,
             created_at DATETIME NOT NULL,
             updated_at DATETIME NULL,
             PRIMARY KEY  (id),

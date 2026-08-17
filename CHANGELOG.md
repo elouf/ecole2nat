@@ -1,6 +1,12 @@
 # Changelog
 
-## Non publié — 0.12.0
+## Non publié — 0.13.0
+
+- Ajoute dans le portail Coach la création d'une séance pour un créneau et la duplication de la séance prévue.
+- Permet d'éditer sur mobile le nom, les objectifs, les parties, les exercices, les durées et les consignes de cette copie avec autosauvegarde.
+- Protège les séances types partagées : seule une copie créée depuis le créneau est modifiable, sous réserve des droits de préparation du groupe et de la date.
+- Ajoute `coach_editable_copy` à `e2n_scheduled_sessions` et porte la version technique du schéma à `0.8.3`.
+- Corrige la bibliothèque d'exercices vide dans l'éditeur Coach en supprimant un filtre sur une colonne inexistante.
 
 - Corrige le planning Coach afin qu’il affiche tous les groupes des saisons actives, et non uniquement ceux d’une saison arbitrairement sélectionnée.
 - Rétablit une section explicite pour les groupes dont le créneau reste impossible à déduire.

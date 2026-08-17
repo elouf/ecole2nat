@@ -123,3 +123,17 @@
 .e2n-attendance-row.is-saving,.e2n-collective-row.is-saving,.e2n-skill.is-saving{box-shadow:inset 3px 0 0 #72aee6}
 .e2n-attendance-row.is-saved,.e2n-collective-row.is-saved,.e2n-skill.is-saved{box-shadow:inset 3px 0 0 #00a32a}
 .e2n-attendance-row.is-error,.e2n-collective-row.is-error,.e2n-skill.is-error{box-shadow:inset 3px 0 0 #d63638;background:#fcf0f1}
+
+/* Éditeur de séance Coach */
+.e2n-session-builder{margin-top:16px;border-top:1px solid #dcdcde;padding-top:12px}
+.e2n-session-builder summary{cursor:pointer;font-weight:700;color:#2271b1}
+.e2n-session-builder form,.e2n-editor-general{display:grid;gap:10px;margin-top:12px}
+.e2n-session-builder label,.e2n-editor-general label,.e2n-editor-exercise label{display:grid;gap:4px;font-size:13px;font-weight:600}
+.e2n-session-builder input,.e2n-session-builder textarea,.e2n-editor-general input,.e2n-editor-general textarea,.e2n-editor-part input,.e2n-editor-part textarea,.e2n-editor-part select{width:100%;box-sizing:border-box}
+.e2n-editor-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.e2n-editor-heading h2{margin:0}.e2n-editor-heading>input{font-size:20px;font-weight:700}
+.e2n-editor-tools{display:flex;align-items:center;gap:14px;flex-wrap:wrap}.e2n-editor-tools form{margin:0}.e2n-editor-tools .e2n-link-button{margin:0}
+.e2n-editor-exercise{display:grid;grid-template-columns:minmax(160px,1fr) 100px minmax(220px,2fr);gap:10px;align-items:end;padding:12px 0;border-top:1px solid #dcdcde}
+.e2n-editor-exercise .e2n-editor-tools{grid-column:1/-1}
+.e2n-editor-add{display:grid;grid-template-columns:minmax(180px,2fr) 90px minmax(150px,1fr) auto;gap:8px;align-items:end;margin-top:14px}
+@media(max-width:700px){.e2n-editor-exercise,.e2n-editor-add{grid-template-columns:1fr}.e2n-editor-exercise .e2n-editor-tools{grid-column:auto}.e2n-editor-heading{align-items:flex-start}.e2n-editor-heading>input{font-size:18px}}

@@ -76,7 +76,7 @@ La contrainte unique `(group_id, user_id)` de `e2n_group_coaches` empêche une d
 
 La contrainte unique `(group_id, user_id, substitution_date)` de `e2n_group_substitutions` empêche de dupliquer un même remplacement. L’affectation permet de préparer la séance jusqu’à la date prévue. Les droits terrain ne sont actifs que lorsque `substitution_date` correspond à la date courante WordPress. Elle ne modifie pas les titulaires permanents. `created_by` conserve l’administrateur ayant enregistré le remplacement.
 
-Dans `e2n_scheduled_sessions`, `status` vaut `planned` ou `completed`. `completed_at` et `completed_by` mémorisent la validation terrain. La contrainte unique `(group_id, session_date)` autorise une seule séance planifiée par groupe et par date.
+Dans `e2n_scheduled_sessions`, `status` vaut `planned` ou `completed`. `completed_at` et `completed_by` mémorisent la validation terrain. La contrainte unique `(group_id, session_date)` autorise une seule séance planifiée par groupe et par date. `coach_editable_copy` vaut `1` uniquement lorsqu'une séance a été créée ou dupliquée depuis ce créneau dans le portail Coach : ce marqueur lie le droit d'édition à la copie et à son affectation datée. Une affectation classique d'une séance de bibliothèque le remet à `0`.
 
 Dans `e2n_attendance`, les statuts persistés sont `present` et `absent`. L’absence de ligne signifie « Non pointé ». La contrainte unique `(group_id, swimmer_id, session_date)` empêche plusieurs pointages du même nageur sur le même créneau daté. Les présences ne modifient jamais l’affectation du nageur à son groupe.
 

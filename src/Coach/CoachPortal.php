@@ -13,6 +13,7 @@ class CoachPortal
     private CoachAccessService $access;
     private CoachPortalRepository $repo;
     private FieldSessionRepository $field;
+    private CoachSessionEditorRepository $editor;
     private EvaluationService $eval;
 
     public function __construct()
@@ -20,6 +21,7 @@ class CoachPortal
         $this->access = new CoachAccessService();
         $this->repo = new CoachPortalRepository();
         $this->field = new FieldSessionRepository();
+        $this->editor = new CoachSessionEditorRepository();
         $this->eval = new EvaluationService();
     }
 
@@ -31,6 +33,7 @@ class CoachPortal
         add_action('wp_ajax_e2n_coach_save_attendance', [$this, 'ajaxSaveAttendance']);
         add_action('wp_ajax_e2n_coach_save_evaluation', [$this, 'ajaxSaveEvaluation']);
         add_action('wp_ajax_e2n_coach_save_note', [$this, 'ajaxSaveNote']);
+        add_action('wp_ajax_e2n_coach_session_action', [$this, 'ajaxSessionAction']);
     }
 
     public function assets(): void
@@ -75,6 +78,7 @@ class CoachPortal
         $groupId = absint($_GET['e2n_group'] ?? 0);
         $swimmerId = absint($_GET['e2n_swimmer'] ?? 0);
         $sessionId = absint($_GET['e2n_session'] ?? 0);
+        $editorSessionId = absint($_GET['e2n_edit_session'] ?? 0);
         $collectiveSkillId = absint($_GET['e2n_collective_skill'] ?? 0);
         $date = $this->requestedDate();
 
@@ -82,7 +86,9 @@ class CoachPortal
         echo '<div class="e2n-coach">';
         $this->header();
 
-        if ($groupId && $swimmerId) {
+        if ($groupId && $editorSessionId) {
+            $this->sessionEditor($groupId, $editorSessionId, $date);
+        } elseif ($groupId && $swimmerId) {
             $this->swimmer($groupId, $swimmerId, $date);
         } elseif ($groupId && $sessionId) {
             $this->session($groupId, $sessionId, $date);
@@ -217,6 +223,9 @@ class CoachPortal
                         </span>
                     </div>
                     <a class="e2n-btn" href="<?php echo esc_url($this->base(['e2n_group' => $gid, 'e2n_session' => (int) $planned['session_id'], 'e2n_date' => $date])); ?>"><?php esc_html_e('Ouvrir la séance', 'ecole2nat'); ?></a>
+                    <?php if ($canPrepare && (int) ($planned['coach_editable_copy'] ?? 0) === 1) : ?>
+                        <a class="e2n-btn" href="<?php echo esc_url($this->base(['e2n_group' => $gid, 'e2n_edit_session' => (int) $planned['session_id'], 'e2n_date' => $date])); ?>"><?php esc_html_e('Modifier la séance', 'ecole2nat'); ?></a>
+                    <?php endif; ?>
                 </div>
                 <?php if ($canOperate) : ?>
                     <form method="post" class="e2n-inline">
@@ -245,6 +254,21 @@ class CoachPortal
                     </select>
                     <button class="e2n-btn" type="submit"><?php echo esc_html($planned ? __('Changer la séance', 'ecole2nat') : __('Affecter une séance', 'ecole2nat')); ?></button>
                 </form>
+            <?php endif; ?>
+            <?php if ($canPrepare) : ?>
+                <details class="e2n-session-builder">
+                    <summary><?php echo esc_html($planned ? __('Créer ou dupliquer pour ce créneau', 'ecole2nat') : __('Créer la séance de ce créneau', 'ecole2nat')); ?></summary>
+                    <form class="e2n-editor-action" data-e2n-session-action>
+                        <input type="hidden" name="editor_action" value="create_session">
+                        <input type="hidden" name="group_id" value="<?php echo (int) $gid; ?>">
+                        <input type="hidden" name="session_date" value="<?php echo esc_attr($date); ?>">
+                        <?php if ($planned) : ?><input type="hidden" name="source_session_id" value="<?php echo (int) $planned['session_id']; ?>"><?php endif; ?>
+                        <label><?php esc_html_e('Nom', 'ecole2nat'); ?><input name="name" required value="<?php echo esc_attr($planned ? sprintf(__('Copie de %s', 'ecole2nat'), $planned['session_name']) : ''); ?>"></label>
+                        <label><?php esc_html_e('Objectifs', 'ecole2nat'); ?><textarea name="objectives" rows="3"><?php echo esc_textarea($planned['objectives'] ?? ''); ?></textarea></label>
+                        <button class="e2n-btn" type="submit"><?php echo esc_html($planned ? __('Dupliquer et adapter', 'ecole2nat') : __('Créer et préparer', 'ecole2nat')); ?></button>
+                        <span class="e2n-autosave-status" data-e2n-save-status aria-live="polite"></span>
+                    </form>
+                </details>
             <?php endif; ?>
         </section>
 
@@ -420,6 +444,108 @@ class CoachPortal
             </div>
         </section>
         <?php
+    }
+
+    private function sessionEditor(int $gid, int $sid, ?string $date): void
+    {
+        $g = $this->repo->group($gid);
+        $date = $date ?? '';
+        $data = $this->access->canPrepareGroup($gid, $date) ? $this->editor->editor($gid, $date, $sid) : null;
+        if (!$g || !$data) {
+            echo '<p>' . esc_html__('Cette séance ne peut pas être modifiée dans ce contexte.', 'ecole2nat') . '</p>';
+            return;
+        }
+        $session = $data['session'];
+        ?>
+        <a class="e2n-back" href="<?php echo esc_url($this->base(['e2n_group' => $gid, 'e2n_date' => $date])); ?>">← <?php esc_html_e('Groupe', 'ecole2nat'); ?></a>
+        <h1><?php esc_html_e('Préparer la séance', 'ecole2nat'); ?></h1>
+        <p><?php echo esc_html($g['name'] . ' · ' . wp_date('d/m/Y', strtotime($date))); ?></p>
+        <section class="e2n-card e2n-editor-general">
+            <div class="e2n-editor-heading"><h2><?php esc_html_e('Informations générales', 'ecole2nat'); ?></h2><strong><?php echo (int) $data['duration']; ?> min</strong></div>
+            <div class="e2n-autosave-status" data-e2n-save-status aria-live="polite"></div>
+            <label><?php esc_html_e('Nom', 'ecole2nat'); ?><input required value="<?php echo esc_attr($session['name']); ?>" data-e2n-editor-field="general" data-field="name" data-group-id="<?php echo (int) $gid; ?>" data-session-id="<?php echo (int) $sid; ?>" data-session-date="<?php echo esc_attr($date); ?>"></label>
+            <label><?php esc_html_e('Objectifs', 'ecole2nat'); ?><textarea rows="4" data-e2n-editor-field="general" data-field="objectives" data-group-id="<?php echo (int) $gid; ?>" data-session-id="<?php echo (int) $sid; ?>" data-session-date="<?php echo esc_attr($date); ?>"><?php echo esc_textarea($session['objectives']); ?></textarea></label>
+        </section>
+        <?php foreach ($data['parts'] as $part) : ?>
+            <section class="e2n-card e2n-editor-part">
+                <div class="e2n-editor-heading">
+                    <input aria-label="<?php esc_attr_e('Titre de la partie', 'ecole2nat'); ?>" value="<?php echo esc_attr($part['title']); ?>" data-e2n-editor-field="part" data-part-id="<?php echo (int) $part['id']; ?>" data-group-id="<?php echo (int) $gid; ?>" data-session-id="<?php echo (int) $sid; ?>" data-session-date="<?php echo esc_attr($date); ?>">
+                    <span><?php echo (int) $part['duration']; ?> min</span>
+                </div>
+                <div class="e2n-autosave-status" data-e2n-save-status aria-live="polite"></div>
+                <div class="e2n-editor-tools">
+                    <?php $this->editorButton('move_part', __('Monter', 'ecole2nat'), $gid, $sid, $date, ['part_id' => (int) $part['id'], 'direction' => 'up']); ?>
+                    <?php $this->editorButton('move_part', __('Descendre', 'ecole2nat'), $gid, $sid, $date, ['part_id' => (int) $part['id'], 'direction' => 'down']); ?>
+                    <?php $this->editorButton('delete_part', __('Supprimer', 'ecole2nat'), $gid, $sid, $date, ['part_id' => (int) $part['id']], __('Supprimer cette partie et ses exercices ?', 'ecole2nat')); ?>
+                </div>
+                <?php foreach ($part['exercises'] as $item) : ?>
+                    <article class="e2n-editor-exercise">
+                        <strong><?php echo esc_html($item['name']); ?></strong>
+                        <label><?php esc_html_e('Durée (min)', 'ecole2nat'); ?><input type="number" min="1" value="<?php echo (int) $item['duration']; ?>" data-e2n-editor-field="exercise" data-field="duration" data-item-id="<?php echo (int) $item['id']; ?>" data-group-id="<?php echo (int) $gid; ?>" data-session-id="<?php echo (int) $sid; ?>" data-session-date="<?php echo esc_attr($date); ?>"></label>
+                        <label><?php esc_html_e('Consigne coach', 'ecole2nat'); ?><textarea rows="2" data-e2n-editor-field="exercise" data-field="notes" data-item-id="<?php echo (int) $item['id']; ?>" data-group-id="<?php echo (int) $gid; ?>" data-session-id="<?php echo (int) $sid; ?>" data-session-date="<?php echo esc_attr($date); ?>"><?php echo esc_textarea($item['coach_notes']); ?></textarea></label>
+                        <div class="e2n-editor-tools">
+                            <?php $this->editorButton('move_exercise', __('Monter', 'ecole2nat'), $gid, $sid, $date, ['item_id' => (int) $item['id'], 'direction' => 'up']); ?>
+                            <?php $this->editorButton('move_exercise', __('Descendre', 'ecole2nat'), $gid, $sid, $date, ['item_id' => (int) $item['id'], 'direction' => 'down']); ?>
+                            <?php $this->editorButton('delete_exercise', __('Retirer', 'ecole2nat'), $gid, $sid, $date, ['item_id' => (int) $item['id']], __('Retirer cet exercice ?', 'ecole2nat')); ?>
+                        </div>
+                    </article>
+                <?php endforeach; ?>
+                <form class="e2n-editor-action e2n-editor-add" data-e2n-session-action>
+                    <input type="hidden" name="editor_action" value="create_exercise"><input type="hidden" name="group_id" value="<?php echo (int) $gid; ?>"><input type="hidden" name="session_id" value="<?php echo (int) $sid; ?>"><input type="hidden" name="session_date" value="<?php echo esc_attr($date); ?>"><input type="hidden" name="part_id" value="<?php echo (int) $part['id']; ?>">
+                    <select name="exercise_id" required><option value=""><?php esc_html_e('Ajouter un exercice…', 'ecole2nat'); ?></option><?php foreach ($data['library'] as $exercise) : ?><option value="<?php echo (int) $exercise['id']; ?>"><?php echo esc_html($exercise['domain_name'] . ' · ' . $exercise['skill_name'] . ' · ' . $exercise['name']); ?></option><?php endforeach; ?></select>
+                    <input type="number" name="duration" min="1" value="5" aria-label="<?php esc_attr_e('Durée en minutes', 'ecole2nat'); ?>"><input name="notes" placeholder="<?php esc_attr_e('Consigne coach', 'ecole2nat'); ?>"><button class="e2n-btn" type="submit"><?php esc_html_e('Ajouter', 'ecole2nat'); ?></button>
+                </form>
+            </section>
+        <?php endforeach; ?>
+        <section class="e2n-card"><form class="e2n-editor-action e2n-editor-add" data-e2n-session-action><input type="hidden" name="editor_action" value="create_part"><input type="hidden" name="group_id" value="<?php echo (int) $gid; ?>"><input type="hidden" name="session_id" value="<?php echo (int) $sid; ?>"><input type="hidden" name="session_date" value="<?php echo esc_attr($date); ?>"><input name="title" required placeholder="<?php esc_attr_e('Nouvelle partie', 'ecole2nat'); ?>"><button class="e2n-btn" type="submit"><?php esc_html_e('Ajouter une partie', 'ecole2nat'); ?></button><span class="e2n-autosave-status" data-e2n-save-status aria-live="polite"></span></form></section>
+        <?php
+    }
+
+    private function editorButton(string $action, string $label, int $gid, int $sid, string $date, array $fields, string $confirm = ''): void
+    {
+        echo '<form class="e2n-editor-action" data-e2n-session-action' . ($confirm !== '' ? ' data-confirm="' . esc_attr($confirm) . '"' : '') . '>';
+        foreach (array_merge(['editor_action' => $action, 'group_id' => $gid, 'session_id' => $sid, 'session_date' => $date], $fields) as $name => $value) {
+            echo '<input type="hidden" name="' . esc_attr($name) . '" value="' . esc_attr((string) $value) . '">';
+        }
+        echo '<button type="submit" class="e2n-link-button">' . esc_html($label) . '</button></form>';
+    }
+
+    public function ajaxSessionAction(): void
+    {
+        check_ajax_referer('e2n_coach_ajax', 'nonce');
+        $gid = absint($_POST['group_id'] ?? 0);
+        $sid = absint($_POST['session_id'] ?? 0);
+        $date = sanitize_text_field(wp_unslash((string) ($_POST['session_date'] ?? '')));
+        $action = sanitize_key(wp_unslash((string) ($_POST['editor_action'] ?? '')));
+        if (!$this->access->canPrepareGroup($gid, $date)) {
+            wp_send_json_error(['message' => __('Modification non autorisée.', 'ecole2nat')], 403);
+        }
+
+        if ($action === 'create_session') {
+            $sid = $this->editor->createForSlot($gid, $date, sanitize_text_field(wp_unslash((string) ($_POST['name'] ?? ''))), sanitize_textarea_field(wp_unslash((string) ($_POST['objectives'] ?? ''))), get_current_user_id(), absint($_POST['source_session_id'] ?? 0));
+            if ($sid > 0) wp_send_json_success(['redirect' => $this->base(['e2n_group' => $gid, 'e2n_edit_session' => $sid, 'e2n_date' => $date])]);
+        } elseif ($action === 'save_general') {
+            $ok = $this->editor->updateGeneral($gid, $date, $sid, sanitize_text_field(wp_unslash((string) ($_POST['name'] ?? ''))), sanitize_textarea_field(wp_unslash((string) ($_POST['objectives'] ?? ''))));
+        } elseif ($action === 'create_part') {
+            $ok = $this->editor->createPart($gid, $date, $sid, sanitize_text_field(wp_unslash((string) ($_POST['title'] ?? ''))));
+        } elseif ($action === 'save_part') {
+            $ok = $this->editor->updatePart($gid, $date, $sid, absint($_POST['part_id'] ?? 0), sanitize_text_field(wp_unslash((string) ($_POST['title'] ?? ''))));
+        } elseif ($action === 'move_part') {
+            $ok = $this->editor->movePart($gid, $date, $sid, absint($_POST['part_id'] ?? 0), sanitize_key(wp_unslash((string) ($_POST['direction'] ?? ''))));
+        } elseif ($action === 'delete_part') {
+            $ok = $this->editor->deletePart($gid, $date, $sid, absint($_POST['part_id'] ?? 0));
+        } elseif ($action === 'create_exercise') {
+            $ok = $this->editor->createExercise($gid, $date, $sid, absint($_POST['part_id'] ?? 0), absint($_POST['exercise_id'] ?? 0), absint($_POST['duration'] ?? 0), sanitize_textarea_field(wp_unslash((string) ($_POST['notes'] ?? ''))));
+        } elseif ($action === 'save_exercise') {
+            $ok = $this->editor->updateExercise($gid, $date, $sid, absint($_POST['item_id'] ?? 0), absint($_POST['duration'] ?? 0), sanitize_textarea_field(wp_unslash((string) ($_POST['notes'] ?? ''))));
+        } elseif ($action === 'move_exercise') {
+            $ok = $this->editor->moveExercise($gid, $date, $sid, absint($_POST['item_id'] ?? 0), sanitize_key(wp_unslash((string) ($_POST['direction'] ?? ''))));
+        } elseif ($action === 'delete_exercise') {
+            $ok = $this->editor->deleteExercise($gid, $date, $sid, absint($_POST['item_id'] ?? 0));
+        }
+
+        if (!empty($ok)) wp_send_json_success(['message' => __('Séance enregistrée.', 'ecole2nat')]);
+        wp_send_json_error(['message' => __('Impossible d’enregistrer la séance.', 'ecole2nat')], 400);
     }
 
     public function ajaxSaveAttendance(): void
