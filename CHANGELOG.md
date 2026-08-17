@@ -1,6 +1,13 @@
 # Changelog
 
-## Non publié — 0.13.1
+## Non publié — 0.14.0
+
+- Distingue les adaptations ponctuelles créées depuis un créneau des séances types réutilisables.
+- Exclut ces adaptations des sélecteurs et de la bibliothèque générale sans supprimer leur historique.
+- Ajoute l'action Coach « Conserver comme séance type ».
+- Ajoute `is_library` à `e2n_sessions` et porte la version technique du schéma à `0.8.4` ; les séances existantes restent dans la bibliothèque.
+- Autorise plusieurs utilisations du même exercice dans une partie, avec des durées et consignes distinctes.
+- Retire de façon idempotente l'ancien index unique `part_exercise` et porte la version technique du schéma à `0.8.5`.
 
 - Ajoute une recherche instantanée dans la bibliothèque d'exercices de l'éditeur Coach.
 - Regroupe les exercices par domaine et compétence pour accélérer leur sélection sur mobile.

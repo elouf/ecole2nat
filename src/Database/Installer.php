@@ -15,9 +15,12 @@ class Installer
         self::createTables();
         self::migrateSeasonHistory();
         self::ensureCoachRoleAndPage();
+        $sessionExercisesMigrated = self::allowRepeatedSessionExercises();
 
         update_option('e2n_version', E2N_VERSION);
-        update_option('e2n_db_version', E2N_DB_VERSION);
+        if ($sessionExercisesMigrated) {
+            update_option('e2n_db_version', E2N_DB_VERSION);
+        }
     }
 
     public static function deactivate(): void
@@ -38,7 +41,9 @@ class Installer
             self::createTables();
             self::migrateSeasonHistory();
             self::ensureCoachRoleAndPage();
-            update_option('e2n_db_version', E2N_DB_VERSION);
+            if (self::allowRepeatedSessionExercises()) {
+                update_option('e2n_db_version', E2N_DB_VERSION);
+            }
         }
 
         if ($installedVersion !== E2N_VERSION) {
@@ -290,6 +295,7 @@ class Installer
             name varchar(150) NOT NULL,
             objectives text NULL,
             is_active tinyint(1) NOT NULL DEFAULT 1,
+            is_library tinyint(1) NOT NULL DEFAULT 1,
             created_at datetime NOT NULL,
             updated_at datetime NULL,
             PRIMARY KEY  (id),
@@ -327,7 +333,6 @@ class Installer
             created_at datetime NOT NULL,
             updated_at datetime NULL,
             PRIMARY KEY  (id),
-            UNIQUE KEY part_exercise (part_id,exercise_id),
             KEY part_id (part_id),
             KEY exercise_id (exercise_id),
             KEY position (position)
@@ -426,6 +431,19 @@ class Installer
         ) {$charsetCollate};";
 
         dbDelta($sql);
+    }
+
+    private static function allowRepeatedSessionExercises(): bool
+    {
+        global $wpdb;
+
+        $table = Config::table('session_exercises');
+        $legacyIndex = $wpdb->get_var("SHOW INDEX FROM {$table} WHERE Key_name = 'part_exercise'");
+        if ($legacyIndex === null) {
+            return true;
+        }
+
+        return $wpdb->query("ALTER TABLE {$table} DROP INDEX part_exercise") !== false;
     }
 
     /**

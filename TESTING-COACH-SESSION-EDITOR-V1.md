@@ -8,9 +8,9 @@
 
 ## Migration
 
-1. Charger WordPress avec une base en version `0.8.2`, sans désactiver le plugin.
-2. Vérifier que `e2n_scheduled_sessions.coach_editable_copy` existe avec `NOT NULL DEFAULT 0` et que `e2n_db_version` vaut `0.8.3`.
-3. Vérifier que les affectations existantes valent `0` et que leurs données sont conservées.
+1. Charger WordPress avec une base en version `0.8.3`, puis refaire le contrôle depuis `0.8.4`, sans désactiver le plugin.
+2. Vérifier que `e2n_sessions.is_library` existe avec `NOT NULL DEFAULT 1`, que l'index unique `part_exercise` n'existe plus et que `e2n_db_version` vaut `0.8.5`.
+3. Vérifier que toutes les séances existantes valent `1`, restent visibles dans le BO et que leurs données sont conservées.
 4. Recharger une seconde fois : aucune erreur ni modification indésirable ne doit apparaître.
 5. Vérifier aussi une installation sur base vide.
 
@@ -23,6 +23,15 @@
 5. Modifier la copie et vérifier que la séance type source ne change jamais.
 6. Réaffecter une séance de bibliothèque avec « Changer la séance » : le bouton « Modifier la séance » doit disparaître et `coach_editable_copy` revenir à `0`.
 
+## Adaptations ponctuelles et bibliothèque
+
+1. Créer puis dupliquer une séance depuis un créneau : vérifier que `is_library=0` dans les deux cas.
+2. Vérifier que ces adaptations restent consultables et modifiables depuis leur créneau daté.
+3. Vérifier qu'elles n'apparaissent ni dans le sélecteur « Affecter une séance », ni dans la liste BO des séances types.
+4. Cliquer sur « Conserver comme séance type », confirmer, puis vérifier que `is_library=1`.
+5. Vérifier que la séance apparaît désormais dans la liste BO et dans le sélecteur de sa catégorie, sans changement de contenu ni de séance affectée.
+6. Comme coach non autorisé, forger l'action `promote_session` : réponse `403` et `is_library` inchangé.
+
 ## Édition et autosauvegarde
 
 1. Modifier rapidement plusieurs fois le nom, les objectifs, le titre d'une partie, une durée et une consigne.
@@ -30,10 +39,11 @@
 3. Recharger : la dernière valeur saisie doit être persistée.
 4. Ajouter, déplacer et supprimer une partie ; vérifier l'ordre déterministe après rechargement.
 5. Ajouter, déplacer et retirer un exercice ; vérifier la durée totale affichée.
-6. Vérifier qu'un exercice d'une autre catégorie et un doublon dans la même partie sont refusés côté serveur.
-7. Vérifier que les exercices rattachés aux domaines et compétences actifs de la catégorie sont proposés, sans erreur SQL dans `debug.log`.
-8. Rechercher un exercice par son nom, son domaine puis sa compétence ; vérifier le compteur, les regroupements et l'ajout du résultat sélectionné.
-9. Effacer la recherche : tous les exercices doivent réapparaître dans leur ordre initial.
+6. Ajouter deux fois le même exercice dans une partie avec deux durées ou consignes différentes ; vérifier que les deux utilisations sont conservées, ordonnées et modifiables indépendamment.
+7. Vérifier qu'un exercice d'une autre catégorie reste refusé côté serveur.
+8. Vérifier que les exercices rattachés aux domaines et compétences actifs de la catégorie sont proposés, sans erreur SQL dans `debug.log`.
+9. Rechercher un exercice par son nom, son domaine puis sa compétence ; vérifier le compteur, les regroupements et l'ajout du résultat sélectionné.
+10. Effacer la recherche : tous les exercices doivent réapparaître dans leur ordre initial.
 
 ## Droits et sécurité
 

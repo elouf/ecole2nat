@@ -40,6 +40,7 @@ Le module permet de :
 - organiser la séance en parties ;
 - ajouter des exercices depuis la bibliothèque ;
 - définir une durée et des consignes propres à chaque utilisation ;
+- réutiliser plusieurs fois le même exercice avec des consignes différentes ;
 - réordonner ou retirer les exercices ;
 - renommer, déplacer ou supprimer les parties ;
 - calculer automatiquement les durées ;
@@ -61,6 +62,7 @@ Depuis un créneau, un titulaire ou le remplaçant autorisé pour la date peut :
 
 - affecter ou changer la séance prévue pour la date ;
 - créer une séance pour le créneau ou dupliquer la séance prévue, puis modifier cette copie (objectifs, parties, exercices, durées et consignes) avec autosauvegarde et recherche rapide dans la bibliothèque ;
+- conserver explicitement une adaptation ponctuelle comme séance type réutilisable ;
 - marquer la séance comme réalisée ;
 - pointer rapidement les nageurs présents ou absents ;
 - ouvrir une fiche nageur avec ses informations utiles et ses acquis ;
@@ -68,6 +70,8 @@ Depuis un créneau, un titulaire ou le remplaçant autorisé pour la date peut :
 - choisir une compétence et évaluer collectivement tout le groupe.
 
 Les présences sont historisées par date et ne modifient jamais l’affectation théorique du nageur à son groupe.
+
+Les séances créées ou dupliquées depuis un créneau sont ponctuelles par défaut : elles restent consultables depuis ce créneau mais ne sont pas proposées dans la bibliothèque générale. Le coach peut choisir « Conserver comme séance type » pour les rendre réutilisables.
 
 ## Prérequis
 

@@ -44,8 +44,9 @@ final class CoachSessionEditorRepository
             'name' => $name,
             'objectives' => $objectives,
             'is_active' => 1,
+            'is_library' => 0,
             'created_at' => $now,
-        ], ['%d', '%s', '%s', '%d', '%s']);
+        ], ['%d', '%s', '%s', '%d', '%d', '%s']);
         if ($created === false) {
             $wpdb->query('ROLLBACK');
             return 0;
@@ -178,7 +179,6 @@ final class CoachSessionEditorRepository
         global $wpdb;
         if (!$this->partBelongs($groupId, $date, $sessionId, $partId) || $duration <= 0 || !$this->exerciseAllowed($sessionId, $exerciseId)) return false;
         $table = Config::table('session_exercises');
-        if ((int)$wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$table} WHERE part_id=%d AND exercise_id=%d",$partId,$exerciseId))>0) return false;
         $position=(int)$wpdb->get_var($wpdb->prepare("SELECT COALESCE(MAX(position),0)+1 FROM {$table} WHERE part_id=%d",$partId));
         return $wpdb->insert($table,['part_id'=>$partId,'exercise_id'=>$exerciseId,'position'=>$position,'duration'=>$duration,'coach_notes'=>$notes,'created_at'=>current_time('mysql')],['%d','%d','%d','%d','%s','%s'])!==false;
     }
@@ -211,6 +211,21 @@ final class CoachSessionEditorRepository
             'SELECT COUNT(*) FROM '.Config::table('scheduled_sessions').' WHERE group_id=%d AND session_date=%s AND session_id=%d AND coach_editable_copy=1',
             $groupId,$date,$sessionId
         ))>0;
+    }
+
+    public function promoteToLibrary(int $groupId, string $date, int $sessionId): bool
+    {
+        global $wpdb;
+        if (!$this->isEditableContext($groupId, $date, $sessionId)) {
+            return false;
+        }
+        return $wpdb->update(
+            Config::table('sessions'),
+            ['is_library' => 1, 'updated_at' => current_time('mysql')],
+            ['id' => $sessionId],
+            ['%d', '%s'],
+            ['%d']
+        ) !== false;
     }
 
     private function group(int $id):?array {global $wpdb;$g=Config::table('groups');$s=Config::table('seasons');$r=$wpdb->get_row($wpdb->prepare("SELECT g.* FROM {$g} g INNER JOIN {$s} s ON s.id=g.season_id WHERE g.id=%d AND g.is_active=1 AND s.is_active=1",$id),ARRAY_A);return is_array($r)?$r:null;}

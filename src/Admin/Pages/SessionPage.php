@@ -569,7 +569,6 @@ class SessionPage
             'exercise_updated' => ['success', __('L’exercice a bien été modifié.', 'ecole2nat')],
             'exercise_deleted' => ['success', __('L’exercice a bien été retiré de la séance.', 'ecole2nat')],
             'exercise_moved' => ['success', __('L’ordre des exercices a bien été modifié.', 'ecole2nat')],
-            'exercise_duplicate' => ['warning', __('Cet exercice est déjà présent dans cette partie.', 'ecole2nat')],
             'invalid' => ['error', __('Veuillez remplir correctement les champs obligatoires.', 'ecole2nat')],
             'error' => ['error', __('Une erreur est survenue.', 'ecole2nat')],
         ];

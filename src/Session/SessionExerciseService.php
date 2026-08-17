@@ -38,13 +38,6 @@ class SessionExerciseService
             ];
         }
 
-        if ($this->repository->exists($partId, $exerciseId)) {
-            return [
-                'success' => false,
-                'message' => 'exercise_duplicate',
-            ];
-        }
-
         $created = $this->repository->create(
             $partId,
             $exerciseId,

@@ -44,7 +44,7 @@ Les principales colonnes spécifiques de `e2n_swimmers` sont :
 
 ## Séances types
 
-- `e2n_sessions` : informations générales d’une séance type rattachée à une catégorie.
+- `e2n_sessions` : informations générales d’une séance rattachée à une catégorie. `is_library=1` désigne une séance type réutilisable ; `is_library=0` une adaptation ponctuelle créée depuis un créneau Coach.
 - `e2n_session_parts` : parties ordonnées d’une séance.
 - `e2n_session_exercises` : exercices ordonnés d’une partie, avec durée et consignes spécifiques.
 
@@ -52,7 +52,9 @@ Les principales colonnes spécifiques de `e2n_swimmers` sont :
 Séance → Partie → Exercice utilisé
 ```
 
-La contrainte unique `(part_id, exercise_id)` empêche d’associer deux fois le même exercice à une partie. La durée totale d’une partie et de la séance est calculée depuis `e2n_session_exercises.duration`.
+Un même exercice de bibliothèque peut être utilisé plusieurs fois dans une partie. Chaque ligne de `e2n_session_exercises` reste une utilisation indépendante, avec sa position, sa durée et sa consigne Coach. La durée totale d’une partie et de la séance est calculée depuis `e2n_session_exercises.duration`.
+
+Les séances existantes et celles créées dans le back-office ont `is_library=1`. Une création ou duplication depuis le portail Coach commence à `0` et reste consultable par son affectation dans `e2n_scheduled_sessions`. L’action explicite « Conserver comme séance type » la passe à `1` sans modifier son contenu ni son historique.
 
 ## Évaluations progressives
 

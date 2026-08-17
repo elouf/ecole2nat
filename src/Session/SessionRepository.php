@@ -38,6 +38,7 @@ class SessionRepository
             FROM {$sessionsTable} AS sessions
             INNER JOIN {$categoriesTable} AS categories
                 ON categories.id = sessions.category_id
+            WHERE sessions.is_library = 1
             ORDER BY
                 categories.sort_order ASC,
                 sessions.name ASC",
@@ -86,12 +87,14 @@ class SessionRepository
                 'name' => $name,
                 'objectives' => $objectives,
                 'is_active' => 1,
+                'is_library' => 1,
                 'created_at' => current_time('mysql'),
             ],
             [
                 '%d',
                 '%s',
                 '%s',
+                '%d',
                 '%d',
                 '%s',
             ]

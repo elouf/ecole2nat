@@ -460,6 +460,14 @@ class CoachPortal
         <a class="e2n-back" href="<?php echo esc_url($this->base(['e2n_group' => $gid, 'e2n_date' => $date])); ?>">← <?php esc_html_e('Groupe', 'ecole2nat'); ?></a>
         <h1><?php esc_html_e('Préparer la séance', 'ecole2nat'); ?></h1>
         <p><?php echo esc_html($g['name'] . ' · ' . wp_date('d/m/Y', strtotime($date))); ?></p>
+        <?php if ((int) ($session['is_library'] ?? 1) === 0) : ?>
+            <section class="e2n-card e2n-editor-library">
+                <div><strong><?php esc_html_e('Adaptation ponctuelle', 'ecole2nat'); ?></strong><p><?php esc_html_e('Cette séance reste liée à ce créneau et n’encombre pas la bibliothèque générale.', 'ecole2nat'); ?></p></div>
+                <?php $this->editorButton('promote_session', __('Conserver comme séance type', 'ecole2nat'), $gid, $sid, $date, [], __('Ajouter cette séance à la bibliothèque générale ?', 'ecole2nat')); ?>
+            </section>
+        <?php else : ?>
+            <p class="e2n-info"><?php esc_html_e('Cette séance est conservée dans la bibliothèque générale.', 'ecole2nat'); ?></p>
+        <?php endif; ?>
         <section class="e2n-card e2n-editor-general">
             <div class="e2n-editor-heading"><h2><?php esc_html_e('Informations générales', 'ecole2nat'); ?></h2><strong><?php echo (int) $data['duration']; ?> min</strong></div>
             <div class="e2n-autosave-status" data-e2n-save-status aria-live="polite"></div>
@@ -565,6 +573,8 @@ class CoachPortal
             $ok = $this->editor->moveExercise($gid, $date, $sid, absint($_POST['item_id'] ?? 0), sanitize_key(wp_unslash((string) ($_POST['direction'] ?? ''))));
         } elseif ($action === 'delete_exercise') {
             $ok = $this->editor->deleteExercise($gid, $date, $sid, absint($_POST['item_id'] ?? 0));
+        } elseif ($action === 'promote_session') {
+            $ok = $this->editor->promoteToLibrary($gid, $date, $sid);
         }
 
         if (!empty($ok)) wp_send_json_success(['message' => __('Séance enregistrée.', 'ecole2nat')]);
