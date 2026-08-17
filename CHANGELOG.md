@@ -1,6 +1,10 @@
 # Changelog
 
-## Non publié — 0.15.0
+## Non publié — 0.16.0
+
+- Ajoute la navigation par semaine dans le planning Coach et affiche la date de chaque journée.
+- Ajoute la navigation entre les occurrences précédentes et suivantes depuis la page d'un groupe.
+- Réserve les opérations terrain au jour courant : le passé reste consultable et le futur permet seulement de préparer la séance, sauf pour les administrateurs.
 
 - Ajoute une commande `composer test` sans dépendance supplémentaire, avec couverture initiale des droits Coach, créneaux, durées et lecture Excel.
 - Rend le repository des droits Coach injectable afin de tester les règles métier sans base WordPress.

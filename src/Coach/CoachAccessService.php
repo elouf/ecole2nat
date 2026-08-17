@@ -32,7 +32,7 @@ class CoachAccessService
 
         $userId = get_current_user_id();
         if ($this->repository->isTitular($userId, $groupId)) {
-            return true;
+            return $sessionDate >= current_time('Y-m-d');
         }
 
         return $sessionDate >= current_time('Y-m-d')
@@ -51,7 +51,7 @@ class CoachAccessService
 
         $userId = get_current_user_id();
         if ($this->repository->isTitular($userId, $groupId)) {
-            return true;
+            return $sessionDate === current_time('Y-m-d');
         }
 
         return $sessionDate === current_time('Y-m-d')
@@ -65,7 +65,15 @@ class CoachAccessService
         }
 
         if ($this->repository->isTitular(get_current_user_id(), $groupId)) {
-            return __('Titulaire · édition autorisée', 'ecole2nat');
+            if ($sessionDate === current_time('Y-m-d')) {
+                return __('Titulaire · édition autorisée aujourd’hui', 'ecole2nat');
+            }
+
+            if ($sessionDate > current_time('Y-m-d')) {
+                return __('Titulaire · préparation autorisée', 'ecole2nat');
+            }
+
+            return __('Consultation · date passée', 'ecole2nat');
         }
 
         if ($sessionDate === current_time('Y-m-d')
@@ -78,7 +86,9 @@ class CoachAccessService
             return __('Remplaçant prévu · préparation autorisée', 'ecole2nat');
         }
 
-        return __('Consultation', 'ecole2nat');
+        return $sessionDate < current_time('Y-m-d')
+            ? __('Consultation · date passée', 'ecole2nat')
+            : __('Consultation', 'ecole2nat');
     }
 
     public function isSubstituteForDate(int $groupId, string $date): bool

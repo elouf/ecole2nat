@@ -58,9 +58,15 @@ expectSame(false, $service->canView(), 'Un utilisateur sans capacité ne voit pa
 expectSame(false, $service->canPrepareGroup(4, '2026-08-17'), 'Un utilisateur sans capacité ne prépare pas');
 
 $service = accessService(['e2n_coach_access'], ['10:4']);
-expectSame(true, $service->canPrepareGroup(4, '2020-01-01'), 'Un titulaire peut préparer une date passée');
-expectSame(true, $service->canOperateGroup(4, '2020-01-01'), 'Un titulaire conserve les droits terrain');
-expectSame('Titulaire · édition autorisée', $service->accessLabel(4, '2026-08-17'), 'Libellé titulaire');
+expectSame(false, $service->canPrepareGroup(4, '2026-08-16'), 'Un titulaire ne modifie pas une date passée');
+expectSame(false, $service->canOperateGroup(4, '2026-08-16'), 'Un titulaire ne dispose pas des droits terrain dans le passé');
+expectSame(true, $service->canPrepareGroup(4, '2026-08-17'), 'Un titulaire peut préparer le jour courant');
+expectSame(true, $service->canOperateGroup(4, '2026-08-17'), 'Un titulaire dispose des droits terrain le jour courant');
+expectSame(true, $service->canPrepareGroup(4, '2026-08-18'), 'Un titulaire peut préparer une date future');
+expectSame(false, $service->canOperateGroup(4, '2026-08-18'), 'Un titulaire ne dispose pas des droits terrain dans le futur');
+expectSame('Consultation · date passée', $service->accessLabel(4, '2026-08-16'), 'Libellé titulaire passé');
+expectSame('Titulaire · édition autorisée aujourd’hui', $service->accessLabel(4, '2026-08-17'), 'Libellé titulaire du jour');
+expectSame('Titulaire · préparation autorisée', $service->accessLabel(4, '2026-08-18'), 'Libellé titulaire futur');
 
 $service = accessService(['e2n_coach_access'], [], ['10:4:2026-08-17', '10:4:2026-08-18', '10:4:2026-08-16']);
 expectSame(true, $service->canPrepareGroup(4, '2026-08-18'), 'Un remplaçant futur peut préparer');

@@ -58,10 +58,11 @@
 
 1. Vérifier l'ensemble du parcours comme administrateur et comme titulaire.
 2. Comme remplaçant futur, vérifier que la préparation est autorisée avant la date prévue.
-3. Après la date d'un remplacement, vérifier que l'éditeur n'est plus accessible au remplaçant.
-4. Comme coach authentifié mais non autorisé, forger chaque action AJAX : réponse `403`, aucune écriture.
-5. Rejouer une action avec nonce absent ou invalide : aucune écriture.
-6. Modifier `group_id`, `session_id`, `part_id`, `item_id`, la date ou l'exercice dans la requête : aucune ressource hors contexte ne doit être modifiée.
+3. Comme titulaire ou remplaçant, vérifier que la préparation future est autorisée, que les opérations terrain sont réservées au jour courant et que le passé reste en consultation.
+4. Après la date d'un remplacement, vérifier que l'éditeur n'est plus accessible au remplaçant.
+5. Comme coach authentifié mais non autorisé, forger chaque action AJAX : réponse `403`, aucune écriture.
+6. Rejouer une action avec nonce absent ou invalide : aucune écriture.
+7. Modifier `group_id`, `session_id`, `part_id`, `item_id`, la date ou l'exercice dans la requête : aucune ressource hors contexte ne doit être modifiée.
 
 ## Ergonomie et non-régression
 

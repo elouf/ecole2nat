@@ -134,9 +134,24 @@ class CoachPortal
         $groups = $this->repo->groups();
         $titular = $this->access->titularGroupIds();
         $days = [1 => 'Lundi', 2 => 'Mardi', 3 => 'Mercredi', 4 => 'Jeudi', 5 => 'Vendredi', 6 => 'Samedi', 7 => 'Dimanche'];
+        $weekStart = $this->requestedWeekStart();
+        $previousWeek = $weekStart->modify('-7 days')->format('Y-m-d');
+        $nextWeek = $weekStart->modify('+7 days')->format('Y-m-d');
+        $currentWeek = $this->currentWeekStart();
+        $weekEnd = $weekStart->modify('+6 days');
         ?>
         <div class="e2n-coach-main">
             <h1><?php esc_html_e('Planning hebdomadaire', 'ecole2nat'); ?></h1>
+            <nav class="e2n-date-nav e2n-week-nav" aria-label="<?php esc_attr_e('Navigation entre les semaines', 'ecole2nat'); ?>">
+                <a href="<?php echo esc_url($this->base(['e2n_week' => $previousWeek])); ?>">← <span><?php esc_html_e('Semaine précédente', 'ecole2nat'); ?></span></a>
+                <div>
+                    <strong><?php echo esc_html(sprintf(__('%1$s – %2$s', 'ecole2nat'), wp_date('j M', $weekStart->getTimestamp()), wp_date('j M Y', $weekEnd->getTimestamp()))); ?></strong>
+                    <?php if ($weekStart->format('Y-m-d') !== $currentWeek->format('Y-m-d')) : ?>
+                        <a class="e2n-date-current" href="<?php echo esc_url($this->base()); ?>"><?php esc_html_e('Cette semaine', 'ecole2nat'); ?></a>
+                    <?php endif; ?>
+                </div>
+                <a href="<?php echo esc_url($this->base(['e2n_week' => $nextWeek])); ?>"><span><?php esc_html_e('Semaine suivante', 'ecole2nat'); ?></span> →</a>
+            </nav>
             <?php if ($groups === []) : ?>
                 <section class="e2n-card"><h2><?php esc_html_e('Aucun groupe à afficher', 'ecole2nat'); ?></h2></section>
             <?php else : ?>
@@ -144,11 +159,12 @@ class CoachPortal
                     <?php foreach ($days as $day => $label) :
                         $rows = array_values(array_filter($groups, static fn(array $g): bool => (int) ($g['weekday'] ?? 0) === $day));
                         if ($rows === []) continue;
+                        $dayDate = $weekStart->modify('+' . ($day - 1) . ' days');
                     ?>
                         <section>
-                            <h2><?php echo esc_html($label); ?></h2>
+                            <h2><?php echo esc_html(sprintf(__('%1$s %2$s', 'ecole2nat'), $label, wp_date('j F', $dayDate->getTimestamp()))); ?></h2>
                             <?php foreach ($rows as $g) :
-                                $date = $this->nextDate((int) $g['weekday']);
+                                $date = $dayDate->format('Y-m-d');
                                 $groupId = (int) $g['id'];
                                 $planned = $this->repo->planned($groupId, $date);
                                 $isSubstitute = $this->access->isSubstituteForDate($groupId, $date);
@@ -159,7 +175,7 @@ class CoachPortal
                                         <strong><?php echo esc_html($g['name']); ?></strong>
                                         <small><?php echo esc_html($g['category_name'] . ' · ' . $g['season_name']); ?><?php if ($planned) echo ' · ' . esc_html($planned['session_name']); ?></small>
                                     </span>
-                                    <?php if ($planned && ($planned['status'] ?? 'planned') === 'completed') : ?><em class="e2n-pill done"><?php esc_html_e('Réalisée', 'ecole2nat'); ?></em><?php elseif (in_array($groupId, $titular, true)) : ?><em><?php esc_html_e('Titulaire', 'ecole2nat'); ?></em><?php elseif ($isSubstitute) : ?><em><?php echo esc_html($date === current_time('Y-m-d') ? __('Remplaçant', 'ecole2nat') : __('Remplaçant prévu', 'ecole2nat')); ?></em><?php endif; ?>
+                                    <?php if ($planned && ($planned['status'] ?? 'planned') === 'completed') : ?><em class="e2n-pill done"><?php esc_html_e('Réalisée', 'ecole2nat'); ?></em><?php elseif (in_array($groupId, $titular, true)) : ?><em><?php esc_html_e('Titulaire', 'ecole2nat'); ?></em><?php elseif ($isSubstitute) : ?><em><?php echo esc_html($date === current_time('Y-m-d') ? __('Remplaçant', 'ecole2nat') : ($date > current_time('Y-m-d') ? __('Remplaçant prévu', 'ecole2nat') : __('Remplacement passé', 'ecole2nat'))); ?></em><?php endif; ?>
                                 </a>
                             <?php endforeach; ?>
                         </section>
@@ -196,7 +212,10 @@ class CoachPortal
         $g = $this->repo->group($gid);
         if (!$g) { echo '<p>' . esc_html__('Groupe introuvable.', 'ecole2nat') . '</p>'; return; }
 
-        $date = $requestedDate ?: $this->nextDate((int) $g['weekday']);
+        $date = $requestedDate ?: $this->dateInCurrentWeek((int) $g['weekday']);
+        $dateObject = new \DateTimeImmutable($date, wp_timezone());
+        $planningWeek = $dateObject->modify('monday this week')->format('Y-m-d');
+        $currentGroupDate = $this->dateInCurrentWeek((int) $g['weekday']);
         $canPrepare = $this->access->canPrepareGroup($gid, $date);
         $canOperate = $this->access->canOperateGroup($gid, $date);
         $swimmers = $this->repo->swimmers($gid, (int) $g['season_id']);
@@ -210,12 +229,21 @@ class CoachPortal
             elseif (($row['status'] ?? '') === 'absent') $absent++;
         }
         ?>
-        <a class="e2n-back" href="<?php echo esc_url($this->base()); ?>">← <?php esc_html_e('Planning', 'ecole2nat'); ?></a>
+        <a class="e2n-back" href="<?php echo esc_url($this->base(['e2n_week' => $planningWeek])); ?>">← <?php esc_html_e('Planning', 'ecole2nat'); ?></a>
         <h1><?php echo esc_html($g['name']); ?></h1>
         <p>
             <?php echo esc_html($g['category_name'] . ' · ' . $g['season_name']); ?>
             <span class="e2n-pill<?php echo ($canPrepare || $canOperate) ? '' : ' muted'; ?>"><?php echo esc_html($this->access->accessLabel($gid, $date)); ?></span>
         </p>
+
+        <nav class="e2n-date-nav e2n-group-date-nav" aria-label="<?php esc_attr_e('Navigation entre les dates du groupe', 'ecole2nat'); ?>">
+            <a href="<?php echo esc_url($this->base(['e2n_group' => $gid, 'e2n_date' => $dateObject->modify('-7 days')->format('Y-m-d')])); ?>">← <span><?php esc_html_e('Séance précédente', 'ecole2nat'); ?></span></a>
+            <div>
+                <strong><?php echo esc_html(wp_date('j M Y', $dateObject->getTimestamp())); ?></strong>
+                <?php if ($date !== $currentGroupDate) : ?><a class="e2n-date-current" href="<?php echo esc_url($this->base(['e2n_group' => $gid, 'e2n_date' => $currentGroupDate])); ?>"><?php esc_html_e('Cette semaine', 'ecole2nat'); ?></a><?php endif; ?>
+            </div>
+            <a href="<?php echo esc_url($this->base(['e2n_group' => $gid, 'e2n_date' => $dateObject->modify('+7 days')->format('Y-m-d')])); ?>"><span><?php esc_html_e('Séance suivante', 'ecole2nat'); ?></span> →</a>
+        </nav>
 
         <section class="e2n-card">
             <h2><?php echo esc_html(sprintf(__('Séance du %s', 'ecole2nat'), wp_date('d/m/Y', strtotime($date)))); ?></h2>
@@ -279,7 +307,7 @@ class CoachPortal
 
         <section class="e2n-card">
             <h2><?php esc_html_e('Présences', 'ecole2nat'); ?> <small data-e2n-attendance-summary data-total="<?php echo (int) count($swimmers); ?>"><?php echo esc_html(sprintf(__('%1$d présents · %2$d absents · %3$d prévus', 'ecole2nat'), $present, $absent, count($swimmers))); ?></small></h2>
-            <?php if (!$canOperate) : ?><p class="e2n-info"><?php echo esc_html($canPrepare ? __('Les présences deviennent modifiables le jour du remplacement.', 'ecole2nat') : __('Consultation uniquement : vous n’avez pas de droit terrain pour ce groupe à cette date.', 'ecole2nat')); ?></p><?php endif; ?>
+            <?php if (!$canOperate) : ?><p class="e2n-info"><?php echo esc_html($canPrepare ? __('Les opérations terrain deviennent modifiables le jour de la séance.', 'ecole2nat') : __('Consultation uniquement : vous n’avez pas de droit terrain pour ce groupe à cette date.', 'ecole2nat')); ?></p><?php endif; ?>
             <div class="e2n-attendance-form">
                 <?php if ($canOperate) : ?><button type="button" class="e2n-link-button" data-e2n-all-present data-group-id="<?php echo (int) $gid; ?>" data-session-date="<?php echo esc_attr($date); ?>"><?php esc_html_e('Tous présents', 'ecole2nat'); ?></button><?php endif; ?>
                 <div class="e2n-autosave-status" data-e2n-save-status aria-live="polite"></div>
@@ -416,7 +444,7 @@ class CoachPortal
         $s = $this->repo->sessionDetail($sid);
         $g = $this->repo->group($gid);
         if (!$s || !$g) { echo '<p>' . esc_html__('Séance introuvable.', 'ecole2nat') . '</p>'; return; }
-        $date = $date ?: $this->nextDate((int)$g['weekday']);
+        $date = $date ?: $this->dateInCurrentWeek((int)$g['weekday']);
         $canPrepare = $this->access->canPrepareGroup($gid, $date);
         $canOperate = $this->access->canOperateGroup($gid, $date);
         $swimmers=$this->repo->swimmers($gid,(int)$g['season_id']);
@@ -695,11 +723,28 @@ class CoachPortal
         return preg_match('/^\d{4}-\d{2}-\d{2}$/', $date) ? $date : null;
     }
 
-    private function nextDate(int $weekday): string
+    private function requestedWeekStart(): \DateTimeImmutable
     {
-        $now = new \DateTimeImmutable('today', wp_timezone());
-        $iso = (int) $now->format('N');
-        $add = ($weekday - $iso + 7) % 7;
-        return $now->modify('+' . $add . ' days')->format('Y-m-d');
+        $requested = isset($_GET['e2n_week']) ? sanitize_text_field(wp_unslash($_GET['e2n_week'])) : '';
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $requested)) {
+            $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $requested, wp_timezone());
+            $errors = \DateTimeImmutable::getLastErrors();
+            if ($date && ($errors === false || ($errors['warning_count'] === 0 && $errors['error_count'] === 0))) {
+                return $date->modify('monday this week');
+            }
+        }
+
+        return $this->currentWeekStart();
+    }
+
+    private function currentWeekStart(): \DateTimeImmutable
+    {
+        return (new \DateTimeImmutable('today', wp_timezone()))->modify('monday this week');
+    }
+
+    private function dateInCurrentWeek(int $weekday): string
+    {
+        $safeWeekday = max(1, min(7, $weekday));
+        return $this->currentWeekStart()->modify('+' . ($safeWeekday - 1) . ' days')->format('Y-m-d');
     }
 }

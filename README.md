@@ -54,7 +54,9 @@ Le module Évaluations permet de suivre le niveau courant de chaque nageur sur l
 
 ## Portail Coach et séance terrain
 
-Le shortcode `[e2n_coach_portal]` alimente l’espace frontend des coachs. Tous les coachs peuvent consulter les groupes actifs ; les modifications sont réservées aux coachs titulaires du groupe et aux remplaçants explicitement affectés pour la date du jour.
+Le shortcode `[e2n_coach_portal]` alimente l’espace frontend des coachs. Le planning permet de parcourir les semaines précédentes et suivantes, puis chaque groupe permet de passer directement à son occurrence précédente ou suivante. Tous les coachs peuvent consulter les groupes actifs.
+
+Pour un titulaire comme pour un remplaçant daté, une date future autorise la préparation de la séance, le jour courant autorise les opérations terrain, et une date passée reste en consultation. Les administrateurs conservent les droits d'édition sur toutes les dates.
 
 Les remplacements sont gérés depuis **Ecole2Nat' → Coachs**. Ils associent un coach, un groupe et une date précise. Le remplaçant peut préparer la séance avant cette date. Les présences, évaluations et actions terrain ne deviennent modifiables que le jour prévu, puis le droit expire automatiquement sans modifier les titulaires permanents.
 

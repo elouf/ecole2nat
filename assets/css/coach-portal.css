@@ -140,3 +140,9 @@
 .e2n-editor-library{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}.e2n-editor-library p{margin:4px 0 0}.e2n-editor-library form{margin:0}
 .e2n-duration-summary{display:grid;gap:2px;text-align:right;color:#646970}.e2n-duration-summary small{min-height:18px}.e2n-duration-summary.is-match{color:#137333}.e2n-duration-summary.is-over{color:#b26200}.e2n-duration-summary.is-under small,.e2n-duration-summary.is-match small{visibility:hidden}
 @media(max-width:820px){.e2n-editor-exercise,.e2n-editor-add{grid-template-columns:1fr}.e2n-editor-exercise .e2n-editor-tools{grid-column:auto}.e2n-editor-heading{align-items:flex-start}.e2n-editor-heading>input{font-size:18px}}
+
+/* Navigation datée du planning et des groupes */
+.e2n-date-nav{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:12px;margin:0 0 18px;padding:12px 14px;border:1px solid #dcdcde;border-radius:10px;background:#fff}
+.e2n-date-nav>a{font-weight:600;text-decoration:none}.e2n-date-nav>a:last-child{text-align:right}
+.e2n-date-nav>div{text-align:center}.e2n-date-nav>div strong{display:block;white-space:nowrap}.e2n-date-current{display:inline-block;margin-top:3px;font-size:12px}
+@media(max-width:600px){.e2n-date-nav{grid-template-columns:1fr auto 1fr;padding:10px 8px}.e2n-date-nav>a span{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}.e2n-date-nav>div strong{font-size:14px}.e2n-date-current{font-size:12px}}
