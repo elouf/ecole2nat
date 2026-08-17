@@ -20,6 +20,11 @@ class GroupService
         return $this->repository->all();
     }
 
+    public function find(int $id): ?array
+    {
+        return $this->repository->find($id);
+    }
+
     public function create(
         int $seasonId,
         int $categoryId,
@@ -29,6 +34,9 @@ class GroupService
         ?string $startTime,
         ?string $endTime
     ): array {
+        if (!$this->repository->relationsExist($seasonId, $categoryId)) {
+            return ['success' => false, 'message' => 'invalid'];
+        }
         if ($this->repository->exists($seasonId, $name)) {
             return [
                 'success' => false,
@@ -55,6 +63,21 @@ class GroupService
     public function toggleActive(int $id): bool
     {
         return $this->repository->toggleActive($id);
+    }
+
+    public function update(int $id, int $seasonId, int $categoryId, string $name, string $color, ?int $weekday, ?string $startTime, ?string $endTime): array
+    {
+        if ($id <= 0 || $seasonId <= 0 || $categoryId <= 0 || trim($name) === '' || $weekday === null) {
+            return ['success' => false, 'message' => 'invalid'];
+        }
+        if ($this->repository->find($id) === null || !$this->repository->relationsExist($seasonId, $categoryId)) {
+            return ['success' => false, 'message' => 'invalid'];
+        }
+        if ($this->repository->exists($seasonId, $name, $id)) {
+            return ['success' => false, 'message' => 'duplicate'];
+        }
+        $updated = $this->repository->update($id, $seasonId, $categoryId, trim($name), $color, $weekday, $startTime, $endTime);
+        return ['success' => $updated, 'message' => $updated ? 'group_saved' : 'error'];
     }
 
     public function active(): array

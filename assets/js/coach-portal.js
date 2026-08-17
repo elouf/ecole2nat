@@ -126,6 +126,36 @@
         summary.textContent = present + ' présents · ' + absent + ' absents · ' + total + ' prévus';
     }
 
+    function updateEditorDurations(field) {
+        var editor = field.closest('.e2n-coach');
+        if (!editor) return;
+        var total = 0;
+        editor.querySelectorAll('.e2n-editor-part').forEach(function (part) {
+            var partTotal = 0;
+            part.querySelectorAll('input[data-e2n-editor-field="exercise"][data-field="duration"]').forEach(function (input) {
+                var duration = parseInt(input.value || '0', 10);
+                if (duration > 0) partTotal += duration;
+            });
+            var partLabel = part.querySelector('[data-e2n-part-duration]');
+            if (partLabel) partLabel.textContent = partTotal + ' ' + e2nCoachAjax.minutes;
+            total += partTotal;
+        });
+
+        var summary = editor.querySelector('[data-e2n-session-duration]');
+        if (!summary) return;
+        var target = parseInt(summary.dataset.targetDuration || '0', 10);
+        summary.textContent = e2nCoachAjax.preparedDuration + ' : ' + total + ' ' + e2nCoachAjax.minutes;
+        if (target > 0) summary.textContent += ' / ' + e2nCoachAjax.slotDuration + ' : ' + target + ' ' + e2nCoachAjax.minutes;
+        var container = summary.closest('.e2n-duration-summary');
+        var warning = container ? container.querySelector('[data-e2n-duration-warning]') : null;
+        if (!container) return;
+        container.classList.remove('is-under', 'is-match', 'is-over');
+        if (target > 0) container.classList.add(total > target ? 'is-over' : (total === target ? 'is-match' : 'is-under'));
+        if (warning) warning.textContent = target > 0 && total > target
+            ? e2nCoachAjax.overDuration + ' : ' + (total - target) + ' ' + e2nCoachAjax.minutes
+            : '';
+    }
+
     document.addEventListener('change', function (event) {
         var input = event.target;
         if (!(input instanceof HTMLInputElement) || input.type !== 'radio') return;
@@ -192,6 +222,7 @@
 
         var editorKind = field.getAttribute('data-e2n-editor-field');
         if (editorKind) {
+            if (editorKind === 'exercise' && field.dataset.field === 'duration') updateEditorDurations(field);
             var editorPrevious = editorTimers.get(field);
             if (editorPrevious) window.clearTimeout(editorPrevious);
             saveStatus(statusFor(field), 'saving', e2nCoachAjax.saving);

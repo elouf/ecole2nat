@@ -52,7 +52,16 @@ final class SynchronizationRepository
             $ck=$this->normalize($row['category']);
             if (!isset($virtualCategories[$ck])) { $virtualCategories[$ck]=isset($categoryMap[$ck])?(int)$categoryMap[$ck]['id']:-count($virtualCategories)-1; $plan['categories'][isset($categoryMap[$ck])?'unchanged':'created']++; }
             $gk=$seasonId.'|'.$virtualCategories[$ck].'|'.$this->normalize($row['name']);
-            $plan['groups'][isset($groupMap[$gk])?'unchanged':'created']++;
+            $existingGroup = $groupMap[$gk] ?? null;
+            if (!$existingGroup) {
+                $plan['groups']['created']++;
+            } else {
+                $effectiveStart = !empty($existingGroup['start_time']) ? (string) $existingGroup['start_time'] : (string) ($row['startTime'] ?? '');
+                $expectedEnd = isset($row['durationMinutes']) && $row['durationMinutes'] !== null ? $this->endTime($effectiveStart, (int) $row['durationMinutes']) : null;
+                $needsRepair = (empty($existingGroup['weekday']) && !empty($row['weekday'])) || (empty($existingGroup['start_time']) && !empty($row['startTime']));
+                $durationChanges = $expectedEnd !== null && substr((string) ($existingGroup['end_time'] ?? ''), 0, 8) !== $expectedEnd;
+                $plan['groups'][$needsRepair || $durationChanges ? 'updated' : 'unchanged']++;
+            }
         }
         foreach ($data['reference'] as $row) {
             $ck=$this->normalize($row['category']);
@@ -137,6 +146,8 @@ final class SynchronizationRepository
             $existing = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$table} WHERE season_id=%d AND category_id=%d AND LOWER(name)=LOWER(%s) LIMIT 1", $seasonId, $categoryId, $row['name']), ARRAY_A);
             $weekday = isset($row['weekday']) && $row['weekday'] !== null ? (int) $row['weekday'] : null;
             $startTime = !empty($row['startTime']) ? (string) $row['startTime'] : null;
+            $durationMinutes = isset($row['durationMinutes']) && $row['durationMinutes'] !== null ? (int) $row['durationMinutes'] : null;
+            $endTime = $durationMinutes !== null && $startTime !== null ? $this->endTime($startTime, $durationMinutes) : null;
 
             if (!$existing) {
                 if ($wpdb->insert($table, [
@@ -146,7 +157,7 @@ final class SynchronizationRepository
                     'color'=>null,
                     'weekday'=>$weekday,
                     'start_time'=>$startTime,
-                    'end_time'=>null,
+                    'end_time'=>$endTime,
                     'is_active'=>1,
                     'created_at'=>current_time('mysql')
                 ], ['%d','%d','%s','%s','%d','%s','%s','%d','%s']) === false) {
@@ -155,21 +166,33 @@ final class SynchronizationRepository
                 $id=(int)$wpdb->insert_id; $stats['groups']['created']++;
             } else {
                 $id=(int)$existing['id'];
-                $needsScheduleRepair = (empty($existing['weekday']) || empty($existing['start_time']))
-                    && ($weekday !== null || $startTime !== null);
+                $needsScheduleRepair = (empty($existing['weekday']) || empty($existing['start_time'])) && ($weekday !== null || $startTime !== null);
+                $effectiveStart = !empty($existing['start_time']) ? (string) $existing['start_time'] : $startTime;
+                $synchronizedEnd = $durationMinutes !== null && $effectiveStart !== null ? $this->endTime($effectiveStart, $durationMinutes) : null;
+                $durationChanges = $synchronizedEnd !== null && substr((string) ($existing['end_time'] ?? ''), 0, 8) !== $synchronizedEnd;
 
-                if ($needsScheduleRepair) {
-                    $wpdb->update(
+                if ($needsScheduleRepair || $durationChanges) {
+                    $payload = [
+                        'updated_at' => current_time('mysql'),
+                    ];
+                    $formats = ['%s'];
+                    if ($needsScheduleRepair) {
+                        $payload['weekday'] = $weekday;
+                        $payload['start_time'] = $startTime;
+                        $formats[] = '%d';
+                        $formats[] = '%s';
+                    }
+                    if ($durationChanges) {
+                        $payload['end_time'] = $synchronizedEnd;
+                        $formats[] = '%s';
+                    }
+                    if ($wpdb->update(
                         $table,
-                        [
-                            'weekday' => $weekday,
-                            'start_time' => $startTime,
-                            'updated_at' => current_time('mysql'),
-                        ],
+                        $payload,
                         ['id' => $id],
-                        ['%d','%s','%s'],
+                        $formats,
                         ['%d']
-                    );
+                    ) === false) throw new \RuntimeException('Impossible de mettre à jour le créneau du groupe ' . $row['name'] . ' : ' . $wpdb->last_error);
                     $stats['groups']['updated']++;
                 } else {
                     $stats['groups']['unchanged']++;
@@ -179,6 +202,13 @@ final class SynchronizationRepository
             $ids[$this->key($row['category'], $row['name'])]=$id;
         }
         return $ids;
+    }
+
+    private function endTime(string $startTime, int $durationMinutes): ?string
+    {
+        $start = \DateTimeImmutable::createFromFormat('!H:i:s', $startTime, wp_timezone());
+        if (!$start || $durationMinutes <= 0) return null;
+        return $start->modify('+' . $durationMinutes . ' minutes')->format('H:i:s');
     }
 
     private function syncReference(array $rows, array $categoryIds, array &$stats): array

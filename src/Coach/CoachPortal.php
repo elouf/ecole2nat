@@ -64,6 +64,10 @@ class CoachPortal
             'saving' => __('Enregistrement…', 'ecole2nat'),
             'saved' => __('Enregistré', 'ecole2nat'),
             'error' => __('Non enregistré — réessayer', 'ecole2nat'),
+            'preparedDuration' => __('Durée préparée', 'ecole2nat'),
+            'slotDuration' => __('créneau', 'ecole2nat'),
+            'overDuration' => __('Dépassement', 'ecole2nat'),
+            'minutes' => __('min', 'ecole2nat'),
         ]);
 
         if (!is_user_logged_in()) {
@@ -456,6 +460,10 @@ class CoachPortal
             return;
         }
         $session = $data['session'];
+        $targetDuration = $this->groupDuration($g['start_time'] ?? null, $g['end_time'] ?? null);
+        $durationState = $targetDuration === null
+            ? ''
+            : ((int) $data['duration'] > $targetDuration ? ' is-over' : ((int) $data['duration'] === $targetDuration ? ' is-match' : ' is-under'));
         ?>
         <a class="e2n-back" href="<?php echo esc_url($this->base(['e2n_group' => $gid, 'e2n_date' => $date])); ?>">← <?php esc_html_e('Groupe', 'ecole2nat'); ?></a>
         <h1><?php esc_html_e('Préparer la séance', 'ecole2nat'); ?></h1>
@@ -469,7 +477,7 @@ class CoachPortal
             <p class="e2n-info"><?php esc_html_e('Cette séance est conservée dans la bibliothèque générale.', 'ecole2nat'); ?></p>
         <?php endif; ?>
         <section class="e2n-card e2n-editor-general">
-            <div class="e2n-editor-heading"><h2><?php esc_html_e('Informations générales', 'ecole2nat'); ?></h2><strong><?php echo (int) $data['duration']; ?> min</strong></div>
+            <div class="e2n-editor-heading"><h2><?php esc_html_e('Informations générales', 'ecole2nat'); ?></h2><div class="e2n-duration-summary<?php echo esc_attr($durationState); ?>"><strong data-e2n-session-duration data-target-duration="<?php echo $targetDuration === null ? '' : (int) $targetDuration; ?>"><?php echo esc_html($this->durationLabel((int) $data['duration'], $targetDuration)); ?></strong><small data-e2n-duration-warning><?php echo $targetDuration !== null && (int) $data['duration'] > $targetDuration ? esc_html(sprintf(__('Dépassement : %d min', 'ecole2nat'), (int) $data['duration'] - $targetDuration)) : ''; ?></small></div></div>
             <div class="e2n-autosave-status" data-e2n-save-status aria-live="polite"></div>
             <label><?php esc_html_e('Nom', 'ecole2nat'); ?><input required value="<?php echo esc_attr($session['name']); ?>" data-e2n-editor-field="general" data-field="name" data-group-id="<?php echo (int) $gid; ?>" data-session-id="<?php echo (int) $sid; ?>" data-session-date="<?php echo esc_attr($date); ?>"></label>
             <label><?php esc_html_e('Objectifs', 'ecole2nat'); ?><textarea rows="4" data-e2n-editor-field="general" data-field="objectives" data-group-id="<?php echo (int) $gid; ?>" data-session-id="<?php echo (int) $sid; ?>" data-session-date="<?php echo esc_attr($date); ?>"><?php echo esc_textarea($session['objectives']); ?></textarea></label>
@@ -478,7 +486,7 @@ class CoachPortal
             <section class="e2n-card e2n-editor-part">
                 <div class="e2n-editor-heading">
                     <input aria-label="<?php esc_attr_e('Titre de la partie', 'ecole2nat'); ?>" value="<?php echo esc_attr($part['title']); ?>" data-e2n-editor-field="part" data-part-id="<?php echo (int) $part['id']; ?>" data-group-id="<?php echo (int) $gid; ?>" data-session-id="<?php echo (int) $sid; ?>" data-session-date="<?php echo esc_attr($date); ?>">
-                    <span><?php echo (int) $part['duration']; ?> min</span>
+                    <span data-e2n-part-duration><?php echo (int) $part['duration']; ?> min</span>
                 </div>
                 <div class="e2n-autosave-status" data-e2n-save-status aria-live="polite"></div>
                 <div class="e2n-editor-tools">
@@ -521,6 +529,31 @@ class CoachPortal
             echo '<input type="hidden" name="' . esc_attr($name) . '" value="' . esc_attr((string) $value) . '">';
         }
         echo '<button type="submit" class="e2n-link-button">' . esc_html($label) . '</button></form>';
+    }
+
+    private function groupDuration($startTime, $endTime): ?int
+    {
+        if (!is_string($startTime) || !is_string($endTime) || $startTime === '' || $endTime === '') {
+            return null;
+        }
+        $start = \DateTimeImmutable::createFromFormat('!H:i:s', $startTime, wp_timezone());
+        $end = \DateTimeImmutable::createFromFormat('!H:i:s', $endTime, wp_timezone());
+        if (!$start || !$end) {
+            return null;
+        }
+        if ($end <= $start) {
+            $end = $end->modify('+1 day');
+        }
+        $minutes = (int) (($end->getTimestamp() - $start->getTimestamp()) / 60);
+        return $minutes > 0 ? $minutes : null;
+    }
+
+    private function durationLabel(int $prepared, ?int $target): string
+    {
+        if ($target === null) {
+            return sprintf(__('Durée préparée : %d min', 'ecole2nat'), $prepared);
+        }
+        return sprintf(__('Durée préparée : %1$d min / créneau : %2$d min', 'ecole2nat'), $prepared, $target);
     }
 
     private function exerciseSelect(array $library): void

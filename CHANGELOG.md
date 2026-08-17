@@ -1,6 +1,14 @@
 # Changelog
 
-## Non publié — 0.14.0
+## Non publié — 0.15.0
+
+- Ajoute l'édition complète d'un groupe depuis la liste du back-office : saison, catégorie, nom, jour, horaires et couleur.
+- Lit la colonne facultative `Durée (min)` de l'onglet `Groupes` ou `Catégories` et calcule l'heure de fin du créneau.
+- Met à jour l'heure de fin lors des synchronisations suivantes lorsque la durée est renseignée, tout en préservant la valeur existante si la cellule est vide.
+
+- Affiche dans l'éditeur Coach la durée préparée et, lorsque les horaires du groupe sont complets, la durée du créneau.
+- Recalcule immédiatement les totaux de la séance et de chaque partie pendant la saisie.
+- Signale visuellement un dépassement sans empêcher l'enregistrement.
 
 - Distingue les adaptations ponctuelles créées depuis un créneau des séances types réutilisables.
 - Exclut ces adaptations des sélecteurs et de la bibliothèque générale sans supprimer leur historique.

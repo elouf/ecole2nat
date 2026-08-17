@@ -10,6 +10,30 @@ if (!defined('ABSPATH')) {
 
 class GroupRepository
 {
+    public function find(int $id): ?array
+    {
+        global $wpdb;
+        $row = $wpdb->get_row($wpdb->prepare(
+            'SELECT * FROM ' . Config::table('groups') . ' WHERE id = %d LIMIT 1',
+            $id
+        ), ARRAY_A);
+        return is_array($row) ? $row : null;
+    }
+
+    public function relationsExist(int $seasonId, int $categoryId): bool
+    {
+        global $wpdb;
+        $seasonExists = (int) $wpdb->get_var($wpdb->prepare(
+            'SELECT COUNT(*) FROM ' . Config::table('seasons') . ' WHERE id = %d',
+            $seasonId
+        )) > 0;
+        $categoryExists = (int) $wpdb->get_var($wpdb->prepare(
+            'SELECT COUNT(*) FROM ' . Config::table('categories') . ' WHERE id = %d',
+            $categoryId
+        )) > 0;
+        return $seasonExists && $categoryExists;
+    }
+
     public function all(): array
     {
         global $wpdb;
@@ -132,20 +156,38 @@ class GroupRepository
         return $result !== false;
     }
 
-    public function exists(int $seasonId, string $name): bool
+    public function update(int $id, int $seasonId, int $categoryId, string $name, string $color, ?int $weekday, ?string $startTime, ?string $endTime): bool
+    {
+        global $wpdb;
+        return $wpdb->update(
+            Config::table('groups'),
+            [
+                'season_id' => $seasonId,
+                'category_id' => $categoryId,
+                'name' => $name,
+                'color' => $color !== '' ? $color : null,
+                'weekday' => $weekday,
+                'start_time' => $startTime,
+                'end_time' => $endTime,
+                'updated_at' => current_time('mysql'),
+            ],
+            ['id' => $id],
+            ['%d', '%d', '%s', '%s', '%d', '%s', '%s', '%s'],
+            ['%d']
+        ) !== false;
+    }
+
+    public function exists(int $seasonId, string $name, ?int $excludedId = null): bool
     {
         global $wpdb;
 
-        $count = (int) $wpdb->get_var(
-            $wpdb->prepare(
-                "SELECT COUNT(*)
-                FROM " . Config::table('groups') . "
-                WHERE season_id = %d
-                AND name = %s",
-                $seasonId,
-                $name
-            )
-        );
+        $sql = 'SELECT COUNT(*) FROM ' . Config::table('groups') . ' WHERE season_id = %d AND name = %s';
+        $arguments = [$seasonId, $name];
+        if ($excludedId !== null) {
+            $sql .= ' AND id <> %d';
+            $arguments[] = $excludedId;
+        }
+        $count = (int) $wpdb->get_var($wpdb->prepare($sql, ...$arguments));
 
         return $count > 0;
     }

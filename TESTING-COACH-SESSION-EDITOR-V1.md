@@ -45,6 +45,15 @@
 9. Rechercher un exercice par son nom, son domaine puis sa compétence ; vérifier le compteur, les regroupements et l'ajout du résultat sélectionné.
 10. Effacer la recherche : tous les exercices doivent réapparaître dans leur ordre initial.
 
+## Assistance sur la durée
+
+1. Avec un groupe de 45 minutes, vérifier l'affichage « Durée préparée / créneau ».
+2. Modifier une durée : le total de la partie et celui de la séance doivent changer immédiatement, avant la fin de l'autosauvegarde.
+3. Tester une durée totale inférieure, égale puis supérieure à 45 minutes : état neutre, vert puis alerte orange explicite.
+4. Vérifier que le dépassement reste enregistrable et persiste après rechargement.
+5. Avec un groupe sans horaire complet, vérifier que seule la durée préparée est affichée sans erreur.
+6. Vérifier un créneau passant minuit : la durée calculée doit rester positive et correcte.
+
 ## Droits et sécurité
 
 1. Vérifier l'ensemble du parcours comme administrateur et comme titulaire.

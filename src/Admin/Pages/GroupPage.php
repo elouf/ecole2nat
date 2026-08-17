@@ -36,11 +36,14 @@ class GroupPage
         $this->handleActions();
 
         $groups = $this->groupService->all();
+        $editingId = isset($_GET['group_id']) ? absint($_GET['group_id']) : 0;
+        $editingGroup = $editingId > 0 ? $this->groupService->find($editingId) : null;
         $seasons = array_values(
             array_filter(
                 $this->seasonRepository->all(),
                 static fn(array $season): bool =>
                     (int) ($season['is_active'] ?? 1) === 1
+                    || (int) $season['id'] === (int) ($editingGroup['season_id'] ?? 0)
             )
         );
 
@@ -49,6 +52,7 @@ class GroupPage
                 $this->categoryRepository->all(),
                 static fn(array $category): bool =>
                     (int) ($category['is_active'] ?? 1) === 1
+                    || (int) $category['id'] === (int) ($editingGroup['category_id'] ?? 0)
             )
         );
 
@@ -62,7 +66,7 @@ class GroupPage
                 <div class="postbox">
                     <div class="postbox-header">
                         <h2 class="hndle">
-                            <?php echo esc_html__('Créer un groupe', 'ecole2nat'); ?>
+                            <?php echo esc_html($editingGroup ? __('Modifier le groupe', 'ecole2nat') : __('Créer un groupe', 'ecole2nat')); ?>
                         </h2>
                     </div>
 
@@ -70,7 +74,8 @@ class GroupPage
                         <?php
                         $this->renderForm(
                             $seasons,
-                            $categories
+                            $categories,
+                            $editingGroup
                         );
                         ?>
                     </div>
@@ -109,6 +114,11 @@ class GroupPage
             return;
         }
 
+        if ($action === 'update_group') {
+            $this->handleUpdate();
+            return;
+        }
+
         if ($action === 'toggle_group') {
             $this->handleToggle();
         }
@@ -138,13 +148,10 @@ class GroupPage
             ? absint($_POST['weekday'])
             : 0;
 
-        $startTime = isset($_POST['start_time'])
-            ? $this->sanitizeTime(wp_unslash($_POST['start_time']))
-            : null;
-
-        $endTime = isset($_POST['end_time'])
-            ? $this->sanitizeTime(wp_unslash($_POST['end_time']))
-            : null;
+        $startRaw = wp_unslash((string) ($_POST['start_time'] ?? ''));
+        $endRaw = wp_unslash((string) ($_POST['end_time'] ?? ''));
+        $startTime = $this->sanitizeTime($startRaw);
+        $endTime = $this->sanitizeTime($endRaw);
 
         if (
             $seasonId <= 0
@@ -152,6 +159,8 @@ class GroupPage
             || $name === ''
             || $weekday < 1
             || $weekday > 7
+            || (trim($startRaw) !== '' && $startTime === null)
+            || (trim($endRaw) !== '' && $endTime === null)
         ) {
             $this->redirectWithNotice('invalid');
         }
@@ -196,9 +205,33 @@ class GroupPage
         );
     }
 
+    private function handleUpdate(): void
+    {
+        $groupId = absint($_POST['group_id'] ?? 0);
+        check_admin_referer('e2n_update_group_' . $groupId);
+        $seasonId = absint($_POST['season_id'] ?? 0);
+        $categoryId = absint($_POST['category_id'] ?? 0);
+        $name = sanitize_text_field(wp_unslash((string) ($_POST['name'] ?? '')));
+        $color = sanitize_hex_color(wp_unslash((string) ($_POST['color'] ?? ''))) ?: '';
+        $weekday = absint($_POST['weekday'] ?? 0);
+        $startRaw = wp_unslash((string) ($_POST['start_time'] ?? ''));
+        $endRaw = wp_unslash((string) ($_POST['end_time'] ?? ''));
+        $startTime = $this->sanitizeTime($startRaw);
+        $endTime = $this->sanitizeTime($endRaw);
+        if ($groupId <= 0 || $seasonId <= 0 || $categoryId <= 0 || $name === '' || $weekday < 1 || $weekday > 7 || (trim($startRaw) !== '' && $startTime === null) || (trim($endRaw) !== '' && $endTime === null)) {
+            $this->redirectWithNotice('invalid', $groupId);
+        }
+        if ($startTime !== null && $endTime !== null && $endTime <= $startTime) {
+            $this->redirectWithNotice('invalid_time', $groupId);
+        }
+        $result = $this->groupService->update($groupId, $seasonId, $categoryId, $name, $color, $weekday, $startTime, $endTime);
+        $this->redirectWithNotice($result['message']);
+    }
+
     private function renderForm(
         array $seasons,
-        array $categories
+        array $categories,
+        ?array $group = null
     ): void {
         if ($seasons === [] || $categories === []) {
             ?>
@@ -227,17 +260,20 @@ class GroupPage
             '#646970' => 'Gris',
             '#8b5e3c' => 'Marron',
         ];
+        $selectedColor = (string) ($group['color'] ?? '');
+        if ($selectedColor === '') $selectedColor = (string) array_key_first($colors);
 
         $weekdays = $this->getWeekdays();
         ?>
         <form method="post">
-            <?php wp_nonce_field('e2n_create_group'); ?>
+            <?php $groupId = (int) ($group['id'] ?? 0); wp_nonce_field($group ? 'e2n_update_group_' . $groupId : 'e2n_create_group'); ?>
 
             <input
                 type="hidden"
                 name="e2n_action"
-                value="create_group"
+                value="<?php echo esc_attr($group ? 'update_group' : 'create_group'); ?>"
             >
+            <?php if ($group) : ?><input type="hidden" name="group_id" value="<?php echo $groupId; ?>"><?php endif; ?>
 
             <table class="form-table" role="presentation">
                 <tbody>
@@ -262,7 +298,7 @@ class GroupPage
                                 <?php foreach ($seasons as $season) : ?>
                                     <option
                                         value="<?php echo esc_attr((string) $season['id']); ?>"
-                                        <?php selected((int) ($season['is_current'] ?? 0), 1); ?>
+                                        <?php selected($group ? (int) $group['season_id'] : ((int) ($season['is_current'] ?? 0) === 1 ? (int) $season['id'] : 0), (int) $season['id']); ?>
                                     >
                                         <?php echo esc_html($season['name']); ?>
                                     </option>
@@ -293,6 +329,7 @@ class GroupPage
                                     <option
                                         value="<?php echo esc_attr((string) $category['id']); ?>"
                                         data-category-name="<?php echo esc_attr($category['name']); ?>"
+                                        <?php selected((int) ($group['category_id'] ?? 0), (int) $category['id']); ?>
                                     >
                                         <?php echo esc_html($category['name']); ?>
                                     </option>
@@ -323,6 +360,7 @@ class GroupPage
                                     <option
                                         value="<?php echo esc_attr((string) $value); ?>"
                                         data-weekday-name="<?php echo esc_attr($label); ?>"
+                                        <?php selected((int) ($group['weekday'] ?? 0), (int) $value); ?>
                                     >
                                         <?php echo esc_html($label); ?>
                                     </option>
@@ -343,6 +381,7 @@ class GroupPage
                                 id="e2n-start-time"
                                 type="time"
                                 name="start_time"
+                                value="<?php echo esc_attr(isset($group['start_time']) ? substr((string) $group['start_time'], 0, 5) : ''); ?>"
                             >
 
                             <span style="margin: 0 8px;">
@@ -353,6 +392,7 @@ class GroupPage
                                 id="e2n-end-time"
                                 type="time"
                                 name="end_time"
+                                value="<?php echo esc_attr(isset($group['end_time']) ? substr((string) $group['end_time'], 0, 5) : ''); ?>"
                             >
                         </td>
                     </tr>
@@ -372,6 +412,7 @@ class GroupPage
                                 class="regular-text"
                                 maxlength="150"
                                 required
+                                value="<?php echo esc_attr((string) ($group['name'] ?? '')); ?>"
                             >
 
                             <p class="description">
@@ -416,7 +457,7 @@ class GroupPage
                                             type="radio"
                                             name="color"
                                             value="<?php echo esc_attr($value); ?>"
-                                            <?php checked($first); ?>
+                                            <?php checked($selectedColor, $value); ?>
                                         >
 
                                         <span
@@ -447,8 +488,9 @@ class GroupPage
 
             <?php
             submit_button(
-                __('Créer le groupe', 'ecole2nat')
+                $group ? __('Enregistrer le groupe', 'ecole2nat') : __('Créer le groupe', 'ecole2nat')
             );
+            if ($group) echo ' <a class="button" href="' . esc_url(admin_url('admin.php?page=ecole2nat-groups')) . '">' . esc_html__('Annuler', 'ecole2nat') . '</a>';
             ?>
         </form>
         <?php
@@ -551,6 +593,7 @@ class GroupPage
                         </td>
 
                         <td>
+                            <a class="button button-small" href="<?php echo esc_url(add_query_arg(['page' => 'ecole2nat-groups', 'group_id' => (int) $group['id']], admin_url('admin.php'))); ?>"><?php esc_html_e('Modifier', 'ecole2nat'); ?></a>
                             <?php if ($seasonIsActive) : ?>
                                 <form method="post">
                                     <?php wp_nonce_field('e2n_toggle_group'); ?>
@@ -599,6 +642,10 @@ class GroupPage
                 'success',
                 __('Le statut du groupe a bien été modifié.', 'ecole2nat'),
             ],
+            'group_saved' => [
+                'success',
+                __('Le groupe a bien été modifié.', 'ecole2nat'),
+            ],
             'invalid' => [
                 'error',
                 __('Veuillez remplir correctement les champs obligatoires.', 'ecole2nat'),
@@ -631,13 +678,12 @@ class GroupPage
         <?php
     }
 
-    private function redirectWithNotice(string $notice): void
+    private function redirectWithNotice(string $notice, int $groupId = 0): void
     {
+        $args = ['page' => 'ecole2nat-groups', 'e2n_notice' => $notice];
+        if ($groupId > 0) $args['group_id'] = $groupId;
         $url = add_query_arg(
-            [
-                'page' => 'ecole2nat-groups',
-                'e2n_notice' => $notice,
-            ],
+            $args,
             admin_url('admin.php')
         );
 

@@ -29,6 +29,8 @@ La durée n’appartient pas à l’exercice de bibliothèque. Elle est définie
 - `e2n_swimmers` : identité, inscription, coordonnées du responsable, informations terrain et groupe courant des nageurs.
 - `e2n_swimmer_group_memberships` : historique de l’affectation d’un nageur à un groupe pour une saison.
 
+Le créneau d’un groupe est porté par `weekday`, `start_time` et `end_time`. La synchronisation peut calculer `end_time` depuis la colonne facultative `Durée (min)` du classeur. Sans valeur dans cette colonne, elle ne remplace pas une heure de fin existante.
+
 La contrainte unique `(swimmer_id, season_id)` de `e2n_swimmer_group_memberships` garantit une seule affectation historique par nageur et par saison. `e2n_swimmers.group_id` représente l’affectation courante ; les consultations historiques utilisent les appartenances saisonnières.
 
 Les principales colonnes spécifiques de `e2n_swimmers` sont :

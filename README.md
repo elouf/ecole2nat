@@ -73,6 +73,8 @@ Les présences sont historisées par date et ne modifient jamais l’affectation
 
 Les séances créées ou dupliquées depuis un créneau sont ponctuelles par défaut : elles restent consultables depuis ce créneau mais ne sont pas proposées dans la bibliothèque générale. Le coach peut choisir « Conserver comme séance type » pour les rendre réutilisables.
 
+L’éditeur compare la durée préparée à la durée calculée depuis les horaires du groupe. Un éventuel dépassement est signalé mais ne bloque jamais l’enregistrement.
+
 ## Prérequis
 
 - WordPress 6.0 ou supérieur ;
@@ -114,6 +116,8 @@ Le menu **Ecole2Nat' → Synchronisation** accepte un classeur `.xlsx` comprenan
 - `Référentiel`.
 
 Les autres onglets et les colonnes comptables sont ignorés. Avant l'analyse, l'administrateur choisit la **saison cible** : la colonne Saison n'est donc pas nécessaire dans l'onglet Groupes. L'association d'un nageur à son groupe repose sur la concaténation de la catégorie et du créneau, par exemple `Dauphin` + `Lundi 17h15` → `Dauphin Lundi 17h15`.
+
+L’onglet `Groupes` ou `Catégories` peut contenir une colonne facultative `Durée (min)`. Lorsqu’elle est renseignée, l’heure de fin est calculée depuis l’heure de début reconnue dans le nom du groupe. Lorsqu’elle est vide, une heure de fin déjà corrigée dans WordPress est conservée. Les groupes peuvent aussi être modifiés depuis **Ecole2Nat’ → Groupes → Modifier**.
 
 
 ## Maintenance

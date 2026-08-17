@@ -120,6 +120,19 @@ final class WorkbookReader
             $schedule = GroupScheduleParser::parse($name);
             $weekday = $schedule['weekday'];
             $startTime = $schedule['start_time'];
+            $durationRaw = $this->string($row, ['duree min', 'duree', 'duree en minutes']);
+            $durationMinutes = null;
+            if ($durationRaw !== '') {
+                if (!ctype_digit($durationRaw) || (int) $durationRaw <= 0 || (int) $durationRaw > 1440) {
+                    $errors[] = sprintf('Onglet Groupes, ligne %d : Durée (min) doit être un entier compris entre 1 et 1440.', $row['_row']);
+                    continue;
+                }
+                $durationMinutes = (int) $durationRaw;
+                if ($startTime === null) {
+                    $errors[] = sprintf('Onglet Groupes, ligne %d : une durée nécessite une heure de début reconnue dans le nom du groupe.', $row['_row']);
+                    continue;
+                }
+            }
 
             if ($weekday === null || $startTime === null) {
                 $warnings[] = sprintf(
@@ -128,7 +141,7 @@ final class WorkbookReader
                 );
             }
 
-            $groups[$key] = compact('name', 'category', 'code', 'weekday', 'startTime');
+            $groups[$key] = compact('name', 'category', 'code', 'weekday', 'startTime', 'durationMinutes');
         }
         return array_values($groups);
     }
