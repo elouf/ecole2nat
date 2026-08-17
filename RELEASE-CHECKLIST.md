@@ -4,6 +4,7 @@ Avant commit/tag :
 
 - [ ] `composer install` puis `composer dump-autoload -o`
 - [ ] lint PHP sans erreur
+- [ ] `composer test` sans échec
 - [ ] activation sur une base vide
 - [ ] mise à jour depuis la version précédente sans désactivation/réactivation
 - [ ] synchronisation d’un classeur avec saison cible

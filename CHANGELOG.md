@@ -2,6 +2,8 @@
 
 ## Non publié — 0.15.0
 
+- Ajoute une commande `composer test` sans dépendance supplémentaire, avec couverture initiale des droits Coach, créneaux, durées et lecture Excel.
+- Rend le repository des droits Coach injectable afin de tester les règles métier sans base WordPress.
 - Ajoute l'édition complète d'un groupe depuis la liste du back-office : saison, catégorie, nom, jour, horaires et couleur.
 - Lit la colonne facultative `Durée (min)` de l'onglet `Groupes` ou `Catégories` et calcule l'heure de fin du créneau.
 - Met à jour l'heure de fin lors des synchronisations suivantes lorsque la durée est renseignée, tout en préservant la valeur existante si la cellule est vide.

@@ -103,6 +103,12 @@ Activez l'extension dans l'administration WordPress.
 find src -name '*.php' -print0 | xargs -0 -n1 php -l
 ```
 
+Les tests automatisés ciblés s’exécutent sans installation supplémentaire avec :
+
+```bash
+composer test
+```
+
 ## Modèle de données
 
 Voir [`docs/database.md`](docs/database.md).

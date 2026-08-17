@@ -10,9 +10,9 @@ class CoachAccessService
 {
     private CoachAccessRepository $repository;
 
-    public function __construct()
+    public function __construct(?CoachAccessRepository $repository = null)
     {
-        $this->repository = new CoachAccessRepository();
+        $this->repository = $repository ?? new CoachAccessRepository();
     }
 
     public function canView(): bool

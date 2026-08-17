@@ -3,6 +3,7 @@
 namespace Ecole2Nat\Synchronization;
 
 use Ecole2Nat\Support\Config;
+use Ecole2Nat\Support\ScheduleDurationCalculator;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -57,7 +58,7 @@ final class SynchronizationRepository
                 $plan['groups']['created']++;
             } else {
                 $effectiveStart = !empty($existingGroup['start_time']) ? (string) $existingGroup['start_time'] : (string) ($row['startTime'] ?? '');
-                $expectedEnd = isset($row['durationMinutes']) && $row['durationMinutes'] !== null ? $this->endTime($effectiveStart, (int) $row['durationMinutes']) : null;
+                $expectedEnd = isset($row['durationMinutes']) && $row['durationMinutes'] !== null ? ScheduleDurationCalculator::endTime($effectiveStart, (int) $row['durationMinutes']) : null;
                 $needsRepair = (empty($existingGroup['weekday']) && !empty($row['weekday'])) || (empty($existingGroup['start_time']) && !empty($row['startTime']));
                 $durationChanges = $expectedEnd !== null && substr((string) ($existingGroup['end_time'] ?? ''), 0, 8) !== $expectedEnd;
                 $plan['groups'][$needsRepair || $durationChanges ? 'updated' : 'unchanged']++;
@@ -147,7 +148,7 @@ final class SynchronizationRepository
             $weekday = isset($row['weekday']) && $row['weekday'] !== null ? (int) $row['weekday'] : null;
             $startTime = !empty($row['startTime']) ? (string) $row['startTime'] : null;
             $durationMinutes = isset($row['durationMinutes']) && $row['durationMinutes'] !== null ? (int) $row['durationMinutes'] : null;
-            $endTime = $durationMinutes !== null && $startTime !== null ? $this->endTime($startTime, $durationMinutes) : null;
+            $endTime = $durationMinutes !== null && $startTime !== null ? ScheduleDurationCalculator::endTime($startTime, $durationMinutes) : null;
 
             if (!$existing) {
                 if ($wpdb->insert($table, [
@@ -168,7 +169,7 @@ final class SynchronizationRepository
                 $id=(int)$existing['id'];
                 $needsScheduleRepair = (empty($existing['weekday']) || empty($existing['start_time'])) && ($weekday !== null || $startTime !== null);
                 $effectiveStart = !empty($existing['start_time']) ? (string) $existing['start_time'] : $startTime;
-                $synchronizedEnd = $durationMinutes !== null && $effectiveStart !== null ? $this->endTime($effectiveStart, $durationMinutes) : null;
+                $synchronizedEnd = $durationMinutes !== null && $effectiveStart !== null ? ScheduleDurationCalculator::endTime($effectiveStart, $durationMinutes) : null;
                 $durationChanges = $synchronizedEnd !== null && substr((string) ($existing['end_time'] ?? ''), 0, 8) !== $synchronizedEnd;
 
                 if ($needsScheduleRepair || $durationChanges) {
@@ -202,13 +203,6 @@ final class SynchronizationRepository
             $ids[$this->key($row['category'], $row['name'])]=$id;
         }
         return $ids;
-    }
-
-    private function endTime(string $startTime, int $durationMinutes): ?string
-    {
-        $start = \DateTimeImmutable::createFromFormat('!H:i:s', $startTime, wp_timezone());
-        if (!$start || $durationMinutes <= 0) return null;
-        return $start->modify('+' . $durationMinutes . ' minutes')->format('H:i:s');
     }
 
     private function syncReference(array $rows, array $categoryIds, array &$stats): array

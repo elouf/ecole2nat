@@ -3,6 +3,7 @@
 namespace Ecole2Nat\Coach;
 
 use Ecole2Nat\Evaluation\EvaluationService;
+use Ecole2Nat\Support\ScheduleDurationCalculator;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -460,7 +461,7 @@ class CoachPortal
             return;
         }
         $session = $data['session'];
-        $targetDuration = $this->groupDuration($g['start_time'] ?? null, $g['end_time'] ?? null);
+        $targetDuration = ScheduleDurationCalculator::minutes($g['start_time'] ?? null, $g['end_time'] ?? null);
         $durationState = $targetDuration === null
             ? ''
             : ((int) $data['duration'] > $targetDuration ? ' is-over' : ((int) $data['duration'] === $targetDuration ? ' is-match' : ' is-under'));
@@ -529,23 +530,6 @@ class CoachPortal
             echo '<input type="hidden" name="' . esc_attr($name) . '" value="' . esc_attr((string) $value) . '">';
         }
         echo '<button type="submit" class="e2n-link-button">' . esc_html($label) . '</button></form>';
-    }
-
-    private function groupDuration($startTime, $endTime): ?int
-    {
-        if (!is_string($startTime) || !is_string($endTime) || $startTime === '' || $endTime === '') {
-            return null;
-        }
-        $start = \DateTimeImmutable::createFromFormat('!H:i:s', $startTime, wp_timezone());
-        $end = \DateTimeImmutable::createFromFormat('!H:i:s', $endTime, wp_timezone());
-        if (!$start || !$end) {
-            return null;
-        }
-        if ($end <= $start) {
-            $end = $end->modify('+1 day');
-        }
-        $minutes = (int) (($end->getTimestamp() - $start->getTimestamp()) / 60);
-        return $minutes > 0 ? $minutes : null;
     }
 
     private function durationLabel(int $prepared, ?int $target): string

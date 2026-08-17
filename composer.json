@@ -11,5 +11,8 @@
         "psr-4": {
             "Ecole2Nat\\": "src/"
         }
+    },
+    "scripts": {
+        "test": "php tests/run.php"
     }
 }
