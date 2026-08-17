@@ -492,7 +492,12 @@ class CoachPortal
                 <?php endforeach; ?>
                 <form class="e2n-editor-action e2n-editor-add" data-e2n-session-action>
                     <input type="hidden" name="editor_action" value="create_exercise"><input type="hidden" name="group_id" value="<?php echo (int) $gid; ?>"><input type="hidden" name="session_id" value="<?php echo (int) $sid; ?>"><input type="hidden" name="session_date" value="<?php echo esc_attr($date); ?>"><input type="hidden" name="part_id" value="<?php echo (int) $part['id']; ?>">
-                    <select name="exercise_id" required><option value=""><?php esc_html_e('Ajouter un exercice…', 'ecole2nat'); ?></option><?php foreach ($data['library'] as $exercise) : ?><option value="<?php echo (int) $exercise['id']; ?>"><?php echo esc_html($exercise['domain_name'] . ' · ' . $exercise['skill_name'] . ' · ' . $exercise['name']); ?></option><?php endforeach; ?></select>
+                    <div class="e2n-exercise-picker">
+                        <label class="screen-reader-text" for="e2n-exercise-search-<?php echo (int) $part['id']; ?>"><?php esc_html_e('Rechercher un exercice', 'ecole2nat'); ?></label>
+                        <input id="e2n-exercise-search-<?php echo (int) $part['id']; ?>" type="search" placeholder="<?php esc_attr_e('Rechercher un exercice…', 'ecole2nat'); ?>" data-e2n-exercise-search autocomplete="off">
+                        <?php $this->exerciseSelect($data['library']); ?>
+                        <small data-e2n-exercise-results aria-live="polite"><?php echo esc_html(sprintf(_n('%d exercice', '%d exercices', count($data['library']), 'ecole2nat'), count($data['library']))); ?></small>
+                    </div>
                     <input type="number" name="duration" min="1" value="5" aria-label="<?php esc_attr_e('Durée en minutes', 'ecole2nat'); ?>"><input name="notes" placeholder="<?php esc_attr_e('Consigne coach', 'ecole2nat'); ?>"><button class="e2n-btn" type="submit"><?php esc_html_e('Ajouter', 'ecole2nat'); ?></button>
                 </form>
             </section>
@@ -508,6 +513,24 @@ class CoachPortal
             echo '<input type="hidden" name="' . esc_attr($name) . '" value="' . esc_attr((string) $value) . '">';
         }
         echo '<button type="submit" class="e2n-link-button">' . esc_html($label) . '</button></form>';
+    }
+
+    private function exerciseSelect(array $library): void
+    {
+        echo '<select name="exercise_id" required data-e2n-exercise-select>';
+        echo '<option value="">' . esc_html__('Ajouter un exercice…', 'ecole2nat') . '</option>';
+        $group = '';
+        foreach ($library as $exercise) {
+            $nextGroup = (string) $exercise['domain_name'] . ' · ' . (string) $exercise['skill_name'];
+            if ($nextGroup !== $group) {
+                if ($group !== '') echo '</optgroup>';
+                echo '<optgroup label="' . esc_attr($nextGroup) . '">';
+                $group = $nextGroup;
+            }
+            echo '<option value="' . (int) $exercise['id'] . '">' . esc_html($exercise['name']) . '</option>';
+        }
+        if ($group !== '') echo '</optgroup>';
+        echo '</select>';
     }
 
     public function ajaxSessionAction(): void

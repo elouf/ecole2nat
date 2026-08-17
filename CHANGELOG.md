@@ -1,6 +1,10 @@
 # Changelog
 
-## Non publié — 0.13.0
+## Non publié — 0.13.1
+
+- Ajoute une recherche instantanée dans la bibliothèque d'exercices de l'éditeur Coach.
+- Regroupe les exercices par domaine et compétence pour accélérer leur sélection sur mobile.
+- Corrige le chevauchement des champs de l'éditeur Coach entre 700 et 820 px de largeur.
 
 - Ajoute dans le portail Coach la création d'une séance pour un créneau et la duplication de la séance prévue.
 - Permet d'éditer sur mobile le nom, les objectifs, les parties, les exercices, les durées et les consignes de cette copie avec autosauvegarde.

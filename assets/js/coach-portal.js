@@ -9,6 +9,13 @@
     var noteTimers = new WeakMap();
     var editorTimers = new WeakMap();
 
+    function searchable(value) {
+        var normalized = String(value || '').toLocaleLowerCase();
+        return typeof normalized.normalize === 'function'
+            ? normalized.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+            : normalized;
+    }
+
     function saveStatus(element, state, message) {
         if (!element) return;
         element.classList.remove('is-saving', 'is-saved', 'is-error');
@@ -159,6 +166,29 @@
     document.addEventListener('input', function (event) {
         var field = event.target;
         if (!(field instanceof HTMLInputElement) && !(field instanceof HTMLTextAreaElement)) return;
+
+        if (field.hasAttribute('data-e2n-exercise-search')) {
+            var picker = field.closest('.e2n-exercise-picker');
+            var select = picker ? picker.querySelector('[data-e2n-exercise-select]') : null;
+            if (!select) return;
+            var query = searchable(field.value.trim());
+            var count = 0;
+            select.querySelectorAll('optgroup').forEach(function (group) {
+                var groupMatch = searchable(group.label).indexOf(query) !== -1;
+                var visibleInGroup = 0;
+                group.querySelectorAll('option').forEach(function (option) {
+                    var visible = query === '' || groupMatch || searchable(option.textContent).indexOf(query) !== -1;
+                    option.hidden = !visible;
+                    if (visible) visibleInGroup++;
+                });
+                group.hidden = visibleInGroup === 0;
+                count += visibleInGroup;
+            });
+            if (select.selectedOptions.length && select.selectedOptions[0].hidden) select.value = '';
+            var results = picker.querySelector('[data-e2n-exercise-results]');
+            if (results) results.textContent = count + (count > 1 ? ' exercices' : ' exercice');
+            return;
+        }
 
         var editorKind = field.getAttribute('data-e2n-editor-field');
         if (editorKind) {

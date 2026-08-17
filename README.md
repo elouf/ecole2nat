@@ -60,7 +60,7 @@ Les remplacements sont gérés depuis **Ecole2Nat' → Coachs**. Ils associent u
 Depuis un créneau, un titulaire ou le remplaçant autorisé pour la date peut :
 
 - affecter ou changer la séance prévue pour la date ;
-- créer une séance pour le créneau ou dupliquer la séance prévue, puis modifier cette copie (objectifs, parties, exercices, durées et consignes) avec autosauvegarde ;
+- créer une séance pour le créneau ou dupliquer la séance prévue, puis modifier cette copie (objectifs, parties, exercices, durées et consignes) avec autosauvegarde et recherche rapide dans la bibliothèque ;
 - marquer la séance comme réalisée ;
 - pointer rapidement les nageurs présents ou absents ;
 - ouvrir une fiche nageur avec ses informations utiles et ses acquis ;

@@ -32,6 +32,8 @@
 5. Ajouter, déplacer et retirer un exercice ; vérifier la durée totale affichée.
 6. Vérifier qu'un exercice d'une autre catégorie et un doublon dans la même partie sont refusés côté serveur.
 7. Vérifier que les exercices rattachés aux domaines et compétences actifs de la catégorie sont proposés, sans erreur SQL dans `debug.log`.
+8. Rechercher un exercice par son nom, son domaine puis sa compétence ; vérifier le compteur, les regroupements et l'ajout du résultat sélectionné.
+9. Effacer la recherche : tous les exercices doivent réapparaître dans leur ordre initial.
 
 ## Droits et sécurité
 
@@ -45,6 +47,7 @@
 ## Ergonomie et non-régression
 
 1. Tester sur téléphone et tablette : champs, sélecteurs et actions doivent rester utilisables au bord du bassin.
-2. Tester la navigation clavier et le focus visible.
-3. Vérifier que consultation de séance, présences, évaluations et statut réalisée/prévue restent inchangés.
-4. Vérifier l'absence de warning ou d'information sensible dans `debug.log` et dans les réponses AJAX.
+2. Vérifier spécifiquement les largeurs 700, 701, 768, 815, 820 et 821 px : aucun champ d'exercice ou d'ajout ne doit se chevaucher ni sortir de la carte.
+3. Tester la navigation clavier et le focus visible.
+4. Vérifier que consultation de séance, présences, évaluations et statut réalisée/prévue restent inchangés.
+5. Vérifier l'absence de warning ou d'information sensible dans `debug.log` et dans les réponses AJAX.
