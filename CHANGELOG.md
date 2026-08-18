@@ -1,7 +1,12 @@
 # Changelog
 
-## Non publié — 0.18.0
+## Non publié — 0.18.1
 
+- Force la résolution Composer sur PHP 8.1 afin d'empêcher une dépendance indirecte de rendre le paquet incompatible avec la version minimale annoncée.
+- Ajoute `composer build` pour générer un ZIP WordPress propre et versionné, contenant les dépendances de production sans les fichiers de développement.
+- Lit un onglet `Référentiel <catégorie>` par catégorie et déduit la catégorie du nom de l'onglet, sans codes domaine ou compétence.
+- Ignore les lignes de l'onglet Inscriptions dont la valeur `Renouvellement` n'est pas explicitement `OUI` ou `NON`.
+- Interprète correctement les cellules fusionnées des classeurs, notamment les domaines couvrant plusieurs compétences.
 - Modernise le portail Coach avec une interface autonome, cohérente et indépendante de la mise en page du thème WordPress.
 - Remplace l'en-tête historique par une navigation compacte et persistante, complétée par un menu utilisateur.
 - Regroupe les actions secondaires de la fiche nageur dans un menu dédié afin de conserver la progression comme action principale.

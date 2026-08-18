@@ -14,6 +14,15 @@
 3. Cliquer sur **Analyser uniquement**.
 4. Vérifier les nombres de groupes, nageurs, lignes de référentiel et exercices.
 5. Vérifier qu'aucune donnée n'a encore été créée.
+6. Vérifier que les onglets `Référentiel Némo`, `Référentiel Dauphin`, etc.
+   sont regroupés dans l'analyse et que leur suffixe détermine la catégorie.
+7. Vérifier que ces onglets fonctionnent sans colonnes `Code domaine`,
+   `Code compétence` ni `Catégorie`.
+8. Ajouter dans `Inscriptions` des lignes complètes avec `Renouvellement` vide
+   ou différent de `OUI`/`NON` : elles ne doivent pas être comptées.
+9. Dans un onglet Référentiel, fusionner une cellule Domaine sur plusieurs
+   lignes de compétences : chaque compétence doit reprendre ce domaine sans
+   erreur d'analyse.
 
 ## Synchronisation
 
@@ -32,7 +41,8 @@
 
 ## Erreurs
 
-- Supprimer temporairement un nom de catégorie dans l'onglet Référentiel : l'analyse doit être bloquée.
+- Renommer tous les onglets `Référentiel <catégorie>` : l'analyse doit être bloquée.
+- Vider Domaine ou Compétence dans un onglet Référentiel : l'analyse doit être bloquée avec le nom de l'onglet et la ligne.
 - Introduire deux fois le même nageur : l'analyse doit signaler un doublon.
 - Mettre une extension autre que `.xlsx` : le fichier doit être refusé.
 - Saisir une durée nulle, négative, non entière ou supérieure à 1440 : l'analyse doit être bloquée avec la ligne concernée.

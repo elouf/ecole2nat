@@ -72,10 +72,21 @@ $groupsSheet->fromArray([
     ['Némo Lundi 17h15', 'Némo', 45],
 ]);
 $spreadsheet->createSheet()->setTitle('Inscriptions')->fromArray([
-    ['Nom', 'Prénom', 'Catégorie', 'Créneau 1', 'Email', 'Téléphone', 'Info médicale', 'Commentaire'],
-    ['Martin', 'Léa', 'Némo', 'Lundi 17h15', 'parent@example.test', '06 01 02 03 04', 'Détail sensible', 'Ancienne remarque'],
+    ['Nom', 'Prénom', 'Catégorie', 'Créneau 1', 'Renouvellement', 'Email', 'Téléphone', 'Info médicale', 'Commentaire'],
+    ['Martin', 'Léa', 'Némo', 'Lundi 17h15', 'OUI', 'parent@example.test', '06 01 02 03 04', 'Détail sensible', 'Ancienne remarque'],
+    ['Durand', 'Noé', 'Dauphin', 'Mardi 18h00', '', 'ignore@example.test', '', '', ''],
+    ['Petit', 'Zoé', 'Avenir', 'Mercredi 19h00', 'En attente', 'ignore2@example.test', '', '', ''],
 ]);
-$spreadsheet->createSheet()->setTitle('Référentiel')->fromArray([['Catégorie', 'Domaine', 'Compétence']]);
+$spreadsheet->createSheet()->setTitle('Référentiel Némo')->fromArray([
+    ['Domaine', 'Compétence', 'Exercices'],
+    ['Immersion', 'Mettre la tête sous l’eau', 'Bulles; Passage sous une frite'],
+    ['', 'Ouvrir les yeux sous l’eau', 'Ramasser un objet'],
+]);
+$spreadsheet->getSheetByName('Référentiel Némo')->mergeCells('A2:A3');
+$spreadsheet->createSheet()->setTitle('Référentiel Dauphin')->fromArray([
+    ['Domaine', 'Compétence', 'Exercices'],
+    ['Propulsion', 'Se déplacer sur le ventre', 'Battements avec planche'],
+]);
 $temporaryBase = tempnam(sys_get_temp_dir(), 'e2n-tests-');
 if ($temporaryBase === false) throw new RuntimeException('Impossible de créer le fichier de test temporaire.');
 $workbookPath = $temporaryBase . '.xlsx';
@@ -89,6 +100,12 @@ expectSame(1, $workbook['data']['swimmers'][0]['health_alert'] ?? null, 'Info m�
 expectSame(false, array_key_exists('medical_note', $workbook['data']['swimmers'][0] ?? []), 'Texte médical absent des données analysées');
 expectSame('parent@example.test', $workbook['data']['swimmers'][0]['responsible_email'] ?? null, 'Email responsable conservé');
 expectSame('06 01 02 03 04', $workbook['data']['swimmers'][0]['responsible_phone'] ?? null, 'Téléphone responsable conservé');
+expectSame(1, count($workbook['data']['swimmers']), 'Inscriptions sans Renouvellement OUI ou NON ignorées');
+expectSame(3, count($workbook['data']['reference']), 'Lecture de plusieurs onglets Référentiel par catégorie');
+expectSame('Némo', $workbook['data']['reference'][0]['category'] ?? null, 'Catégorie déduite du nom de l’onglet Référentiel');
+expectSame('Immersion', $workbook['data']['reference'][1]['domain'] ?? null, 'Domaine repris depuis une cellule fusionnée');
+expectSame(false, array_key_exists('domainCode', $workbook['data']['reference'][0] ?? []), 'Code domaine absent des données analysées');
+expectSame(false, array_key_exists('skillCode', $workbook['data']['reference'][0] ?? []), 'Code compétence absent des données analysées');
 unlink($workbookPath);
 
 if ($failures !== []) {

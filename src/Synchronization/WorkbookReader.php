@@ -19,7 +19,7 @@ final class WorkbookReader
 
         $groupsSheet = $this->findSheet($spreadsheet, ['groupes', 'catégories', 'categories']);
         $registrationsSheet = $this->findSheet($spreadsheet, ['inscriptions', 'inscription']);
-        $referenceSheet = $this->findSheet($spreadsheet, ['référentiel', 'referentiel']);
+        $referenceSheets = $this->findReferenceSheets($spreadsheet);
 
         $errors = [];
         if ($groupsSheet === null) {
@@ -28,8 +28,8 @@ final class WorkbookReader
         if ($registrationsSheet === null) {
             $errors[] = 'Onglet Inscriptions introuvable.';
         }
-        if ($referenceSheet === null) {
-            $errors[] = 'Onglet Référentiel introuvable.';
+        if ($referenceSheets === []) {
+            $errors[] = 'Aucun onglet Référentiel <catégorie> trouvé.';
         }
 
         if ($errors !== []) {
@@ -38,7 +38,18 @@ final class WorkbookReader
 
         $warnings = [];
         $groups = $this->readGroups($groupsSheet, $errors, $warnings);
-        $reference = $this->readReference($referenceSheet, $errors, $warnings);
+        $reference = [];
+        foreach ($referenceSheets as $referenceSheet) {
+            $reference = array_merge(
+                $reference,
+                $this->readReference(
+                    $referenceSheet['sheet'],
+                    $referenceSheet['category'],
+                    $errors,
+                    $warnings
+                )
+            );
+        }
         $swimmers = $this->readSwimmers($registrationsSheet, $errors, $warnings);
 
         return [
@@ -65,6 +76,29 @@ final class WorkbookReader
         return null;
     }
 
+    private function findReferenceSheets($spreadsheet): array
+    {
+        $sheets = [];
+        foreach ($spreadsheet->getWorksheetIterator() as $sheet) {
+            $title = trim((string) $sheet->getTitle());
+            $normalized = $this->normalize($title);
+
+            if ($normalized === 'referentiel') {
+                $sheets[] = ['sheet' => $sheet, 'category' => null];
+                continue;
+            }
+
+            if (str_starts_with($normalized, 'referentiel ')) {
+                $category = trim((string) preg_replace('/^r[ée]f[ée]rentiel\s+/iu', '', $title));
+                if ($category !== '') {
+                    $sheets[] = ['sheet' => $sheet, 'category' => $category];
+                }
+            }
+        }
+
+        return $sheets;
+    }
+
     private function rows($sheet): array
     {
         $highestColumn = Coordinate::columnIndexFromString($sheet->getHighestDataColumn());
@@ -84,6 +118,9 @@ final class WorkbookReader
             foreach ($headers as $column => $header) {
                 $cell = $sheet->getCell([$column, $row]);
                 $value = $cell->getValue();
+                if ($value === null || $value === '') {
+                    $value = $this->mergedCellValue($sheet, $column, $row);
+                }
                 if ($value !== null && $value !== '') {
                     $hasValue = true;
                 }
@@ -95,6 +132,25 @@ final class WorkbookReader
             }
         }
         return $rows;
+    }
+
+    private function mergedCellValue($sheet, int $column, int $row)
+    {
+        foreach ($sheet->getMergeCells() as $range) {
+            [$start, $end] = Coordinate::rangeBoundaries($range);
+            if (
+                $column < $start[0]
+                || $column > $end[0]
+                || $row < $start[1]
+                || $row > $end[1]
+            ) {
+                continue;
+            }
+
+            return $sheet->getCell([$start[0], $start[1]])->getValue();
+        }
+
+        return null;
     }
 
     private function readGroups($sheet, array &$errors, array &$warnings): array
@@ -146,25 +202,23 @@ final class WorkbookReader
         return array_values($groups);
     }
 
-    private function readReference($sheet, array &$errors, array &$warnings): array
+    private function readReference($sheet, ?string $sheetCategory, array &$errors, array &$warnings): array
     {
         $rows = [];
         foreach ($this->rows($sheet) as $row) {
-            $category = $this->string($row, ['categorie']);
+            $category = $sheetCategory ?? $this->string($row, ['categorie']);
             $domain = $this->string($row, ['domaine']);
-            $domainCode = $this->string($row, ['code domaine']);
             $skill = $this->string($row, ['competences', 'competence']);
-            $skillCode = $this->string($row, ['code competence']);
             $exerciseText = $this->string($row, ['exercices', 'exercice']);
             if ($category === '' && $domain === '' && $skill === '' && $exerciseText === '') {
                 continue;
             }
             if ($category === '' || $domain === '' || $skill === '') {
-                $errors[] = sprintf('Onglet Référentiel, ligne %d : Catégorie, Domaine et Compétence sont obligatoires.', $row['_row']);
+                $errors[] = sprintf('Onglet %s, ligne %d : Domaine et Compétence sont obligatoires.', $sheet->getTitle(), $row['_row']);
                 continue;
             }
             $exercises = array_values(array_unique(array_filter(array_map('trim', preg_split('/[;\n]+/u', $exerciseText) ?: []))));
-            $rows[] = compact('category', 'domain', 'domainCode', 'skill', 'skillCode', 'exercises');
+            $rows[] = compact('category', 'domain', 'skill', 'exercises');
         }
         return $rows;
     }
@@ -174,6 +228,11 @@ final class WorkbookReader
         $swimmers = [];
         $identities = [];
         foreach ($this->rows($sheet) as $row) {
+            $renewal = $this->normalize($this->string($row, ['renouvellement']));
+            if (!in_array($renewal, ['oui', 'non'], true)) {
+                continue;
+            }
+
             $lastName = $this->string($row, ['nom']);
             $firstName = $this->string($row, ['prenom']);
             if ($lastName === '' && $firstName === '') {

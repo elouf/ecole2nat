@@ -17,6 +17,11 @@ Plugin WordPress de suivi pédagogique pour école de natation.
 - maintenance et purge contrôlée des données ;
 - portail Coach avec semaine type et évaluations rapides.
 
+La synchronisation attend un onglet `Référentiel <catégorie>` par référentiel
+(par exemple `Référentiel Némo`) avec les colonnes Domaine, Compétence et
+Exercice(s). Les inscriptions ne sont importées que lorsque la colonne
+`Renouvellement` contient explicitement `OUI` ou `NON`.
+
 ## Portail parents
 
 1. Créez et publiez une page WordPress, par exemple **Mon parcours de natation**.
@@ -68,6 +73,16 @@ git clone https://github.com/elouf/ecole2nat.git
 cd ecole2nat
 composer install
 ```
+
+## Construire une archive installable
+
+```bash
+composer build
+```
+
+Le ZIP est généré dans `build/` avec les dépendances de production. Il exclut
+Git, les tests et la documentation de développement, et contient un dossier
+racine `ecole2nat/` directement installable dans WordPress.
 
 Placez ensuite le dépôt dans :
 

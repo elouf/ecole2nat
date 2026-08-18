@@ -17,6 +17,30 @@ Avant commit/tag :
 - [ ] purge totale sur l’environnement de test puis reconstruction par synchronisation
 - [ ] sauvegarde de la base avant déploiement réel
 
+## Construire le ZIP installable
+
+Depuis la racine du plugin :
+
+```bash
+composer build
+```
+
+La commande réinstalle les dépendances verrouillées de production, optimise
+l'autoload puis génère `build/ecole2nat-<version>.zip`. L'archive inclut le
+code, les assets, les gabarits et `vendor/`, mais exclut Git, les tests et la
+documentation de développement.
+
+Vérifier dans l'archive la présence de :
+
+- `ecole2nat/ecole2nat.php`
+- `ecole2nat/src/`
+- `ecole2nat/templates/`
+- `ecole2nat/assets/`
+- `ecole2nat/vendor/autoload.php`
+
+Vérifier enfin que le `vendor/composer/platform_check.php` embarqué correspond
+à la version PHP minimale annoncée par le plugin.
+
 Commit conseillé :
 
 ```bash
