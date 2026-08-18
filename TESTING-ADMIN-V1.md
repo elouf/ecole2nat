@@ -8,7 +8,7 @@
 
 ## Badges de statut
 
-- Vérifier le badge vert **Actif** dans les listes des catégories, groupes, nageurs et séances.
+- Vérifier le badge vert **Actif** dans les listes des catégories, groupes et nageurs.
 - Désactiver un élément et vérifier le badge rouge clair **Inactif**.
 
 ## Tableau des nageurs
@@ -29,7 +29,7 @@
 - Exercice utilisé dans une séance : suppression refusée.
 - Saison courante ou contenant des groupes : suppression refusée.
 - Groupe contenant des nageurs : suppression refusée.
-- Groupe lié à un coach titulaire ou à un remplacement daté : suppression refusée.
+- Groupe lié à un coach titulaire : suppression refusée.
 
 ## Suppressions autorisées
 
@@ -44,6 +44,7 @@
 
 ## Non-régression
 
+- Modifier la signature dans **Réglages**, recharger la page et vérifier sa persistance.
 - Créer et modifier un nageur.
 - Ouvrir un accès parents existant.
 - Créer et modifier une séance.

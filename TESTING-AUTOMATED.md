@@ -15,7 +15,7 @@ La commande doit se terminer avec un code `0` et afficher le nombre d’assertio
 - accès administrateur au portail Coach ;
 - refus d’un utilisateur sans capacité Coach ;
 - droits permanents d’un titulaire ;
-- préparation future, droits terrain du jour et expiration d’un remplaçant ;
+- droit d’évaluation de tous les groupes pour chaque compte Coach ;
 - libellés d’accès correspondants ;
 - extraction du jour et de l’heure depuis un nom de groupe ;
 - durée normale, horaire incomplet et créneau passant minuit ;

@@ -27,4 +27,4 @@
 
 1. Tester le formulaire et la liste à 320, 768 et 1280 px.
 2. Vérifier les actions Activer/Désactiver et Supprimer.
-3. Vérifier que l’édition n’altère ni les nageurs, ni les séances datées, ni les titulaires et remplaçants du groupe.
+3. Vérifier que l’édition n’altère ni les nageurs, ni les anciennes données datées conservées, ni les titulaires du groupe.

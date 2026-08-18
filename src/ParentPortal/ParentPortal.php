@@ -73,7 +73,7 @@ class ParentPortal
             }
         }
 
-        $previewMode = false;
+        $previewMode = '';
         $swimmerId = 0;
 
         if (
@@ -88,12 +88,29 @@ class ParentPortal
                 $previewSwimmerId > 0
                 && wp_verify_nonce($nonce, 'e2n_parent_preview_' . $previewSwimmerId)
             ) {
-                $previewMode = true;
+                $previewMode = 'admin';
                 $swimmerId = $previewSwimmerId;
             }
         }
 
-        if (!$previewMode) {
+        if (
+            $previewMode === ''
+            && is_user_logged_in()
+            && (current_user_can('manage_options') || current_user_can('e2n_coach_access'))
+            && isset($_GET['e2n_coach_preview'], $_GET['_wpnonce'])
+        ) {
+            $previewSwimmerId = absint($_GET['e2n_coach_preview']);
+            $nonce = sanitize_text_field(wp_unslash($_GET['_wpnonce']));
+            if (
+                $previewSwimmerId > 0
+                && wp_verify_nonce($nonce, 'e2n_coach_parent_preview_' . $previewSwimmerId)
+            ) {
+                $previewMode = 'coach';
+                $swimmerId = $previewSwimmerId;
+            }
+        }
+
+        if ($previewMode === '') {
             $swimmerId = $this->service->authenticatedSwimmerId();
         }
 
@@ -171,7 +188,7 @@ class ParentPortal
         <?php
     }
 
-    private function renderReport(array $report, bool $previewMode = false): void
+    private function renderReport(array $report, string $previewMode = ''): void
     {
         $swimmer = $report['swimmer'];
         $counts = $report['counts'];
@@ -179,9 +196,11 @@ class ParentPortal
         $acquired = (int) $counts['acquired'];
         $percentage = $total > 0 ? (int) round(($acquired / $total) * 100) : 0;
         ?>
-        <?php if ($previewMode) : ?>
+        <?php if ($previewMode !== '') : ?>
             <div class="e2n-parent-alert e2n-parent-preview-banner">
-                <?php esc_html_e('Prévisualisation administrateur — aucun code parent n’a été utilisé.', 'ecole2nat'); ?>
+                <?php echo esc_html($previewMode === 'coach'
+                    ? __('Prévisualisation Coach — aucun code parent n’a été utilisé.', 'ecole2nat')
+                    : __('Prévisualisation administrateur — aucun code parent n’a été utilisé.', 'ecole2nat')); ?>
             </div>
         <?php endif; ?>
         <?php if (!empty($report['seasons']) && count($report['seasons']) > 1) : ?>
@@ -240,7 +259,7 @@ class ParentPortal
                 <button type="button" class="e2n-parent-print" onclick="window.print()">
                     <?php esc_html_e('Imprimer', 'ecole2nat'); ?>
                 </button>
-                <?php if (!$previewMode) : ?>
+                <?php if ($previewMode === '') : ?>
                     <form method="post">
                         <?php wp_nonce_field('e2n_parent_logout'); ?>
                         <input type="hidden" name="e2n_parent_action" value="logout">
@@ -309,9 +328,23 @@ class ParentPortal
                         <?php foreach ($domain['skills'] as $skill) : ?>
                             <li class="status-<?php echo esc_attr(str_replace('_', '-', $skill['status'])); ?>">
                                 <span class="e2n-parent-status-dot" aria-hidden="true"></span>
-                                <div>
+                                <div class="e2n-parent-skill-content">
                                     <strong><?php echo esc_html($skill['name']); ?></strong>
                                     <span><?php echo esc_html($this->parentStatusLabel($skill['status'])); ?></span>
+                                    <?php if (!empty($skill['history'])) : ?>
+                                        <details class="e2n-parent-history">
+                                            <summary aria-label="<?php esc_attr_e('Afficher l’historique de cette compétence', 'ecole2nat'); ?>"><span aria-hidden="true">◷</span> <?php esc_html_e('Voir l’historique', 'ecole2nat'); ?></summary>
+                                            <ol>
+                                                <?php foreach ($skill['history'] as $event) : ?>
+                                                    <li>
+                                                        <time><?php echo esc_html(wp_date('d/m/Y', strtotime((string) $event['changed_at']))); ?></time>
+                                                        — <?php echo esc_html($this->parentStatusLabel((string) $event['status'])); ?>
+                                                        — <?php echo esc_html((string) ($event['evaluator_name'] ?: __('Coach', 'ecole2nat'))); ?>
+                                                    </li>
+                                                <?php endforeach; ?>
+                                            </ol>
+                                        </details>
+                                    <?php endif; ?>
                                 </div>
                             </li>
                         <?php endforeach; ?>

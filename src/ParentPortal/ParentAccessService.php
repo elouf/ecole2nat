@@ -214,6 +214,23 @@ class ParentAccessService
         );
     }
 
+    public function coachPreviewUrl(int $swimmerId): string
+    {
+        if ($swimmerId <= 0 || (!current_user_can('manage_options') && !current_user_can('e2n_coach_access'))) {
+            return '';
+        }
+
+        $portalUrl = $this->portalUrl();
+        if ($portalUrl === '') {
+            return '';
+        }
+
+        return wp_nonce_url(
+            add_query_arg(['e2n_coach_preview' => $swimmerId], $portalUrl),
+            'e2n_coach_parent_preview_' . $swimmerId
+        );
+    }
+
     public function portalUrl(): string
     {
         global $wpdb;

@@ -20,7 +20,8 @@ class EvaluationService
         $ctx=$this->groupContext($groupId); if($ctx===null)return null; $seasonId=(int)$ctx['group']['season_id'];
         $sw=$this->repository->findSwimmerInGroup($swimmerId,$groupId,$seasonId); if($sw===null)return null;
         $levels=$this->repository->levelsBySwimmer($swimmerId,$seasonId);
-        foreach($ctx['skills'] as &$skill){$id=(int)$skill['id'];$saved=$levels[$id]??null;$skill['status']=is_array($saved)?(string)$saved['status']:self::STATUS_NOT_OBSERVED;$skill['notes']=is_array($saved)?(string)($saved['notes']??''):'';$skill['evaluated_at']=is_array($saved)?($saved['evaluated_at']??null):null;$skill['evaluator_name']=is_array($saved)?(string)($saved['evaluator_name']??''):'';} unset($skill);
+        $history=$this->repository->historyBySwimmer($swimmerId,$seasonId);
+        foreach($ctx['skills'] as &$skill){$id=(int)$skill['id'];$saved=$levels[$id]??null;$skill['status']=is_array($saved)?(string)$saved['status']:self::STATUS_NOT_OBSERVED;$skill['notes']=is_array($saved)?(string)($saved['notes']??''):'';$skill['evaluated_at']=is_array($saved)?($saved['evaluated_at']??null):null;$skill['evaluator_name']=is_array($saved)?(string)($saved['evaluator_name']??''):'';$skill['history']=$history[$id]??[];} unset($skill);
         return ['group'=>$ctx['group'],'swimmer'=>$sw,'skills'=>$ctx['skills']];
     }
     public function save(int $groupId,int $swimmerId,array $statuses,array $notes,int $userId):array

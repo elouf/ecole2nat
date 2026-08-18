@@ -4,8 +4,8 @@
 
 1. Remplacer le plugin par le contenu de l’archive.
 2. Exécuter `composer install` puis `composer dump-autoload -o`.
-3. Recharger une page WordPress afin de déclencher la migration automatique `maybeUpgrade()` et la création de `e2n_swimmer_skill_levels`.
-4. Vérifier dans la base que la table existe.
+3. Recharger une page WordPress afin de déclencher la migration automatique `maybeUpgrade()` et la création de `e2n_swimmer_skill_levels` et `e2n_skill_level_history`.
+4. Vérifier dans la base que les deux tables existent.
 
 ## Préconditions
 
@@ -27,3 +27,6 @@
 10. Recharger l’écran et vérifier que les niveaux, notes et dates sont conservés.
 11. Revenir au groupe et vérifier les compteurs Non observé / En cours / Acquis.
 12. Vérifier qu’un nageur d’un autre groupe ne peut pas être évalué en modifiant manuellement l’URL.
+13. Vérifier que chaque changement effectif de statut ajoute un événement avec la date et l'utilisateur.
+14. Réenregistrer un statut identique et vérifier qu'aucun doublon d'historique n'est créé.
+15. Provoquer un échec d'ajout dans l'historique et vérifier que le niveau courant est annulé par le `ROLLBACK`.

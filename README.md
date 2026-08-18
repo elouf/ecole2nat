@@ -1,6 +1,6 @@
 # Ecole2Nat'
 
-Plugin WordPress de suivi et de préparation pédagogique pour école de natation.
+Plugin WordPress de suivi pédagogique pour école de natation.
 
 ## Modules disponibles
 
@@ -10,13 +10,12 @@ Plugin WordPress de suivi et de préparation pédagogique pour école de natatio
 - bibliothèque d'exercices ;
 - groupes ;
 - nageurs ;
-- séances types avec parties, exercices, durées et consignes ;
 - évaluations progressives ;
 - portail parents sécurisé ;
 - distribution groupée des accès parents par email, coupons ou CSV ;
 - synchronisation d’un classeur club avec saison cible ;
 - maintenance et purge contrôlée des données ;
-- portail Coach avec planning, séance terrain, présences et évaluations rapides.
+- portail Coach avec semaine type et évaluations rapides.
 
 ## Portail parents
 
@@ -29,53 +28,26 @@ Plugin WordPress de suivi et de préparation pédagogique pour école de natatio
 
 3. Utilisez **Ecole2Nat' → Accès parents** pour distribuer les accès d’un groupe par email, coupons ou CSV.
 4. Les liens **Voir le parcours** du back-office permettent une prévisualisation administrateur sans exposer le code parent.
+5. Personnalisez la signature des emails dans **Ecole2Nat' → Réglages** ; elle s'applique aussi aux renvois déclenchés depuis le portail Coach.
 
 Le code n'est jamais conservé en clair. Il n'est affiché dans l'administration qu'après sa génération ou sa régénération. Un renvoi génère donc un nouveau code et invalide l'ancien.
 
-## Séances types
-
-Le module permet de :
-
-- créer et modifier une séance ;
-- organiser la séance en parties ;
-- ajouter des exercices depuis la bibliothèque ;
-- définir une durée et des consignes propres à chaque utilisation ;
-- réutiliser plusieurs fois le même exercice avec des consignes différentes ;
-- réordonner ou retirer les exercices ;
-- renommer, déplacer ou supprimer les parties ;
-- calculer automatiquement les durées ;
-- dupliquer une séance complète ;
-- imprimer une fiche A4.
-
 ## Évaluations progressives
 
-Le module Évaluations permet de suivre le niveau courant de chaque nageur sur les compétences du référentiel de la catégorie de son groupe. Les trois états disponibles sont : Non observé, En cours et Acquis. Les évaluations sont mises à jour au fil de l'eau, sans campagne ni calendrier imposé.
+Le module Évaluations permet de suivre le niveau courant de chaque nageur sur les compétences du référentiel de la catégorie de son groupe. Les trois états disponibles sont : Non observé, En cours et Acquis. Chaque changement conserve sa date et le nom du coach dans un historique saisonnier.
 
 
-## Portail Coach et séance terrain
+## Portail Coach
 
-Le shortcode `[e2n_coach_portal]` alimente l’espace frontend des coachs. Le planning permet de parcourir les semaines précédentes et suivantes, puis chaque groupe permet de passer directement à son occurrence précédente ou suivante. Tous les coachs peuvent consulter les groupes actifs.
+Le shortcode `[e2n_coach_portal]` propose trois accès complémentaires aux nageurs : liste alphabétique avec recherche, classement par catégorie et semaine type permanente construite depuis les créneaux des groupes. Aucun créneau n'est associé à une date et aucune préparation de séance n'est requise. Depuis une fiche d'évaluation, un coach peut ouvrir une prévisualisation sécurisée de la fiche Parents ou régénérer et envoyer un nouveau code à l'adresse responsable enregistrée. Le code n'est jamais affiché au coach.
 
-Pour un titulaire comme pour un remplaçant daté, une date future autorise la préparation de la séance, le jour courant autorise les opérations terrain, et une date passée reste en consultation. Les administrateurs conservent les droits d'édition sur toutes les dates.
+Un clic sur un créneau ouvre directement le groupe. Tous les comptes Coach peuvent mettre à jour les progressions de tous les groupes actifs, individuellement ou collectivement. Les titulaires habituels restent affichés à titre informatif.
 
-Les remplacements sont gérés depuis **Ecole2Nat' → Coachs**. Ils associent un coach, un groupe et une date précise. Le remplaçant peut préparer la séance avant cette date. Les présences, évaluations et actions terrain ne deviennent modifiables que le jour prévu, puis le droit expire automatiquement sans modifier les titulaires permanents.
+Les changements sont enregistrés immédiatement et alimentent la chronologie de chaque compétence. Les informations médicales restent réservées au portail Coach et ne sont jamais exposées dans le portail Parents.
 
-Depuis un créneau, un titulaire ou le remplaçant autorisé pour la date peut :
+Le portail Parents présente l'état courant de façon synthétique. Un contrôle replié sous chaque compétence permet d'afficher à la demande la date, le statut atteint et le coach ayant effectué chaque changement.
 
-- affecter ou changer la séance prévue pour la date ;
-- créer une séance pour le créneau ou dupliquer la séance prévue, puis modifier cette copie (objectifs, parties, exercices, durées et consignes) avec autosauvegarde et recherche rapide dans la bibliothèque ;
-- conserver explicitement une adaptation ponctuelle comme séance type réutilisable ;
-- marquer la séance comme réalisée ;
-- pointer rapidement les nageurs présents ou absents ;
-- ouvrir une fiche nageur avec ses informations utiles et ses acquis ;
-- évaluer individuellement un nageur ;
-- choisir une compétence et évaluer collectivement tout le groupe.
-
-Les présences sont historisées par date et ne modifient jamais l’affectation théorique du nageur à son groupe.
-
-Les séances créées ou dupliquées depuis un créneau sont ponctuelles par défaut : elles restent consultables depuis ce créneau mais ne sont pas proposées dans la bibliothèque générale. Le coach peut choisir « Conserver comme séance type » pour les rendre réutilisables.
-
-L’éditeur compare la durée préparée à la durée calculée depuis les horaires du groupe. Un éventuel dépassement est signalé mais ne bloque jamais l’enregistrement.
+La bibliothèque d'exercices reste disponible dans le back-office comme ressource pédagogique indépendante.
 
 ## Prérequis
 
@@ -146,4 +118,4 @@ Depuis la v0.9.0, les évaluations, le référentiel actif et les affectations d
 
 ## Synchronisation des informations nageur
 
-Dans l’onglet `Inscriptions`, Ecole2Nat’ reconnaît notamment les colonnes `Info médicale` et `Droit à l'image`. Le droit à l’image accepte `OUI` ou `NON` (la cellule peut rester vide si l’information n’est pas connue). La colonne historique `Commentaire` n’est plus utilisée pour alimenter les informations médicales.
+Dans l’onglet `Inscriptions`, Ecole2Nat’ reconnaît notamment les colonnes `Info médicale` et `Droit à l'image`. Une cellule `Info médicale` non vide active uniquement un indicateur de santé : son texte n'est jamais stocké dans WordPress. Le droit à l’image accepte `OUI` ou `NON` (la cellule peut rester vide si l’information n’est pas connue). La colonne historique `Commentaire` est ignorée.

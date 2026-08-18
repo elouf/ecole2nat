@@ -6,6 +6,13 @@
 - WP Mail SMTP est configuré et un email de test fonctionne.
 - Un groupe contient plusieurs nageurs actifs, dont au moins un avec une adresse email responsable valide.
 
+## Signature
+
+1. Ouvrir **Ecole2Nat' → Réglages** et remplacer la signature des emails Parents par une valeur de test sur plusieurs lignes.
+2. Recharger la page et vérifier la persistance exacte de la signature.
+3. Envoyer successivement un code depuis le BO et depuis une fiche Coach : les deux emails doivent se terminer par cette signature.
+4. Forger l'enregistrement sans capacité `manage_options` ou avec un nonce invalide : l'option ne doit pas changer.
+
 ## Liens rapides
 
 1. Ouvrir **Ecole2Nat' → Nageurs**.
@@ -20,7 +27,8 @@
 2. Cliquer sur **Générer et envoyer par email**.
 3. Accepter la confirmation : un nouveau code est généré et invalide l'ancien.
 4. Vérifier la réception de l'email et tester le code reçu sur le portail public.
-5. Vérifier l'affichage de la date et de l'adresse de dernière transmission dans le BO.
+5. Vérifier la signature personnalisée à la fin du message.
+6. Vérifier l'affichage de la date et de l'adresse de dernière transmission dans le BO.
 
 ## Envoi groupé
 

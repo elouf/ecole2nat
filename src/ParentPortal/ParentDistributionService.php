@@ -2,6 +2,8 @@
 
 namespace Ecole2Nat\ParentPortal;
 
+use Ecole2Nat\Support\Config;
+
 if (!defined('ABSPATH')) {
     exit;
 }
@@ -195,10 +197,11 @@ class ParentDistributionService
     private function emailBody(array $swimmer, string $portalUrl, string $code): string
     {
         return sprintf(
-            __("Bonjour,\n\nVous pouvez consulter le parcours de natation de %1\$s à l'adresse suivante :\n%2\$s\n\nCode d'accès : %3\$s\n\nCe code est personnel et permet d'accéder au parcours de votre enfant.\n\nL'équipe Ecole2Nat'", 'ecole2nat'),
+            __("Bonjour,\n\nVous pouvez consulter le parcours de natation de %1\$s à l'adresse suivante :\n%2\$s\n\nCode d'accès : %3\$s\n\nCe code est personnel et permet d'accéder au parcours de votre enfant.\n\n%4\$s", 'ecole2nat'),
             (string) $swimmer['first_name'],
             $portalUrl,
-            $code
+            $code,
+            Config::parentEmailSignature()
         );
     }
 }

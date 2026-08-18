@@ -633,18 +633,16 @@ class SwimmerPage
 
                     <tr>
                         <th scope="row">
-                            <label for="medical_note">
-                                <?php esc_html_e('Notes médicales', 'ecole2nat'); ?>
+                            <label for="health_alert">
+                                <?php esc_html_e('Information de santé', 'ecole2nat'); ?>
                             </label>
                         </th>
 
                         <td>
-                            <textarea
-                                id="medical_note"
-                                name="medical_note"
-                                rows="4"
-                                class="large-text"
-                            ><?php echo esc_textarea($this->fieldValue('medical_note')); ?></textarea>
+                            <label>
+                                <input type="checkbox" id="health_alert" name="health_alert" value="1" <?php checked($this->fieldValue('health_alert'), '1'); ?>>
+                                <?php esc_html_e('Une information de santé est à consulter dans la source externe du club.', 'ecole2nat'); ?>
+                            </label>
                         </td>
                     </tr>
 
@@ -907,7 +905,7 @@ class SwimmerPage
                 ? sanitize_text_field($_POST['registration_date'])
                 : current_time('Y-m-d'),
 
-            'medical_note' => sanitize_textarea_field($_POST['medical_note'] ?? ''),
+            'health_alert' => isset($_POST['health_alert']) ? 1 : 0,
 
             'image_rights' => isset($_POST['image_rights']) && $_POST['image_rights'] !== ''
                 ? ((int) $_POST['image_rights'] === 1 ? 1 : 0)

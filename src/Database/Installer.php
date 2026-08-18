@@ -13,12 +13,13 @@ class Installer
     public static function activate(): void
     {
         self::createTables();
+        $healthAlertMigrated = self::migrateHealthAlert();
         self::migrateSeasonHistory();
         self::ensureCoachRoleAndPage();
         $sessionExercisesMigrated = self::allowRepeatedSessionExercises();
 
         update_option('e2n_version', E2N_VERSION);
-        if ($sessionExercisesMigrated) {
+        if ($sessionExercisesMigrated && $healthAlertMigrated) {
             update_option('e2n_db_version', E2N_DB_VERSION);
         }
     }
@@ -39,9 +40,10 @@ class Installer
 
         if ($installedDbVersion !== E2N_DB_VERSION) {
             self::createTables();
+            $healthAlertMigrated = self::migrateHealthAlert();
             self::migrateSeasonHistory();
             self::ensureCoachRoleAndPage();
-            if (self::allowRepeatedSessionExercises()) {
+            if (self::allowRepeatedSessionExercises() && $healthAlertMigrated) {
                 update_option('e2n_db_version', E2N_DB_VERSION);
             }
         }
@@ -261,7 +263,7 @@ class Installer
             responsible_phone VARCHAR(100) NULL,
             licence_number VARCHAR(50) NULL,
             registration_date DATE NULL,
-            medical_note TEXT NULL,
+            health_alert TINYINT(1) NOT NULL DEFAULT 0,
             image_rights TINYINT(1) NULL,
             parent_message TEXT NULL,
             parent_access_code_hash CHAR(64) NULL,
@@ -363,6 +365,26 @@ class Installer
 
         dbDelta($sql);
 
+        $tableName = Config::table('skill_level_history');
+
+        $sql = "CREATE TABLE {$tableName} (
+            id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+            swimmer_id bigint(20) unsigned NOT NULL,
+            season_id bigint(20) unsigned NOT NULL,
+            skill_id bigint(20) unsigned NOT NULL,
+            previous_status varchar(20) NOT NULL DEFAULT 'not_observed',
+            status varchar(20) NOT NULL,
+            changed_at datetime NOT NULL,
+            changed_by bigint(20) unsigned NOT NULL,
+            PRIMARY KEY  (id),
+            KEY swimmer_season (swimmer_id,season_id),
+            KEY swimmer_skill (swimmer_id,skill_id),
+            KEY changed_at (changed_at),
+            KEY changed_by (changed_by)
+        ) {$charsetCollate};";
+
+        dbDelta($sql);
+
 
         $tableName = Config::table('season_skills');
 
@@ -444,6 +466,32 @@ class Installer
         }
 
         return $wpdb->query("ALTER TABLE {$table} DROP INDEX part_exercise") !== false;
+    }
+
+    /**
+     * Convertit l'ancienne note médicale en simple indicateur puis supprime le
+     * texte sensible. La colonne booléenne est créée auparavant par dbDelta().
+     */
+    private static function migrateHealthAlert(): bool
+    {
+        global $wpdb;
+
+        $table = Config::table('swimmers');
+        $legacyColumn = $wpdb->get_var(
+            "SELECT COLUMN_NAME FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE()
+             AND TABLE_NAME = '" . esc_sql($table) . "'
+             AND COLUMN_NAME = 'medical_note' LIMIT 1"
+        );
+        if ($legacyColumn === null) {
+            return true;
+        }
+
+        if ($wpdb->query("UPDATE {$table} SET health_alert = 1 WHERE medical_note IS NOT NULL AND TRIM(medical_note) <> ''") === false) {
+            return false;
+        }
+
+        return $wpdb->query("ALTER TABLE {$table} DROP COLUMN medical_note") !== false;
     }
 
     /**

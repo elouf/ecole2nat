@@ -41,8 +41,12 @@
    - Acquis → Acquis
 6. Vérifier le message de l'entraîneur.
 7. Vérifier la date de dernière mise à jour.
-8. Vérifier l'impression A4.
-9. Vérifier le bouton **Changer de code**.
+8. Sous une compétence modifiée plusieurs fois, vérifier que l'historique est masqué par défaut.
+9. Cliquer sur le pictogramme d'historique et vérifier les dates, statuts et noms des coachs, puis le replier.
+10. Vérifier que les compétences sans historique restent compactes et sans contrôle vide.
+11. Vérifier qu'aucun indicateur ou détail de santé ni aucune note interne Coach n'est exposé.
+12. Vérifier l'impression A4 : les historiques repliables ne doivent pas être imprimés.
+13. Vérifier le bouton **Changer de code**.
 
 ## 5. Sécurité
 
@@ -52,6 +56,9 @@
 4. Désactiver l'accès : le code actif doit cesser de fonctionner.
 5. Vérifier que la base ne contient jamais le code en clair.
 6. Vérifier que `e2n_parent_access_logs.ip_hash` ne contient pas l'adresse IP brute.
+7. Depuis le portail Coach, ouvrir la prévisualisation d'un nageur et vérifier qu'elle porte la bannière Coach, n'utilise aucun code et ne modifie ni le compteur ni les journaux parents.
+8. Vérifier que l'URL de prévisualisation Coach exige une session Coach ou administrateur active et un nonce valide.
+9. Renvoyer un code depuis la fiche Coach : vérifier que l'ancien code est immédiatement refusé et que le nouvel envoi est enregistré comme distribution email.
 
 ## 6. Responsive
 

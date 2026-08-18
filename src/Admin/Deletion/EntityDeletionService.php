@@ -28,6 +28,7 @@ final class EntityDeletionService
             'skill' => $this->deleteRestricted('skills', $id, [
                 ['exercises', 'skill_id', __('des exercices', 'ecole2nat')],
                 ['swimmer_skill_levels', 'skill_id', __('des évaluations', 'ecole2nat')],
+                ['skill_level_history', 'skill_id', __('de l’historique des progressions', 'ecole2nat')],
                 ['season_skills', 'skill_id', __('des référentiels saisonniers', 'ecole2nat')],
             ]),
             'exercise' => $this->deleteRestricted('exercises', $id, [
@@ -96,6 +97,7 @@ final class EntityDeletionService
             ['season_skills', 'season_id', __('des compétences de référentiel', 'ecole2nat')],
             ['swimmer_group_memberships', 'season_id', __('des affectations de nageurs', 'ecole2nat')],
             ['swimmer_skill_levels', 'season_id', __('des évaluations', 'ecole2nat')],
+            ['skill_level_history', 'season_id', __('de l’historique des progressions', 'ecole2nat')],
         ]);
     }
 
@@ -105,6 +107,7 @@ final class EntityDeletionService
         $wpdb->query('START TRANSACTION');
         try {
             $wpdb->delete(Config::table('swimmer_skill_levels'), ['swimmer_id' => $id], ['%d']);
+            $wpdb->delete(Config::table('skill_level_history'), ['swimmer_id' => $id], ['%d']);
             $wpdb->delete(Config::table('swimmer_group_memberships'), ['swimmer_id' => $id], ['%d']);
             $wpdb->delete(Config::table('parent_access_logs'), ['swimmer_id' => $id], ['%d']);
             $wpdb->delete(Config::table('attendance'), ['swimmer_id' => $id], ['%d']);

@@ -225,6 +225,25 @@ class ParentAccessRepository
             $rows = [];
         }
 
+        $historyTable = Config::table('skill_level_history');
+        $historyRows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT history.skill_id, history.status, history.changed_at,
+                        users.display_name AS evaluator_name
+                 FROM {$historyTable} history
+                 LEFT JOIN {$wpdb->users} users ON users.ID = history.changed_by
+                 WHERE history.swimmer_id = %d AND history.season_id = %d
+                 ORDER BY history.changed_at ASC, history.id ASC",
+                $swimmerId,
+                $seasonId
+            ),
+            ARRAY_A
+        );
+        $historyBySkill = [];
+        foreach (is_array($historyRows) ? $historyRows : [] as $historyRow) {
+            $historyBySkill[(int) $historyRow['skill_id']][] = $historyRow;
+        }
+
         $groupedDomains = [];
         $latestUpdate = null;
         $counts = ['not_observed' => 0, 'in_progress' => 0, 'acquired' => 0];
@@ -252,6 +271,7 @@ class ParentAccessRepository
                 'name' => $row['skill_name'],
                 'description' => $row['skill_description'],
                 'status' => $status,
+                'history' => $historyBySkill[(int) $row['skill_id']] ?? [],
             ];
         }
 

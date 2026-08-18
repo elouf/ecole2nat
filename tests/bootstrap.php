@@ -7,6 +7,7 @@ define('ABSPATH', dirname(__DIR__) . '/');
 $GLOBALS['e2n_test_caps'] = [];
 $GLOBALS['e2n_test_user_id'] = 10;
 $GLOBALS['e2n_test_today'] = '2026-08-17';
+$GLOBALS['e2n_test_options'] = [];
 
 function current_user_can(string $capability): bool
 {
@@ -36,6 +37,22 @@ function wp_timezone(): DateTimeZone
 function remove_accents(string $text): string
 {
     return strtr($text, ['é' => 'e', 'è' => 'e', 'ê' => 'e', 'à' => 'a', 'ù' => 'u', 'î' => 'i', 'ô' => 'o', 'ç' => 'c']);
+}
+
+function sanitize_email(string $email): string
+{
+    return filter_var(trim($email), FILTER_VALIDATE_EMAIL) !== false ? trim($email) : '';
+}
+
+function get_option(string $name, mixed $default = false): mixed
+{
+    return $GLOBALS['e2n_test_options'][$name] ?? $default;
+}
+
+function update_option(string $name, mixed $value): bool
+{
+    $GLOBALS['e2n_test_options'][$name] = $value;
+    return true;
 }
 
 require dirname(__DIR__) . '/vendor/autoload.php';

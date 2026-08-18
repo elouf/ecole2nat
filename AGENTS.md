@@ -4,8 +4,8 @@
 
 Ecole2Nat' est un plugin WordPress de gestion pédagogique pour école de
 natation. Il couvre le référentiel pédagogique, les groupes et nageurs,
-les séances types, les évaluations saisonnières, le portail parents,
-la synchronisation Excel et le portail Coach avec suivi terrain.
+la bibliothèque d'exercices, les évaluations saisonnières, le portail parents,
+la synchronisation Excel et le portail Coach centré sur les progressions.
 
 Avant toute modification importante, lire :
 
@@ -63,10 +63,9 @@ Principaux domaines :
 - `src/Database` : schéma, migrations et purge
 - `src/Category`, `src/Reference`, `src/Exercise` : référentiel pédagogique
 - `src/Season`, `src/Group`, `src/Swimmer` : organisation du club
-- `src/Session` : séances types, parties et exercices utilisés
 - `src/Evaluation` : évaluations saisonnières
 - `src/ParentPortal` : accès et rapports parents
-- `src/Coach` : droits, planning et opérations terrain
+- `src/Coach` : semaine type, droits et évaluations terrain
 - `src/Synchronization` : lecture et synchronisation des classeurs
 - `src/Support` : configuration et utilitaires transverses
 
@@ -99,14 +98,12 @@ repositories. Éviter d’ajouter de la logique métier aux classes de rendu.
 - `e2n_swimmers.group_id` représente le groupe courant.
 - L’historique saisonnier appartient à
   `e2n_swimmer_group_memberships`.
-- Une présence terrain ne modifie jamais l’affectation du nageur.
 - Le droit à l’image conserve trois états : Oui, Non, Non renseigné.
-- La colonne Excel `Info médicale` alimente l’information médicale.
-- L’ancienne colonne `Commentaire` ne doit pas l’alimenter.
-- Les informations médicales sont des données sensibles : ne les exposer
-  que dans les interfaces où elles sont nécessaires.
-- Elles sont visibles des administrateurs et des coachs autorisés, mais
-  ne doivent pas être exposées automatiquement dans le portail parents.
+- Une cellule Excel `Info médicale` non vide alimente uniquement le booléen
+  `health_alert` ; son contenu textuel ne doit jamais être stocké.
+- L’ancienne colonne `Commentaire` ne doit pas alimenter cet indicateur.
+- Le portail Coach peut afficher l'existence d'une information de santé, mais
+  aucun détail médical ne doit être stocké ou exposé.
 
 ### Référentiel et évaluations
 
@@ -121,26 +118,37 @@ repositories. Éviter d’ajouter de la logique métier aux classes de rendu.
 - Une évaluation collective ne doit pas effacer une note individuelle.
 - Vérifier côté serveur l’appartenance du nageur au groupe et à la saison.
 
-### Séances
+### Exercices et anciennes séances
 
-- La durée appartient à l’utilisation d’un exercice dans une séance,
-  pas à l’exercice de bibliothèque.
-- L’ordre des parties et exercices doit rester déterministe.
-- La suppression d’une séance peut supprimer ses parties et associations,
-  mais ne doit pas supprimer les exercices de la bibliothèque.
+- La bibliothèque d'exercices reste une ressource pédagogique indépendante.
+- Les anciennes données de séances sont conservées mais ne sont plus exposées
+  dans les interfaces Coach ou administrateur.
+- Ne pas réintroduire de planification datée sans validation explicite du
+  besoin et de ses conséquences sur l'usage terrain.
 
 ### Coachs
 
 - Les administrateurs peuvent consulter et modifier tous les groupes.
-- Les coachs peuvent consulter tous les groupes actifs.
-- Les administrateurs et les coachs titulaires peuvent modifier un groupe.
-- Un remplaçant daté peut préparer la séance en amont ; ses droits terrain
-  ne sont actifs que le jour prévu.
+- Les coachs peuvent consulter et évaluer tous les groupes actifs.
+- Les titulaires habituels sont une information de la semaine type et ne
+  limitent pas les droits d'évaluation.
 - Les contrôles de droits doivent être appliqués côté serveur, y compris
   pour AJAX ; masquer un contrôle dans l’interface ne suffit pas.
-- Les présences persistées sont `present` ou `absent`.
-- L’absence de ligne de présence signifie « Non pointé ».
-- Une séance datée est `planned` ou `completed`.
+- Le portail Coach ne gère ni présences, ni remplacements datés, ni séances
+  planifiées.
+- Les accès Nageurs, Catégories et Semaine type ouvrent la même fiche
+  d'évaluation et doivent conserver leur contexte de retour.
+- La prévisualisation Parents depuis le portail Coach exige une session
+  autorisée et un nonce ; elle n'utilise pas le code familial et ne doit pas
+  compter comme une consultation parent.
+- Le renvoi d'un code Parents depuis le portail Coach exige une confirmation,
+  un nonce et la vérification serveur du groupe et du nageur ; le nouveau code
+  ne doit jamais être affiché au coach.
+- Tous les emails de codes Parents utilisent l'option
+  `e2n_parent_email_signature`, modifiable uniquement par un administrateur.
+- Chaque changement effectif de statut crée un événement historique avec
+  date et utilisateur dans la même transaction que le niveau courant.
+- Réenregistrer un statut identique ne crée pas d'événement.
 
 ### Portail parents
 
@@ -151,6 +159,8 @@ repositories. Éviter d’ajouter de la logique métier aux classes de rendu.
 - Ne jamais exposer l’adresse IP brute dans les journaux.
 - Conserver la limitation des tentatives et les cookies signés.
 - Le portail public doit rester marqué `noindex`.
+- La chronologie d'une compétence est repliée par défaut et peut afficher le
+  nom du coach, mais jamais une note interne ou un détail de santé.
 
 ### Synchronisation
 

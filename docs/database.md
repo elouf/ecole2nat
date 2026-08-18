@@ -20,7 +20,7 @@ Catégorie → Domaine → Compétence → Exercice
 
 La contrainte unique `(season_id, skill_id)` de `e2n_season_skills` garantit une seule association par saison et compétence. Une compétence retirée d’un nouveau référentiel reste en base afin de préserver les historiques.
 
-La durée n’appartient pas à l’exercice de bibliothèque. Elle est définie lors de son utilisation dans une séance.
+La bibliothèque d'exercices est indépendante du suivi des progressions.
 
 ## Organisation du club
 
@@ -35,7 +35,7 @@ La contrainte unique `(swimmer_id, season_id)` de `e2n_swimmer_group_memberships
 
 Les principales colonnes spécifiques de `e2n_swimmers` sont :
 
-- `medical_note` : information médicale interne ;
+- `health_alert` : indicateur booléen signalant qu'une information de santé doit être consultée dans la source externe du club ; aucun détail médical n'est stocké ;
 - `image_rights` : `1` pour Oui, `0` pour Non et `NULL` pour Non renseigné ;
 - `parent_message` : message explicitement destiné aux familles ;
 - `parent_access_code_hash` : empreinte HMAC du code, jamais le code en clair ;
@@ -44,7 +44,7 @@ Les principales colonnes spécifiques de `e2n_swimmers` sont :
 - `parent_access_last_used_at` et `parent_access_count` : dernière consultation réussie et compteur ;
 - `parent_access_distributed_at`, `parent_access_distribution_method` et `parent_access_distributed_to` : suivi de la dernière distribution.
 
-## Séances types
+## Anciennes données de séances
 
 - `e2n_sessions` : informations générales d’une séance rattachée à une catégorie. `is_library=1` désigne une séance type réutilisable ; `is_library=0` une adaptation ponctuelle créée depuis un créneau Coach.
 - `e2n_session_parts` : parties ordonnées d’une séance.
@@ -56,7 +56,7 @@ Séance → Partie → Exercice utilisé
 
 Un même exercice de bibliothèque peut être utilisé plusieurs fois dans une partie. Chaque ligne de `e2n_session_exercises` reste une utilisation indépendante, avec sa position, sa durée et sa consigne Coach. La durée totale d’une partie et de la séance est calculée depuis `e2n_session_exercises.duration`.
 
-Les séances existantes et celles créées dans le back-office ont `is_library=1`. Une création ou duplication depuis le portail Coach commence à `0` et reste consultable par son affectation dans `e2n_scheduled_sessions`. L’action explicite « Conserver comme séance type » la passe à `1` sans modifier son contenu ni son historique.
+Ces tables sont conservées pour ne pas supprimer les données des installations existantes, mais elles ne sont plus exposées dans le portail Coach ni dans le back-office depuis la version 0.17.6.
 
 ## Évaluations progressives
 
@@ -69,20 +69,25 @@ Les séances existantes et celles créées dans le back-office ont `is_library=1
 
 La contrainte unique `(swimmer_id, season_id, skill_id)` garantit un seul niveau courant par compétence et par saison. Les saisons précédentes restent consultables.
 
-## Coachs, planning et terrain
+`e2n_skill_level_history` est le journal immuable des changements de statut :
+
+- `previous_status` et `status` décrivent la transition ;
+- `changed_at` utilise la date et l'heure WordPress ;
+- `changed_by` référence l'utilisateur WordPress responsable.
+
+Une ligne est ajoutée uniquement lorsque le statut change. La mise à jour du niveau courant et l'ajout au journal appartiennent à la même transaction. Les modifications de notes seules ne créent pas d'événement.
+La migration crée la table sans fabriquer d'événements rétroactifs : l'historique commence avec les changements réalisés après la mise à jour.
+
+## Coachs et anciennes données datées
 
 - `e2n_group_coaches` : affectation des utilisateurs WordPress titulaires d’un groupe.
 - `e2n_group_substitutions` : affectation temporaire d’un coach remplaçant à un groupe pour une date précise.
 - `e2n_scheduled_sessions` : séance type prévue pour un groupe et une date.
 - `e2n_attendance` : pointage d’un nageur pour un groupe et une date.
 
-La contrainte unique `(group_id, user_id)` de `e2n_group_coaches` empêche une double affectation du même coach au même groupe.
+La contrainte unique `(group_id, user_id)` de `e2n_group_coaches` empêche une double affectation du même coach au même groupe. Ces affectations indiquent les titulaires habituels affichés dans la semaine type ; elles ne limitent pas les droits d'évaluation. Tous les comptes Coach peuvent évaluer tous les groupes actifs.
 
-La contrainte unique `(group_id, user_id, substitution_date)` de `e2n_group_substitutions` empêche de dupliquer un même remplacement. L’affectation permet de préparer la séance jusqu’à la date prévue. Les droits terrain ne sont actifs que lorsque `substitution_date` correspond à la date courante WordPress. Elle ne modifie pas les titulaires permanents. `created_by` conserve l’administrateur ayant enregistré le remplacement.
-
-Dans `e2n_scheduled_sessions`, `status` vaut `planned` ou `completed`. `completed_at` et `completed_by` mémorisent la validation terrain. La contrainte unique `(group_id, session_date)` autorise une seule séance planifiée par groupe et par date. `coach_editable_copy` vaut `1` uniquement lorsqu'une séance a été créée ou dupliquée depuis ce créneau dans le portail Coach : ce marqueur lie le droit d'édition à la copie et à son affectation datée. Une affectation classique d'une séance de bibliothèque le remet à `0`.
-
-Dans `e2n_attendance`, les statuts persistés sont `present` et `absent`. L’absence de ligne signifie « Non pointé ». La contrainte unique `(group_id, swimmer_id, session_date)` empêche plusieurs pointages du même nageur sur le même créneau daté. Les présences ne modifient jamais l’affectation du nageur à son groupe.
+Les tables de remplacements, séances planifiées et présences sont conservées pour éviter toute suppression automatique de données, mais ne sont plus alimentées ni exposées depuis la version 0.17.6. Leurs contraintes historiques restent présentes dans le schéma pour préserver les installations existantes.
 
 ## Accès parents
 
@@ -113,4 +118,4 @@ Les suppressions ordinaires sont contrôlées par les services applicatifs, qui 
 
 La purge de maintenance vide toutes les tables portant le préfixe `e2n_`, mais conserve le schéma ainsi que les options techniques `e2n_version` et `e2n_db_version`.
 
-Après une mise à jour du plugin, `Installer::maybeUpgrade()` compare `e2n_db_version` à `E2N_DB_VERSION`. Une différence relance `dbDelta()`, les migrations idempotentes d’historique saisonnier et la mise en place du rôle/page Coach. Il n’est pas nécessaire de désactiver puis réactiver le plugin.
+Après une mise à jour du plugin, `Installer::maybeUpgrade()` compare `e2n_db_version` à `E2N_DB_VERSION`. Une différence relance `dbDelta()`, les migrations idempotentes d’historique saisonnier et de l'indicateur de santé, puis la mise en place du rôle/page Coach. Il n’est pas nécessaire de désactiver puis réactiver le plugin.

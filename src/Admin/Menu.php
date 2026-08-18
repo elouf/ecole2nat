@@ -13,9 +13,7 @@ use Ecole2Nat\Admin\Pages\ParentAccessPage;
 use Ecole2Nat\Admin\Pages\ParentDistributionPage;
 use Ecole2Nat\Admin\Pages\ReferencePage;
 use Ecole2Nat\Admin\Pages\SeasonPage;
-use Ecole2Nat\Admin\Pages\SessionListPage;
-use Ecole2Nat\Admin\Pages\SessionPage;
-use Ecole2Nat\Admin\Pages\SessionPrintPage;
+use Ecole2Nat\Admin\Pages\SettingsPage;
 use Ecole2Nat\Admin\Pages\SwimmerPage;
 use Ecole2Nat\Admin\Pages\SynchronizationPage;
 
@@ -102,15 +100,6 @@ class Menu
 
         add_submenu_page(
             'ecole2nat',
-            __('Séances', 'ecole2nat'),
-            __('Séances', 'ecole2nat'),
-            'manage_options',
-            'ecole2nat-sessions',
-            [new SessionListPage(), 'render']
-        );
-
-        add_submenu_page(
-            'ecole2nat',
             __('Évaluations', 'ecole2nat'),
             __('Évaluations', 'ecole2nat'),
             'manage_options',
@@ -138,31 +127,20 @@ class Menu
 
         add_submenu_page(
             'ecole2nat',
+            __('Réglages', 'ecole2nat'),
+            __('Réglages', 'ecole2nat'),
+            'manage_options',
+            'ecole2nat-settings',
+            [new SettingsPage(), 'render']
+        );
+
+        add_submenu_page(
+            'ecole2nat',
             __('Maintenance', 'ecole2nat'),
             __('Maintenance', 'ecole2nat'),
             'manage_options',
             'ecole2nat-maintenance',
             [new MaintenancePage(), 'render']
-        );
-
-        // Pages internes : elles restent enregistrées pour les permissions,
-        // puis sont seulement masquées visuellement via admin_head.
-        add_submenu_page(
-            'ecole2nat',
-            __('Éditeur de séance', 'ecole2nat'),
-            __('Éditeur de séance', 'ecole2nat'),
-            'manage_options',
-            'ecole2nat-session',
-            [new SessionPage(), 'render']
-        );
-
-        add_submenu_page(
-            'ecole2nat',
-            __('Impression de séance', 'ecole2nat'),
-            __('Impression de séance', 'ecole2nat'),
-            'manage_options',
-            'ecole2nat-session-print',
-            [new SessionPrintPage(), 'render']
         );
 
         add_submenu_page(
@@ -191,8 +169,6 @@ class Menu
     {
         ?>
         <style>
-            #toplevel_page_ecole2nat a[href="admin.php?page=ecole2nat-session"],
-            #toplevel_page_ecole2nat a[href="admin.php?page=ecole2nat-session-print"],
             #toplevel_page_ecole2nat a[href="admin.php?page=ecole2nat-exercise"],
             #toplevel_page_ecole2nat a[href="admin.php?page=ecole2nat-parent-access"] {
                 display: none !important;

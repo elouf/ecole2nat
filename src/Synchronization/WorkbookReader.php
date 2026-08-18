@@ -200,7 +200,7 @@ final class WorkbookReader
             $gender = in_array($genderValue, ['femme', 'feminin', 'f'], true) ? 'F' : (in_array($genderValue, ['homme', 'masculin', 'm'], true) ? 'M' : '');
             $email = sanitize_email($this->string($row, ['email', 'e-mail']));
             $phone = $this->string($row, ['telephone', 'tel']);
-            $medicalNote = $this->string($row, ['info médicale', 'information médicale']);
+            $healthAlert = $this->string($row, ['info médicale', 'information médicale']) !== '' ? 1 : 0;
 
             $imageRightsRaw = $this->normalize(
                 $this->string($row, ["droit à l'image", 'droit image'])
@@ -228,7 +228,7 @@ final class WorkbookReader
                 'licence_number' => $licence,
                 'responsible_email' => $email,
                 'responsible_phone' => $phone,
-                'medical_note' => $medicalNote,
+                'health_alert' => $healthAlert,
                 'image_rights' => $imageRights,
                 'category' => $category,
                 'slot' => $slot,

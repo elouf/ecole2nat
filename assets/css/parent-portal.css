@@ -12,3 +12,5 @@
 .e2n-parent-image-rights.is-yes { color:#137333; }
 .e2n-parent-image-rights.is-no { color:#b32d2e; }
 .e2n-parent-image-rights.is-unknown { color:#646970; }
+.e2n-parent-skill-content{flex:1;min-width:0}.e2n-parent-history{margin-top:7px}.e2n-parent-history summary{display:inline-flex;gap:5px;align-items:center;color:var(--e2n-primary);font-size:13px;font-weight:700;cursor:pointer;list-style:none}.e2n-parent-history summary::-webkit-details-marker{display:none}.e2n-parent-history ol{margin:8px 0 0;padding:8px 8px 8px 24px;border-radius:8px;background:var(--e2n-bg)}.e2n-parent-history ol li{display:list-item;padding:4px 0;border:0;color:var(--e2n-muted);font-size:13px}
+@media print{.e2n-parent-history{display:none}}

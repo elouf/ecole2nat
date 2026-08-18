@@ -1,6 +1,23 @@
 # Changelog
 
-## Non publié — 0.16.0
+## Non publié — 0.17.6
+
+- Recentre le portail Coach sur une semaine type permanente et l'accès direct aux groupes, sans navigation datée.
+- Retire du portail les séances planifiées, les remplacements datés et le pointage des présences.
+- Autorise tous les comptes Coach à évaluer tous les groupes actifs ; les titulaires restent une information de la semaine type.
+- Retire du back-office la liste, l'éditeur et l'impression des séances ainsi que la gestion des remplacements.
+- Ajoute un journal transactionnel des changements de progression avec date et coach, affiché à la demande dans les portails Coach et Parents.
+- Ajoute au portail Coach les onglets Nageurs, Catégories et Semaine type, avec recherche alphabétique et conservation du contexte de navigation.
+- Permet au coach de prévisualiser la fiche Parents d'un nageur par un lien signé, sans utiliser son code ni comptabiliser un accès parent.
+- Remplace les notes médicales stockées par un simple indicateur de santé, convertit les anciennes valeurs puis supprime définitivement leur contenu textuel.
+- Affiche les indicateurs santé et droit à l'image dans les listes Coach et ajoute les actions Appeler et Envoyer un message sur la fiche nageur.
+- Simplifie la liste alphabétique Coach en n'affichant que le groupe, sans répéter la catégorie déjà présente dans son nom.
+- Ajoute l'espace intérieur nécessaire entre l'indicateur coloré d'autosauvegarde et le contenu d'une compétence.
+- Permet à un coach de régénérer et d'envoyer un code Parents depuis la fiche nageur, après confirmation et sans afficher le code en clair.
+- Ajoute un réglage administrateur pour personnaliser la signature commune de tous les emails de codes Parents.
+- Utilise « Les coachs » comme signature par défaut des emails Parents.
+- Ajoute `e2n_skill_level_history` et porte la version technique du schéma à `0.9.0`.
+- Porte la version technique du schéma à `0.10.0` pour la migration de l'indicateur de santé.
 
 - Ajoute la navigation par semaine dans le planning Coach et affiche la date de chaque journée.
 - Ajoute la navigation entre les occurrences précédentes et suivantes depuis la page d'un groupe.

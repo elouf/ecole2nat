@@ -8,6 +8,8 @@ if (!defined('ABSPATH')) {
 
 class Config
 {
+    public const DEFAULT_PARENT_EMAIL_SIGNATURE = 'Les coachs';
+
     public static function version(): string
     {
         return E2N_VERSION;
@@ -38,5 +40,15 @@ class Config
     public static function option(string $option): string
     {
         return 'e2n_' . $option;
+    }
+
+    public static function parentEmailSignature(): string
+    {
+        $signature = trim((string) get_option(
+            self::option('parent_email_signature'),
+            self::DEFAULT_PARENT_EMAIL_SIGNATURE
+        ));
+
+        return $signature !== '' ? $signature : self::DEFAULT_PARENT_EMAIL_SIGNATURE;
     }
 }
