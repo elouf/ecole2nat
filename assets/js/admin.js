@@ -177,5 +177,45 @@
 
     document.addEventListener('DOMContentLoaded', function () {
         document.querySelectorAll('.wrap table.widefat:not(.form-table)').forEach(initTable);
+
+        var selectLogo = document.querySelector('[data-e2n-parent-logo-select]');
+        var removeLogo = document.querySelector('[data-e2n-parent-logo-remove]');
+        var logoId = document.querySelector('[data-e2n-parent-logo-id]');
+        var preview = document.querySelector('[data-e2n-parent-logo-preview]');
+
+        if (selectLogo && removeLogo && logoId && preview && window.wp && wp.media) {
+            var mediaFrame;
+
+            selectLogo.addEventListener('click', function () {
+                if (!mediaFrame) {
+                    mediaFrame = wp.media({
+                        title: 'Choisir le logo des portails',
+                        button: { text: 'Utiliser ce logo' },
+                        library: { type: 'image' },
+                        multiple: false
+                    });
+                    mediaFrame.on('select', function () {
+                        var attachment = mediaFrame.state().get('selection').first().toJSON();
+                        var imageUrl = attachment.sizes && attachment.sizes.thumbnail
+                            ? attachment.sizes.thumbnail.url
+                            : attachment.url;
+                        logoId.value = attachment.id;
+                        preview.innerHTML = '';
+                        var image = document.createElement('img');
+                        image.src = imageUrl;
+                        image.alt = '';
+                        preview.appendChild(image);
+                        removeLogo.hidden = false;
+                    });
+                }
+                mediaFrame.open();
+            });
+
+            removeLogo.addEventListener('click', function () {
+                logoId.value = '0';
+                preview.innerHTML = '<span>E2N</span>';
+                removeLogo.hidden = true;
+            });
+        }
     });
 }());

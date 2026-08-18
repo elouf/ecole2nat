@@ -51,6 +51,10 @@ class Application
             Config::version(),
             true
         );
+
+        if ($page === 'ecole2nat-settings') {
+            wp_enqueue_media();
+        }
     }
 
     public function registerAdminMenu(): void

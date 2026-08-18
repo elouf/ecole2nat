@@ -13,6 +13,14 @@
 3. Envoyer successivement un code depuis le BO et depuis une fiche Coach : les deux emails doivent se terminer par cette signature.
 4. Forger l'enregistrement sans capacité `manage_options` ou avec un nonce invalide : l'option ne doit pas changer.
 
+## En-tête des portails
+
+1. Dans **Ecole2Nat' → Réglages**, saisir le nom commun des portails et choisir
+   un logo depuis la médiathèque WordPress.
+2. Enregistrer et vérifier la persistance du nom, de l'identifiant du média et
+   de l'aperçu.
+3. Retirer le logo et vérifier le retour au monogramme E2N.
+
 ## Liens rapides
 
 1. Ouvrir **Ecole2Nat' → Nageurs**.

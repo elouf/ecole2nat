@@ -1,5 +1,29 @@
 # Recette — Portail Coach simplifié
 
+## Présentation et navigation
+
+1. Ouvrir le portail Coach sur ordinateur et vérifier que l'en-tête, le pied
+   de page, le titre et les colonnes du thème WordPress ne sont pas affichés.
+2. Vérifier que la barre d'administration WordPress reste disponible pour un
+   administrateur connecté.
+3. Faire défiler une page longue : la navigation Coach doit rester visible et
+   son onglet actif doit être identifiable.
+4. Ouvrir le menu utilisateur, vérifier le nom affiché et le lien de
+   déconnexion.
+5. Sur une fiche nageur, ouvrir **Actions** et vérifier les actions disponibles
+   sans déclencher le renvoi d'un code Parents.
+6. Vérifier le résumé de progression, le regroupement par domaine et
+   l'ouverture à la demande d'une note vide. Une note existante doit rester
+   visible à l'ouverture de la fiche.
+7. Répéter le contrôle aux largeurs 390 px, 768 px et 1024 px : aucun défilement
+   horizontal ne doit apparaître, les choix doivent rester tactiles et le menu
+   d'actions doit rester entièrement accessible.
+8. Avec la barre d'administration WordPress visible, contrôler les largeurs
+   601, 768 et 783 px : elle ne doit masquer ni chevaucher l'en-tête Coach.
+9. Modifier le nom et le logo des portails dans **Ecole2Nat' → Réglages** :
+   ils doivent apparaître sur toutes les vues Coach. Retirer le logo doit
+   restaurer le monogramme E2N.
+
 ## Migration
 
 1. Charger WordPress avec une base en version `0.8.5`, sans désactiver le plugin.

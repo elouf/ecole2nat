@@ -5,6 +5,7 @@ namespace Ecole2Nat\Coach;
 use Ecole2Nat\Evaluation\EvaluationService;
 use Ecole2Nat\ParentPortal\ParentAccessService;
 use Ecole2Nat\ParentPortal\ParentDistributionService;
+use Ecole2Nat\Support\Config;
 
 if (!defined('ABSPATH')) { exit; }
 
@@ -29,10 +30,21 @@ class CoachPortal
     {
         add_shortcode('e2n_coach_portal', [$this, 'shortcode']);
         add_action('wp_enqueue_scripts', [$this, 'assets']);
+        add_filter('template_include', [$this, 'template'], 99);
         add_filter('login_redirect', [$this, 'loginRedirect'], 10, 3);
         add_action('wp_ajax_e2n_coach_save_evaluation', [$this, 'ajaxSaveEvaluation']);
         add_action('wp_ajax_e2n_coach_save_note', [$this, 'ajaxSaveNote']);
         add_action('wp_ajax_e2n_coach_send_parent_code', [$this, 'ajaxSendParentCode']);
+    }
+
+    public function template(string $template): string
+    {
+        $pageId = (int) get_option('e2n_coach_page_id', 0);
+        if ($pageId > 0 && is_page($pageId)) {
+            $coachTemplate = E2N_PLUGIN_PATH . 'templates/coach-portal.php';
+            if (is_readable($coachTemplate)) return $coachTemplate;
+        }
+        return $template;
     }
 
     public function assets(): void
@@ -96,8 +108,10 @@ class CoachPortal
 
     private function header(string $view): void
     {
-        $user = wp_get_current_user(); ?>
-        <header class="e2n-coach-head"><div><strong>Ecole2Nat’</strong><span><?php echo esc_html($user->display_name); ?></span></div><nav aria-label="<?php esc_attr_e('Navigation Coach', 'ecole2nat'); ?>"><a class="<?php echo $view === 'swimmers' ? 'is-active' : ''; ?>" href="<?php echo esc_url($this->base(['e2n_view' => 'swimmers'])); ?>"><?php esc_html_e('Nageurs', 'ecole2nat'); ?></a><a class="<?php echo $view === 'categories' ? 'is-active' : ''; ?>" href="<?php echo esc_url($this->base(['e2n_view' => 'categories'])); ?>"><?php esc_html_e('Catégories', 'ecole2nat'); ?></a><a class="<?php echo $view === 'week' ? 'is-active' : ''; ?>" href="<?php echo esc_url($this->base()); ?>"><?php esc_html_e('Semaine type', 'ecole2nat'); ?></a><a href="<?php echo esc_url(wp_logout_url($this->base())); ?>"><?php esc_html_e('Déconnexion', 'ecole2nat'); ?></a></nav></header>
+        $user = wp_get_current_user();
+        $portalTitle = Config::portalTitle();
+        $portalLogoId = Config::portalLogoId(); ?>
+        <header class="e2n-coach-head"><a class="e2n-brand" href="<?php echo esc_url($this->base()); ?>"><?php if ($portalLogoId > 0) : ?><?php echo wp_get_attachment_image($portalLogoId, 'thumbnail', false, ['class' => 'e2n-brand-image']); ?><?php else : ?><span class="e2n-brand-mark" aria-hidden="true">E2N</span><?php endif; ?><span><?php echo esc_html($portalTitle); ?></span></a><nav aria-label="<?php esc_attr_e('Navigation Coach', 'ecole2nat'); ?>"><a class="<?php echo $view === 'swimmers' ? 'is-active' : ''; ?>" href="<?php echo esc_url($this->base(['e2n_view' => 'swimmers'])); ?>"><?php esc_html_e('Nageurs', 'ecole2nat'); ?></a><a class="<?php echo $view === 'categories' ? 'is-active' : ''; ?>" href="<?php echo esc_url($this->base(['e2n_view' => 'categories'])); ?>"><?php esc_html_e('Catégories', 'ecole2nat'); ?></a><a class="<?php echo $view === 'week' ? 'is-active' : ''; ?>" href="<?php echo esc_url($this->base()); ?>"><?php esc_html_e('Semaine type', 'ecole2nat'); ?></a></nav><details class="e2n-user-menu"><summary aria-label="<?php esc_attr_e('Menu utilisateur', 'ecole2nat'); ?>"><span aria-hidden="true"><?php echo esc_html(mb_strtoupper(mb_substr((string) $user->display_name, 0, 1))); ?></span></summary><div><strong><?php echo esc_html($user->display_name); ?></strong><a href="<?php echo esc_url(wp_logout_url($this->base())); ?>"><?php esc_html_e('Déconnexion', 'ecole2nat'); ?></a></div></details></header>
         <?php
     }
 
@@ -170,14 +184,36 @@ class CoachPortal
     private function swimmer(int $groupId, int $swimmerId, string $from): void
     {
         $data = $this->eval->swimmerEvaluation($groupId, $swimmerId);
-        if ($data === null) { echo '<p>' . esc_html__('Nageur introuvable dans ce groupe.', 'ecole2nat') . '</p>'; return; } ?>
-        <a class="e2n-back" href="<?php echo esc_url($from === 'week' ? $this->base(['e2n_group' => $groupId]) : $this->originUrl($from)); ?>">← <?php echo esc_html($from === 'week' ? __('Groupe', 'ecole2nat') : $this->originLabel($from)); ?></a><div class="e2n-swimmer-heading"><div><h1><?php echo esc_html($data['swimmer']['first_name'] . ' ' . $data['swimmer']['last_name']); ?></h1><p class="e2n-swimmer-meta"><?php echo esc_html($data['group']['name']); ?> <?php $this->swimmerFlags($data['swimmer']); ?></p></div><div class="e2n-swimmer-actions"><?php $phone = $this->phoneUri((string) ($data['swimmer']['responsible_phone'] ?? '')); if ($phone !== '') : ?><a class="e2n-btn" href="tel:<?php echo esc_attr($phone); ?>">☎ <?php esc_html_e('Appeler', 'ecole2nat'); ?></a><a class="e2n-btn" href="sms:<?php echo esc_attr($phone); ?>">✉ <?php esc_html_e('Envoyer un message', 'ecole2nat'); ?></a><?php endif; ?><?php $email = sanitize_email((string) ($data['swimmer']['responsible_email'] ?? '')); if ($email !== '' && is_email($email)) : ?><button class="e2n-btn e2n-btn-parent-code" type="button" data-e2n-send-parent-code data-group-id="<?php echo (int) $groupId; ?>" data-swimmer-id="<?php echo (int) $swimmerId; ?>"><?php esc_html_e('Renvoyer un nouveau code Parents', 'ecole2nat'); ?></button><?php else : ?><span class="e2n-contact-missing"><?php esc_html_e('Email responsable non renseigné', 'ecole2nat'); ?></span><?php endif; ?><?php $previewUrl = $this->parentAccess->coachPreviewUrl($swimmerId); if ($previewUrl !== '') : ?><a class="e2n-btn e2n-btn-secondary" href="<?php echo esc_url($previewUrl); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e('Voir la fiche Parents', 'ecole2nat'); ?></a><?php endif; ?><span class="e2n-parent-code-status" data-e2n-parent-code-status aria-live="polite"></span></div></div>
-        <section class="e2n-card"><h2><?php esc_html_e('Compétences', 'ecole2nat'); ?></h2><div class="e2n-autosave-status" data-e2n-save-status aria-live="polite"></div><div class="e2n-skills">
-        <?php $domain = ''; foreach ($data['skills'] as $skill) : if ($domain !== $skill['domain_name']) { $domain = $skill['domain_name']; echo '<h3>' . esc_html($domain) . '</h3>'; } ?>
-            <div class="e2n-skill"><div><strong><?php echo esc_html($skill['name']); ?></strong><?php $this->history($skill['history']); ?></div><div class="e2n-choice-group e2n-choice-group--evaluation" role="radiogroup" aria-label="<?php echo esc_attr($skill['name']); ?>">
-            <?php foreach ($this->eval->statuses() as $value => $label) : ?><label class="e2n-choice e2n-choice--<?php echo esc_attr($value); ?>"><input type="radio" name="status[<?php echo (int) $skill['id']; ?>]" value="<?php echo esc_attr($value); ?>" data-e2n-kind="evaluation" data-group-id="<?php echo (int) $groupId; ?>" data-swimmer-id="<?php echo (int) $swimmerId; ?>" data-skill-id="<?php echo (int) $skill['id']; ?>" <?php checked($skill['status'], $value); ?>><span><?php echo esc_html($label); ?></span></label><?php endforeach; ?>
-            </div><textarea data-e2n-kind="note" data-group-id="<?php echo (int) $groupId; ?>" data-swimmer-id="<?php echo (int) $swimmerId; ?>" data-skill-id="<?php echo (int) $skill['id']; ?>" placeholder="<?php esc_attr_e('Note interne', 'ecole2nat'); ?>"><?php echo esc_textarea($skill['notes']); ?></textarea></div>
-        <?php endforeach; ?></div></section><?php
+        if ($data === null) { echo '<p>' . esc_html__('Nageur introuvable dans ce groupe.', 'ecole2nat') . '</p>'; return; }
+        $total = count($data['skills']);
+        $acquired = count(array_filter($data['skills'], static fn(array $skill): bool => $skill['status'] === EvaluationService::STATUS_ACQUIRED));
+        $inProgress = count(array_filter($data['skills'], static fn(array $skill): bool => $skill['status'] === EvaluationService::STATUS_IN_PROGRESS));
+        $percentage = $total > 0 ? (int) round(($acquired / $total) * 100) : 0;
+        $domains = [];
+        foreach ($data['skills'] as $skill) $domains[(string) $skill['domain_name']][] = $skill;
+        $phone = $this->phoneUri((string) ($data['swimmer']['responsible_phone'] ?? ''));
+        $email = sanitize_email((string) ($data['swimmer']['responsible_email'] ?? ''));
+        $previewUrl = $this->parentAccess->coachPreviewUrl($swimmerId); ?>
+        <a class="e2n-back" href="<?php echo esc_url($from === 'week' ? $this->base(['e2n_group' => $groupId]) : $this->originUrl($from)); ?>">← <?php echo esc_html($from === 'week' ? __('Groupe', 'ecole2nat') : $this->originLabel($from)); ?></a>
+        <article class="e2n-swimmer-profile">
+            <header class="e2n-swimmer-heading">
+                <div><p class="e2n-eyebrow"><?php esc_html_e('Fiche nageur', 'ecole2nat'); ?></p><h1><?php echo esc_html($data['swimmer']['first_name'] . ' ' . $data['swimmer']['last_name']); ?></h1><p class="e2n-swimmer-meta"><?php echo esc_html($data['group']['name']); ?></p><?php $this->swimmerFlags($data['swimmer'], true); ?></div>
+                <details class="e2n-actions-menu"><summary><?php esc_html_e('Actions', 'ecole2nat'); ?> <span aria-hidden="true">•••</span></summary><div class="e2n-actions-panel">
+                    <?php if ($phone !== '') : ?><a href="tel:<?php echo esc_attr($phone); ?>"><?php esc_html_e('Appeler le responsable', 'ecole2nat'); ?></a><a href="sms:<?php echo esc_attr($phone); ?>"><?php esc_html_e('Envoyer un message', 'ecole2nat'); ?></a><?php endif; ?>
+                    <?php if ($previewUrl !== '') : ?><a href="<?php echo esc_url($previewUrl); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e('Voir la fiche Parents', 'ecole2nat'); ?></a><?php endif; ?>
+                    <?php if ($email !== '' && is_email($email)) : ?><button class="e2n-action-danger" type="button" data-e2n-send-parent-code data-group-id="<?php echo (int) $groupId; ?>" data-swimmer-id="<?php echo (int) $swimmerId; ?>"><?php esc_html_e('Renvoyer un code Parents', 'ecole2nat'); ?></button><?php else : ?><span class="e2n-contact-missing"><?php esc_html_e('Email responsable non renseigné', 'ecole2nat'); ?></span><?php endif; ?>
+                    <span class="e2n-parent-code-status" data-e2n-parent-code-status aria-live="polite"></span>
+                </div></details>
+            </header>
+            <section class="e2n-progress-summary" aria-label="<?php esc_attr_e('Résumé de la progression', 'ecole2nat'); ?>"><div><strong><?php esc_html_e('Progression', 'ecole2nat'); ?></strong><span><?php echo esc_html(sprintf(__('%1$d acquises · %2$d en cours · %3$d au total', 'ecole2nat'), $acquired, $inProgress, $total)); ?></span></div><div class="e2n-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="<?php echo (int) $percentage; ?>"><span style="width:<?php echo (int) $percentage; ?>%"></span></div><b><?php echo (int) $percentage; ?> %</b></section>
+            <section class="e2n-card e2n-progress-card"><div class="e2n-autosave-status" data-e2n-save-status aria-live="polite"></div><div class="e2n-skills">
+                <?php foreach ($domains as $domain => $skills) : ?><section class="e2n-domain"><h2><?php echo esc_html($domain); ?></h2>
+                    <?php foreach ($skills as $skill) : ?><article class="e2n-skill"><div class="e2n-skill-name"><strong><?php echo esc_html($skill['name']); ?></strong><?php $this->history($skill['history']); ?></div><div class="e2n-choice-group e2n-choice-group--evaluation" role="radiogroup" aria-label="<?php echo esc_attr($skill['name']); ?>">
+                    <?php foreach ($this->eval->statuses() as $value => $label) : ?><label class="e2n-choice e2n-choice--<?php echo esc_attr($value); ?>"><input type="radio" name="status[<?php echo (int) $skill['id']; ?>]" value="<?php echo esc_attr($value); ?>" data-e2n-kind="evaluation" data-group-id="<?php echo (int) $groupId; ?>" data-swimmer-id="<?php echo (int) $swimmerId; ?>" data-skill-id="<?php echo (int) $skill['id']; ?>" <?php checked($skill['status'], $value); ?>><span><?php echo esc_html($label); ?></span></label><?php endforeach; ?></div>
+                    <details class="e2n-note-editor" <?php echo $skill['notes'] !== '' ? 'open' : ''; ?>><summary><?php echo esc_html($skill['notes'] !== '' ? __('Note interne renseignée', 'ecole2nat') : __('Ajouter une note', 'ecole2nat')); ?></summary><textarea rows="2" data-e2n-kind="note" data-group-id="<?php echo (int) $groupId; ?>" data-swimmer-id="<?php echo (int) $swimmerId; ?>" data-skill-id="<?php echo (int) $skill['id']; ?>" placeholder="<?php esc_attr_e('Note interne', 'ecole2nat'); ?>"><?php echo esc_textarea($skill['notes']); ?></textarea></details></article><?php endforeach; ?>
+                </section><?php endforeach; ?>
+            </div></section>
+        </article><?php
     }
 
     private function originUrl(string $from): string
@@ -185,9 +221,9 @@ class CoachPortal
         return $from === 'week' ? $this->base() : $this->base(['e2n_view' => $from]);
     }
 
-    private function swimmerFlags(array $swimmer): void
+    private function swimmerFlags(array $swimmer, bool $detailed = false): void
     { ?>
-        <span class="e2n-swimmer-flags"><?php if (!empty($swimmer['health_alert'])) : ?><span class="e2n-health-alert" title="<?php esc_attr_e('Information de santé à consulter', 'ecole2nat'); ?>" aria-label="<?php esc_attr_e('Information de santé à consulter', 'ecole2nat'); ?>">⚠</span><?php endif; ?><span class="e2n-image-rights <?php echo $swimmer['image_rights'] === null ? 'is-unknown' : ((int) $swimmer['image_rights'] === 1 ? 'is-yes' : 'is-no'); ?>" title="<?php esc_attr_e('Droit à l’image', 'ecole2nat'); ?>">📷<?php echo $swimmer['image_rights'] === null ? '?' : ((int) $swimmer['image_rights'] === 1 ? '✓' : '✕'); ?></span></span><?php
+        <span class="e2n-swimmer-flags <?php echo $detailed ? 'is-detailed' : ''; ?>"><?php if (!empty($swimmer['health_alert'])) : ?><span class="e2n-health-alert" title="<?php esc_attr_e('Information de santé à consulter', 'ecole2nat'); ?>" aria-label="<?php esc_attr_e('Information de santé à consulter', 'ecole2nat'); ?>">⚠<?php if ($detailed) : ?> <?php esc_html_e('Santé à consulter', 'ecole2nat'); ?><?php endif; ?></span><?php endif; ?><span class="e2n-image-rights <?php echo $swimmer['image_rights'] === null ? 'is-unknown' : ((int) $swimmer['image_rights'] === 1 ? 'is-yes' : 'is-no'); ?>" title="<?php esc_attr_e('Droit à l’image', 'ecole2nat'); ?>" aria-label="<?php esc_attr_e('Droit à l’image', 'ecole2nat'); ?>">📷<?php echo $swimmer['image_rights'] === null ? '?' : ((int) $swimmer['image_rights'] === 1 ? '✓' : '✕'); ?><?php if ($detailed) : ?> <?php echo esc_html($swimmer['image_rights'] === null ? __('Image non renseignée', 'ecole2nat') : ((int) $swimmer['image_rights'] === 1 ? __('Image autorisée', 'ecole2nat') : __('Image refusée', 'ecole2nat'))); ?><?php endif; ?></span></span><?php
     }
 
     private function phoneUri(string $phone): string

@@ -21,13 +21,38 @@ class ParentPortal
     {
         add_shortcode('e2n_parent_report', [$this, 'renderShortcode']);
         add_action('wp', [$this, 'registerNoIndex']);
+        add_action('wp_enqueue_scripts', [$this, 'assets']);
+        add_filter('template_include', [$this, 'template'], 99);
+    }
+
+    public function assets(): void
+    {
+        if (!$this->isParentPortalPage()) {
+            return;
+        }
+
+        wp_enqueue_style(
+            'e2n-parent-portal',
+            Config::pluginUrl() . 'assets/css/parent-portal.css',
+            [],
+            Config::version()
+        );
+    }
+
+    public function template(string $template): string
+    {
+        if (!$this->isParentPortalPage()) {
+            return $template;
+        }
+
+        $parentTemplate = E2N_PLUGIN_PATH . 'templates/parent-portal.php';
+
+        return is_readable($parentTemplate) ? $parentTemplate : $template;
     }
 
     public function registerNoIndex(): void
     {
-        global $post;
-
-        if ($post instanceof \WP_Post && has_shortcode((string) $post->post_content, 'e2n_parent_report')) {
+        if ($this->isParentPortalPage()) {
             add_filter('wp_robots', static function (array $robots): array {
                 $robots['noindex'] = true;
                 $robots['nofollow'] = true;
@@ -37,15 +62,17 @@ class ParentPortal
         }
     }
 
+    private function isParentPortalPage(): bool
+    {
+        global $post;
+
+        return $post instanceof \WP_Post
+            && is_singular()
+            && has_shortcode((string) $post->post_content, 'e2n_parent_report');
+    }
+
     public function renderShortcode(): string
     {
-        wp_enqueue_style(
-            'e2n-parent-portal',
-            Config::pluginUrl() . 'assets/css/parent-portal.css',
-            [],
-            Config::version()
-        );
-
         $message = '';
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {

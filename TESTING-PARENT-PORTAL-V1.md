@@ -19,6 +19,22 @@
 3. Publier la page.
 4. Vérifier que la page affiche seulement le formulaire de code.
 5. Vérifier dans le code source de la page la présence de la directive robots `noindex`.
+6. Vérifier que la page utilise le gabarit autonome Ecole2Nat' : aucun en-tête,
+   pied de page, titre ou colonne du thème WordPress ne doit apparaître.
+
+## 2 bis. Identité visuelle
+
+1. Ouvrir **Ecole2Nat' → Réglages**, modifier le nom commun des portails et
+   choisir une image dans la médiathèque WordPress.
+2. Enregistrer puis recharger les réglages : le nom, le logo et son aperçu
+   doivent être conservés.
+3. Ouvrir successivement la saisie du code, une fiche enfant, une
+   prévisualisation Coach et le portail Coach : le même nom et le même logo
+   doivent apparaître.
+4. Retirer le logo et enregistrer : le monogramme **E2N** doit reprendre sa
+   place, sans modifier le nom configuré.
+5. Forger l'enregistrement sans capacité `manage_options` ou avec un nonce
+   invalide : les deux options ne doivent pas changer.
 
 ## 3. Génération d'un accès
 
@@ -47,6 +63,8 @@
 11. Vérifier qu'aucun indicateur ou détail de santé ni aucune note interne Coach n'est exposé.
 12. Vérifier l'impression A4 : les historiques repliables ne doivent pas être imprimés.
 13. Vérifier le bouton **Changer de code**.
+14. Vérifier que la saisie du code, la fiche enfant et la prévisualisation Coach
+    partagent la même identité visuelle que le portail Coach.
 
 ## 5. Sécurité
 
@@ -68,3 +86,6 @@ Tester la fiche avec une largeur de téléphone :
 - cartes sur une seule colonne ;
 - boutons utilisables ;
 - code facile à saisir.
+
+Avec un administrateur connecté, répéter le contrôle entre 601 et 783 px et
+vérifier que la barre d'administration ne masque pas l'en-tête Ecole2Nat'.

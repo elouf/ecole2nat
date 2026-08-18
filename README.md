@@ -45,7 +45,13 @@ Un clic sur un créneau ouvre directement le groupe. Tous les comptes Coach peuv
 
 Les changements sont enregistrés immédiatement et alimentent la chronologie de chaque compétence. Les informations médicales restent réservées au portail Coach et ne sont jamais exposées dans le portail Parents.
 
+Le portail utilise une mise en page autonome, pensée comme une application mobile et tablette : navigation compacte et persistante, actions secondaires regroupées, résumé de progression et notes internes affichées à la demande. Il conserve les hooks WordPress nécessaires aux extensions et à la barre d'administration, mais ne reprend ni l'en-tête, ni le pied de page, ni les colonnes du thème actif.
+
 Le portail Parents présente l'état courant de façon synthétique. Un contrôle replié sous chaque compétence permet d'afficher à la demande la date, le statut atteint et le coach ayant effectué chaque changement.
+
+Comme le portail Coach, le portail Parents possède un gabarit autonome et responsive fourni par le plugin. La saisie du code, la fiche enfant et les prévisualisations Coach ou administrateur utilisent la même identité visuelle sans dépendre des fichiers du thème WordPress.
+
+Le nom et le logo communs aux en-têtes Coach et Parents se configurent dans **Ecole2Nat' → Réglages**. Le logo est choisi dans la médiathèque WordPress ; en son absence, le monogramme E2N reste affiché.
 
 La bibliothèque d'exercices reste disponible dans le back-office comme ressource pédagogique indépendante.
 

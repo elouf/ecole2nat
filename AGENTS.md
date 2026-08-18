@@ -66,6 +66,8 @@ Principaux domaines :
 - `src/Evaluation` : évaluations saisonnières
 - `src/ParentPortal` : accès et rapports parents
 - `src/Coach` : semaine type, droits et évaluations terrain
+- `templates/coach-portal.php` : gabarit autonome du portail Coach
+- `templates/parent-portal.php` : gabarit autonome du portail Parents
 - `src/Synchronization` : lecture et synchronisation des classeurs
 - `src/Support` : configuration et utilitaires transverses
 
@@ -235,6 +237,10 @@ suppression appropriées.
   ou manipulé par un thème WordPress.
 - Le portail Coach est conçu mobile/tablette en priorité pour une
   utilisation au bord du bassin.
+- Son gabarit reste autonome du thème WordPress, tout en conservant
+  `wp_head()`, `wp_body_open()` et `wp_footer()`.
+- Le portail Parents suit la même règle d'autonomie afin que sa page publique
+  et ses prévisualisations conservent une présentation cohérente.
 - Minimiser le nombre d’actions nécessaires pour les opérations fréquentes.
 - Préférer l’enregistrement immédiat aux boutons de validation pour les
   actions terrain fréquentes, avec retour visuel de succès ou d’échec.

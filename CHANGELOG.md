@@ -1,6 +1,16 @@
 # Changelog
 
-## Non publié — 0.17.6
+## Non publié — 0.18.0
+
+- Modernise le portail Coach avec une interface autonome, cohérente et indépendante de la mise en page du thème WordPress.
+- Remplace l'en-tête historique par une navigation compacte et persistante, complétée par un menu utilisateur.
+- Regroupe les actions secondaires de la fiche nageur dans un menu dédié afin de conserver la progression comme action principale.
+- Ajoute un résumé visuel de la progression et regroupe les compétences par domaine dans des cartes plus lisibles.
+- Réduit l'encombrement des notes internes en les affichant à la demande, tout en laissant ouvertes celles déjà renseignées.
+- Corrige le positionnement des en-têtes autonomes sous la barre d'administration WordPress, y compris entre 601 et 782 px.
+- Harmonise la saisie du code, la fiche Parents et sa prévisualisation Coach avec le langage visuel du portail Coach.
+- Isole également le portail Parents de la mise en page du thème WordPress sans modifier ses contrôles d'accès.
+- Ajoute aux réglages le nom et le logo communs aux en-têtes des portails Coach et Parents, avec sélection du logo depuis la médiathèque WordPress.
 
 - Recentre le portail Coach sur une semaine type permanente et l'accès direct aux groupes, sans navigation datée.
 - Retire du portail les séances planifiées, les remplacements datés et le pointage des présences.
