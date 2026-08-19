@@ -46,3 +46,9 @@
 - Distribution des accès parents.
 - Création/modification de séances.
 - Purge totale Ecole2Nat'.
+
+# Non-régression du démarrage des migrations
+
+1. Installer une version dont `e2n_db_version` est antérieure à `E2N_DB_VERSION`.
+2. Charger directement une page du site ou du back-office.
+3. Vérifier que la migration s'exécute sur `init`, que la page Coach est créée si nécessaire et qu'aucune erreur liée à `get_page_permastruct()` n'est produite.

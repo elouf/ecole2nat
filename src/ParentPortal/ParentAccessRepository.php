@@ -20,12 +20,12 @@ class ParentAccessRepository
 
         $result = $wpdb->get_row(
             $wpdb->prepare(
-                "SELECT swimmers.*, groups.name AS group_name, groups.category_id,
-                        categories.name AS category_name
-                 FROM {$swimmers} swimmers
-                 LEFT JOIN {$groups} groups ON groups.id = swimmers.group_id
-                 LEFT JOIN {$categories} categories ON categories.id = groups.category_id
-                 WHERE swimmers.id = %d LIMIT 1",
+                "SELECT sw.*, grp.name AS group_name, grp.category_id,
+                        cat.name AS category_name
+                 FROM {$swimmers} sw
+                 LEFT JOIN {$groups} grp ON grp.id = sw.group_id
+                 LEFT JOIN {$categories} cat ON cat.id = grp.category_id
+                 WHERE sw.id = %d LIMIT 1",
                 $swimmerId
             ),
             ARRAY_A
@@ -143,15 +143,15 @@ class ParentAccessRepository
         $categories = Config::table('categories');
         $results = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT seasons.id, seasons.name, seasons.start_date, seasons.end_date, seasons.is_current,
-                        groups.id AS group_id, groups.name AS group_name,
-                        categories.id AS category_id, categories.name AS category_name
+                "SELECT sea.id, sea.name, sea.start_date, sea.end_date, sea.is_current,
+                        grp.id AS group_id, grp.name AS group_name,
+                        cat.id AS category_id, cat.name AS category_name
                  FROM {$memberships} membership
-                 INNER JOIN {$groups} groups ON groups.id = membership.group_id
-                 INNER JOIN {$seasons} seasons ON seasons.id = membership.season_id
-                 INNER JOIN {$categories} categories ON categories.id = groups.category_id
+                 INNER JOIN {$groups} grp ON grp.id = membership.group_id
+                 INNER JOIN {$seasons} sea ON sea.id = membership.season_id
+                 INNER JOIN {$categories} cat ON cat.id = grp.category_id
                  WHERE membership.swimmer_id = %d
-                 ORDER BY seasons.is_current DESC, seasons.start_date DESC, seasons.id DESC",
+                 ORDER BY sea.is_current DESC, sea.start_date DESC, sea.id DESC",
                 $swimmerId
             ),
             ARRAY_A
@@ -303,21 +303,21 @@ class ParentAccessRepository
         $groups = Config::table('groups');
         $seasons = Config::table('seasons');
         $categories = Config::table('categories');
-        $where = 'WHERE groups.is_active = 1';
+        $where = 'WHERE grp.is_active = 1';
         $params = [];
         $categoryIds = array_values(array_filter(array_unique(array_map('absint', $categoryIds))));
         if ($categoryIds !== []) {
-            $where .= ' AND groups.category_id IN (' . implode(',', array_fill(0, count($categoryIds), '%d')) . ')';
+            $where .= ' AND grp.category_id IN (' . implode(',', array_fill(0, count($categoryIds), '%d')) . ')';
             $params = $categoryIds;
         }
-        $sql = "SELECT groups.*, seasons.name AS season_name, seasons.is_current,
-                       categories.name AS category_name
-                FROM {$groups} groups
-                INNER JOIN {$seasons} seasons ON seasons.id = groups.season_id
-                INNER JOIN {$categories} categories ON categories.id = groups.category_id
+        $sql = "SELECT grp.*, sea.name AS season_name, sea.is_current,
+                       cat.name AS category_name
+                FROM {$groups} grp
+                INNER JOIN {$seasons} sea ON sea.id = grp.season_id
+                INNER JOIN {$categories} cat ON cat.id = grp.category_id
                 {$where}
-                ORDER BY seasons.is_current DESC, seasons.start_date DESC,
-                         categories.sort_order ASC, groups.name ASC";
+                ORDER BY sea.is_current DESC, sea.start_date DESC,
+                         cat.sort_order ASC, grp.name ASC";
         $results = $params === []
             ? $wpdb->get_results($sql, ARRAY_A)
             : $wpdb->get_results($wpdb->prepare($sql, $params), ARRAY_A);

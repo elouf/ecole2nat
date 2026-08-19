@@ -3,7 +3,7 @@
  * Plugin Name: Ecole2Nat'
  * Plugin URI: https://github.com/elouf/ecole2nat
  * Description: Plugin WordPress de suivi pédagogique pour école de natation.
- * Version: 0.18.1
+ * Version: 0.18.2
  * Author: Erwannig LOUF
  * Text Domain: ecole2nat
  * Domain Path: /languages
@@ -15,7 +15,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('E2N_VERSION', '0.18.1');
+define('E2N_VERSION', '0.18.2');
 define('E2N_DB_VERSION', '0.10.0');
 define('E2N_PLUGIN_FILE', __FILE__);
 define('E2N_PLUGIN_PATH', plugin_dir_path(__FILE__));
@@ -44,6 +44,9 @@ register_activation_hook(E2N_PLUGIN_FILE, ['\Ecole2Nat\Database\Installer', 'act
 register_deactivation_hook(E2N_PLUGIN_FILE, ['\Ecole2Nat\Database\Installer', 'deactivate']);
 
 add_action('plugins_loaded', function () {
-    \Ecole2Nat\Database\Installer::maybeUpgrade();
     e2n()->boot();
 });
+
+// Les migrations pouvant créer une page doivent attendre l'initialisation
+// complète de WordPress et de ses règles de réécriture.
+add_action('init', ['\Ecole2Nat\Database\Installer', 'maybeUpgrade'], 1);

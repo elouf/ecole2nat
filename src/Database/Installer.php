@@ -516,11 +516,11 @@ class Installer
         );
 
         $wpdb->query(
-            "UPDATE {$levels} levels
-             INNER JOIN {$swimmers} swimmers ON swimmers.id = levels.swimmer_id
-             LEFT JOIN {$groups} groups ON groups.id = swimmers.group_id
-             SET levels.season_id = COALESCE(groups.season_id, {$currentSeasonId})
-             WHERE levels.season_id = 0"
+            "UPDATE {$levels} lvl
+             INNER JOIN {$swimmers} sw ON sw.id = lvl.swimmer_id
+             LEFT JOIN {$groups} grp ON grp.id = sw.group_id
+             SET lvl.season_id = COALESCE(grp.season_id, {$currentSeasonId})
+             WHERE lvl.season_id = 0"
         );
 
         $oldIndex = $wpdb->get_var(
@@ -548,18 +548,18 @@ class Installer
 
         $wpdb->query(
             "INSERT IGNORE INTO {$memberships} (swimmer_id, season_id, group_id, created_at)
-             SELECT swimmers.id, groups.season_id, groups.id, NOW()
-             FROM {$swimmers} swimmers
-             INNER JOIN {$groups} groups ON groups.id = swimmers.group_id
-             WHERE swimmers.group_id IS NOT NULL"
+             SELECT sw.id, grp.season_id, grp.id, NOW()
+             FROM {$swimmers} sw
+             INNER JOIN {$groups} grp ON grp.id = sw.group_id
+             WHERE sw.group_id IS NOT NULL"
         );
 
         $wpdb->query(
             "INSERT IGNORE INTO {$seasonSkills} (season_id, skill_id, is_active, created_at)
-             SELECT DISTINCT groups.season_id, skills.id, 1, NOW()
-             FROM {$groups} groups
-             INNER JOIN {$domains} domains ON domains.category_id = groups.category_id
-             INNER JOIN {$skills} skills ON skills.domain_id = domains.id"
+             SELECT DISTINCT grp.season_id, skill.id, 1, NOW()
+             FROM {$groups} grp
+             INNER JOIN {$domains} domain ON domain.category_id = grp.category_id
+             INNER JOIN {$skills} skill ON skill.domain_id = domain.id"
         );
     }
 

@@ -44,6 +44,7 @@
 4. Générer un code.
 5. Vérifier qu'il contient exactement 8 caractères et aucun caractère ambigu (`0`, `O`, `1`, `I`).
 6. Imprimer le coupon et vérifier que le code et l'adresse de la page apparaissent.
+7. Sur MySQL 8, vérifier que le lien **Accès parents** ouvre bien le nageur sans erreur « Nageur introuvable ».
 
 ## 4. Consultation
 

@@ -1,6 +1,9 @@
 # Changelog
 
-## Non publié — 0.18.1
+## Non publié — 0.18.2
+
+- Corrige les listes Nageurs et Catégories du portail Coach ainsi que les accès Parents sur MySQL 8 en évitant l'alias SQL réservé `groups`.
+- Exécute les migrations automatiques sur `init` afin que la création de la page Coach ne provoque plus d'erreur fatale pendant `plugins_loaded`.
 
 - Force la résolution Composer sur PHP 8.1 afin d'empêcher une dépendance indirecte de rendre le paquet incompatible avec la version minimale annoncée.
 - Ajoute `composer build` pour générer un ZIP WordPress propre et versionné, contenant les dépendances de production sans les fichiers de développement.

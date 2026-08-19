@@ -31,16 +31,16 @@ class CoachPortalRepository {
  public function allSwimmers():array {
   global $wpdb;
   $m=Config::table('swimmer_group_memberships');$sw=Config::table('swimmers');$g=Config::table('groups');$s=Config::table('seasons');$c=Config::table('categories');
-  $rows=$wpdb->get_results("SELECT swimmers.id,swimmers.first_name,swimmers.last_name,swimmers.health_alert,swimmers.image_rights,
-      groups.id group_id,groups.name group_name,categories.id category_id,categories.name category_name,
-      seasons.id season_id,seasons.name season_name,seasons.is_current
-      FROM {$m} memberships
-      INNER JOIN {$sw} swimmers ON swimmers.id=memberships.swimmer_id
-      INNER JOIN {$g} groups ON groups.id=memberships.group_id
-      INNER JOIN {$s} seasons ON seasons.id=memberships.season_id
-      INNER JOIN {$c} categories ON categories.id=groups.category_id
-      WHERE swimmers.is_active=1 AND groups.is_active=1 AND seasons.is_active=1
-      ORDER BY swimmers.last_name,swimmers.first_name,seasons.is_current DESC,seasons.start_date DESC,groups.name",ARRAY_A);
+  $rows=$wpdb->get_results("SELECT sw.id,sw.first_name,sw.last_name,sw.health_alert,sw.image_rights,
+      grp.id group_id,grp.name group_name,cat.id category_id,cat.name category_name,
+      sea.id season_id,sea.name season_name,sea.is_current
+      FROM {$m} membership
+      INNER JOIN {$sw} sw ON sw.id=membership.swimmer_id
+      INNER JOIN {$g} grp ON grp.id=membership.group_id
+      INNER JOIN {$s} sea ON sea.id=membership.season_id
+      INNER JOIN {$c} cat ON cat.id=grp.category_id
+      WHERE sw.is_active=1 AND grp.is_active=1 AND sea.is_active=1
+      ORDER BY sw.last_name,sw.first_name,sea.is_current DESC,sea.start_date DESC,grp.name",ARRAY_A);
   if(!is_array($rows)) return [];
   $unique=[];
   foreach($rows as $row){$id=(int)$row['id'];if(!isset($unique[$id]))$unique[$id]=$row;}

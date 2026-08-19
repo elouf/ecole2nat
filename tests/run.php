@@ -35,6 +35,34 @@ function accessService(array $caps): CoachAccessService
     return new CoachAccessService(new FakeCoachAccessRepository());
 }
 
+function expectNotContains(string $needle, string $haystack, string $label): void
+{
+    global $tests, $failures;
+    $tests++;
+    if (str_contains(strtolower($haystack), strtolower($needle))) {
+        $failures[] = $label . ' — motif interdit trouvé : ' . $needle;
+    }
+}
+
+$sqlSources = [
+    __DIR__ . '/../src/Coach/CoachPortalRepository.php',
+    __DIR__ . '/../src/ParentPortal/ParentAccessRepository.php',
+    __DIR__ . '/../src/Database/Installer.php',
+];
+foreach ($sqlSources as $sqlSource) {
+    $contents = file_get_contents($sqlSource);
+    expectSame(true, is_string($contents), 'Lecture de ' . basename($sqlSource));
+    expectNotContains('} groups ', (string) $contents, 'Aucun alias SQL réservé groups dans ' . basename($sqlSource));
+}
+
+$bootstrapSource = file_get_contents(__DIR__ . '/../ecole2nat.php');
+expectSame(true, is_string($bootstrapSource), 'Lecture du point d’entrée du plugin');
+expectSame(
+    true,
+    str_contains((string) $bootstrapSource, "add_action('init', ['\\Ecole2Nat\\Database\\Installer', 'maybeUpgrade'], 1)"),
+    'Les migrations automatiques attendent le hook init'
+);
+
 $service = accessService(['manage_options']);
 expectSame(true, $service->canEvaluateGroup(4), 'Un administrateur peut évaluer tout groupe');
 expectSame('Les coachs', Config::parentEmailSignature(), 'Signature email par défaut');
