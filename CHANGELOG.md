@@ -1,6 +1,8 @@
 # Changelog
 
-## Non publié — 0.18.2
+## Non publié — 0.18.4
+
+- Rétablit la recherche locale de l’onglet Nageurs du portail Coach, sans dépendre de la configuration AJAX, et garantit que les cartes marquées `hidden` ne sont pas réaffichées par leur mise en page CSS.
 
 - Corrige les listes Nageurs et Catégories du portail Coach ainsi que les accès Parents sur MySQL 8 en évitant l'alias SQL réservé `groups`.
 - Exécute les migrations automatiques sur `init` afin que la création de la page Coach ne provoque plus d'erreur fatale pendant `plugins_loaded`.

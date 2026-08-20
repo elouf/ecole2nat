@@ -1,11 +1,6 @@
 (function () {
     'use strict';
 
-    if (typeof e2nCoachAjax === 'undefined') return;
-
-    var queues = new Map();
-    var noteTimers = new WeakMap();
-
     function normalize(value) {
         return value.toLocaleLowerCase('fr').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     }
@@ -23,6 +18,13 @@
         var empty = document.querySelector('[data-e2n-empty-filter]');
         if (empty) empty.hidden = visible !== 0;
     });
+
+    // La recherche est entièrement locale et doit rester disponible même si
+    // la configuration AJAX n'a pas été injectée (cache de page, script isolé).
+    if (typeof e2nCoachAjax === 'undefined') return;
+
+    var queues = new Map();
+    var noteTimers = new WeakMap();
 
     function indicatorFor(element) {
         var card = element.closest('.e2n-card');

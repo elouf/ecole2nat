@@ -7,3 +7,4 @@
 5. Vérifier que le groupe affiche son nom, sa catégorie, sa saison, la prochaine séance et les nageurs prévus.
 6. Tester au clavier avec Tab : le focus du créneau doit être visible.
 7. Sur MySQL 8, ouvrir les onglets **Nageurs** et **Catégories** et vérifier que les nageurs actifs apparaissent et restent recherchables.
+8. Charger `coach-portal.js` sans objet global `e2nCoachAjax`, saisir un nom avec et sans accent dans la recherche et vérifier que les cartes sans correspondance disparaissent, que le message vide apparaît si nécessaire et qu’aucune erreur JavaScript n’est produite.

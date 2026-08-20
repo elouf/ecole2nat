@@ -63,6 +63,23 @@ expectSame(
     'Les migrations automatiques attendent le hook init'
 );
 
+$coachScript = file_get_contents(__DIR__ . '/../assets/js/coach-portal.js');
+expectSame(true, is_string($coachScript), 'Lecture du script Coach');
+$searchListenerPosition = strpos((string) $coachScript, "field.matches('[data-e2n-swimmer-search]')");
+$ajaxGuardPosition = strpos((string) $coachScript, "typeof e2nCoachAjax === 'undefined'");
+expectSame(
+    true,
+    $searchListenerPosition !== false && $ajaxGuardPosition !== false && $searchListenerPosition < $ajaxGuardPosition,
+    'La recherche Nageurs est initialisée avant la garde AJAX'
+);
+$coachStyles = file_get_contents(__DIR__ . '/../assets/css/coach-portal.css');
+expectSame(true, is_string($coachStyles), 'Lecture des styles Coach');
+expectSame(
+    true,
+    str_contains((string) $coachStyles, '.e2n-coach [hidden]{display:none!important}'),
+    'Les cartes filtrées restent masquées malgré leurs règles de mise en page'
+);
+
 $service = accessService(['manage_options']);
 expectSame(true, $service->canEvaluateGroup(4), 'Un administrateur peut évaluer tout groupe');
 expectSame('Les coachs', Config::parentEmailSignature(), 'Signature email par défaut');
