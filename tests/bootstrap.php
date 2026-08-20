@@ -44,6 +44,16 @@ function sanitize_email(string $email): string
     return filter_var(trim($email), FILTER_VALIDATE_EMAIL) !== false ? trim($email) : '';
 }
 
+function is_email(string $email): bool
+{
+    return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
+}
+
+function sanitize_text_field(string $value): string
+{
+    return trim(strip_tags($value));
+}
+
 function get_option(string $name, mixed $default = false): mixed
 {
     return $GLOBALS['e2n_test_options'][$name] ?? $default;
@@ -53,6 +63,11 @@ function update_option(string $name, mixed $value): bool
 {
     $GLOBALS['e2n_test_options'][$name] = $value;
     return true;
+}
+
+function wp_salt(string $scheme = 'auth'): string
+{
+    return 'e2n-test-salt-' . $scheme;
 }
 
 require dirname(__DIR__) . '/vendor/autoload.php';

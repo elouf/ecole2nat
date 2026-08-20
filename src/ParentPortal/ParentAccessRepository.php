@@ -34,25 +34,27 @@ class ParentAccessRepository
         return is_array($result) ? $result : null;
     }
 
-    public function codeHashExists(string $codeHash): bool
+    public function codeHashExists(string $codeHash, int $excludeSwimmerId = 0): bool
     {
         global $wpdb;
-        return (int) $wpdb->get_var(
-            $wpdb->prepare(
-                'SELECT COUNT(*) FROM ' . Config::table('swimmers') . ' WHERE parent_access_code_hash = %s',
-                $codeHash
-            )
-        ) > 0;
+        $sql = 'SELECT COUNT(*) FROM ' . Config::table('swimmers') . ' WHERE parent_access_code_hash = %s';
+        $args = [$codeHash];
+        if ($excludeSwimmerId > 0) {
+            $sql .= ' AND id <> %d';
+            $args[] = $excludeSwimmerId;
+        }
+        return (int) $wpdb->get_var($wpdb->prepare($sql, ...$args)) > 0;
     }
 
-    public function saveAccessCode(int $swimmerId, string $codeHash): bool
+    public function saveAccessCode(int $swimmerId, string $codeHash, int $generation, bool $enabled = true): bool
     {
         global $wpdb;
         $result = $wpdb->update(
             Config::table('swimmers'),
             [
                 'parent_access_code_hash' => $codeHash,
-                'parent_access_enabled' => 1,
+                'parent_access_code_generation' => $generation,
+                'parent_access_enabled' => $enabled ? 1 : 0,
                 'parent_access_created_at' => current_time('mysql'),
                 'parent_access_last_used_at' => null,
                 'parent_access_count' => 0,
@@ -62,10 +64,22 @@ class ParentAccessRepository
                 'updated_at' => current_time('mysql'),
             ],
             ['id' => $swimmerId],
-            ['%s', '%d', '%s', '%s', '%d', '%s', '%s', '%s', '%s'],
+            ['%s', '%d', '%d', '%s', '%s', '%d', '%s', '%s', '%s', '%s'],
             ['%d']
         );
         return $result !== false;
+    }
+
+    public function enableAccess(int $swimmerId): bool
+    {
+        global $wpdb;
+        return $wpdb->update(
+            Config::table('swimmers'),
+            ['parent_access_enabled' => 1, 'updated_at' => current_time('mysql')],
+            ['id' => $swimmerId],
+            ['%d', '%s'],
+            ['%d']
+        ) !== false;
     }
 
     public function disableAccess(int $swimmerId): bool

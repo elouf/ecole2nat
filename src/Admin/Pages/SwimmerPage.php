@@ -2,6 +2,8 @@
 
 namespace Ecole2Nat\Admin\Pages;
 
+use Ecole2Nat\Support\ContactList;
+
 use Ecole2Nat\Swimmer\SwimmerService;
 use Ecole2Nat\Group\GroupService;
 use Ecole2Nat\Swimmer\SwimmerSearchCriteria;
@@ -543,12 +545,13 @@ class SwimmerPage
 
                         <td>
                             <input
-                                type="email"
+                                type="text"
                                 id="responsible_email"
                                 name="responsible_email"
                                 class="regular-text"
                                 value="<?php echo esc_attr($this->fieldValue('responsible_email')); ?>"
                             >
+                            <p class="description"><?php esc_html_e('Plusieurs adresses peuvent être séparées par / ou ;', 'ecole2nat'); ?></p>
                         </td>
                     </tr>
 
@@ -896,8 +899,8 @@ class SwimmerPage
             'gender' => sanitize_text_field($_POST['gender'] ?? ''),
 
             'responsible_name' => sanitize_text_field($_POST['responsible_name'] ?? ''),
-            'responsible_email' => sanitize_email($_POST['responsible_email'] ?? ''),
-            'responsible_phone' => sanitize_text_field($_POST['responsible_phone'] ?? ''),
+            'responsible_email' => ContactList::normalizeEmails((string) ($_POST['responsible_email'] ?? '')),
+            'responsible_phone' => ContactList::normalizePhones((string) ($_POST['responsible_phone'] ?? '')),
 
             'licence_number' => sanitize_text_field($_POST['licence_number'] ?? ''),
 

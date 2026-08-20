@@ -267,6 +267,7 @@ class Installer
             image_rights TINYINT(1) NULL,
             parent_message TEXT NULL,
             parent_access_code_hash CHAR(64) NULL,
+            parent_access_code_generation BIGINT UNSIGNED NOT NULL DEFAULT 0,
             parent_access_enabled TINYINT(1) NOT NULL DEFAULT 0,
             parent_access_created_at DATETIME NULL,
             parent_access_last_used_at DATETIME NULL,

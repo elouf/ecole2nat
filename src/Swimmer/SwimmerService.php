@@ -2,6 +2,8 @@
 
 namespace Ecole2Nat\Swimmer;
 
+use Ecole2Nat\ParentPortal\ParentAccessService;
+
 if (!defined('ABSPATH')) {
     exit;
 }
@@ -9,10 +11,12 @@ if (!defined('ABSPATH')) {
 class SwimmerService
 {
     private SwimmerRepository $repository;
+    private ParentAccessService $parentAccess;
 
-    public function __construct()
+    public function __construct(?SwimmerRepository $repository = null, ?ParentAccessService $parentAccess = null)
     {
-        $this->repository = new SwimmerRepository();
+        $this->repository = $repository ?? new SwimmerRepository();
+        $this->parentAccess = $parentAccess ?? new ParentAccessService();
     }
 
     public function all(): array
@@ -35,7 +39,12 @@ class SwimmerService
             ];
         }
 
-        $created = $this->repository->create($data);
+        global $wpdb;
+        $wpdb->query('START TRANSACTION');
+        $swimmerId = $this->repository->create($data);
+        $access = $swimmerId > 0 ? $this->parentAccess->permanentCode($swimmerId) : ['success' => false];
+        $created = $swimmerId > 0 && !empty($access['success']);
+        $wpdb->query($created ? 'COMMIT' : 'ROLLBACK');
 
         return [
             'success' => $created,

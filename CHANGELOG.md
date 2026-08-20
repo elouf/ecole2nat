@@ -1,6 +1,12 @@
 # Changelog
 
-## Non publié — 0.18.4
+## Non publié — 0.19.0
+
+- Préserve les emails et téléphones multiples séparés par `/` ou `;` lors de la synchronisation et envoie les accès Parents à chaque adresse email valide.
+- Crée automatiquement pour chaque nageur un code Parents permanent, récupérable sans stockage en clair et inchangé lors des affichages, coupons ou renvois.
+- Permet aux coachs autorisés d'afficher et copier le code depuis la fiche nageur, tout en conservant les contrôles de groupe, nonce et droits côté serveur.
+- Réserve le changement de code à une réinitialisation administrateur explicite et porte la version technique du schéma à `0.11.0`.
+- Préserve les anciens codes jusqu'à leur première récupération ; ils sont alors convertis une seule fois au format permanent.
 
 - Rétablit la recherche locale de l’onglet Nageurs du portail Coach, sans dépendre de la configuration AJAX, et garantit que les cartes marquées `hidden` ne sont pas réaffichées par leur mise en page CSS.
 

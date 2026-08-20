@@ -31,13 +31,14 @@
 3. Vérifier qu'un nageur est associé au groupe construit avec `Catégorie + Créneau 1`.
 4. Relancer exactement le même classeur : aucun doublon ne doit être créé.
 5. Modifier un email ou téléphone dans Excel et relancer : le nageur doit être mis à jour.
-6. Renseigner `Info médicale` avec un texte sensible : seul `health_alert = 1` doit être stocké, jamais le texte.
-7. Vérifier que les évaluations, séances et accès parents existants ne sont pas supprimés.
-8. Vérifier l'historique en bas de la page.
-9. Ajouter `Durée (min) = 45` dans l'onglet `Catégories` pour un groupe commençant à 17h15 : vérifier `end_time = 18:00:00` dans l'analyse puis après synchronisation.
-10. Modifier la durée à 60 : l'analyse doit annoncer un groupe mis à jour et la synchronisation doit porter la fin à 18h15.
-11. Vider ensuite la cellule, modifier manuellement l'heure de fin dans WordPress et resynchroniser : l'heure manuelle doit être conservée et le groupe annoncé inchangé.
-12. Relancer le même classeur avec la durée renseignée : aucun changement supplémentaire ne doit être annoncé.
+6. Saisir deux emails et deux téléphones séparés par `/`, puis par `;` : vérifier qu'ils restent distincts en base avec le séparateur ` / ` et que chaque email valide reçoit l'envoi Parents.
+7. Renseigner `Info médicale` avec un texte sensible : seul `health_alert = 1` doit être stocké, jamais le texte.
+8. Vérifier que les évaluations, séances et accès parents existants ne sont pas supprimés.
+9. Vérifier l'historique en bas de la page.
+10. Ajouter `Durée (min) = 45` dans l'onglet `Catégories` pour un groupe commençant à 17h15 : vérifier `end_time = 18:00:00` dans l'analyse puis après synchronisation.
+11. Modifier la durée à 60 : l'analyse doit annoncer un groupe mis à jour et la synchronisation doit porter la fin à 18h15.
+12. Vider ensuite la cellule, modifier manuellement l'heure de fin dans WordPress et resynchroniser : l'heure manuelle doit être conservée et le groupe annoncé inchangé.
+13. Relancer le même classeur avec la durée renseignée : aucun changement supplémentaire ne doit être annoncé.
 
 ## Erreurs
 

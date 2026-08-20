@@ -6,6 +6,7 @@
 2. Vérifier les nouvelles colonnes de `e2n_swimmers` :
    - `parent_message`
    - `parent_access_code_hash`
+   - `parent_access_code_generation`
    - `parent_access_enabled`
    - `parent_access_created_at`
    - `parent_access_last_used_at`
@@ -41,8 +42,8 @@
 1. Ouvrir **Ecole2Nat' → Nageurs**.
 2. Cliquer sur **Accès parents** pour un nageur affecté à un groupe.
 3. Saisir un message destiné aux parents et l'enregistrer.
-4. Générer un code.
-5. Vérifier qu'il contient exactement 8 caractères et aucun caractère ambigu (`0`, `O`, `1`, `I`).
+4. Afficher le code créé automatiquement.
+5. Vérifier son format `XXXX-XXXX`, sans caractère ambigu (`0`, `O`, `1`, `I`), puis le réafficher : il doit rester identique.
 6. Imprimer le coupon et vérifier que le code et l'adresse de la page apparaissent.
 7. Sur MySQL 8, vérifier que le lien **Accès parents** ouvre bien le nageur sans erreur « Nageur introuvable ».
 
@@ -71,13 +72,14 @@
 
 1. Tester un code erroné : aucune information sur un nageur ne doit apparaître.
 2. Faire cinq tentatives erronées : l'accès doit être bloqué temporairement.
-3. Régénérer le code : l'ancien code doit cesser de fonctionner.
+3. Afficher, envoyer et imprimer le code : il doit rester identique.
+4. Réinitialiser explicitement le code : l'ancien doit cesser de fonctionner.
 4. Désactiver l'accès : le code actif doit cesser de fonctionner.
 5. Vérifier que la base ne contient jamais le code en clair.
 6. Vérifier que `e2n_parent_access_logs.ip_hash` ne contient pas l'adresse IP brute.
 7. Depuis le portail Coach, ouvrir la prévisualisation d'un nageur et vérifier qu'elle porte la bannière Coach, n'utilise aucun code et ne modifie ni le compteur ni les journaux parents.
 8. Vérifier que l'URL de prévisualisation Coach exige une session Coach ou administrateur active et un nonce valide.
-9. Renvoyer un code depuis la fiche Coach : vérifier que l'ancien code est immédiatement refusé et que le nouvel envoi est enregistré comme distribution email.
+9. Renvoyer un code depuis la fiche Coach : vérifier qu'il reste identique et que l'envoi est enregistré comme distribution email.
 
 ## 6. Responsive
 

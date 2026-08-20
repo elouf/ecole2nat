@@ -123,22 +123,22 @@ class ParentDistributionPage
 
                             <p style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
                                 <button type="submit" name="e2n_action" value="send_missing_results" class="button button-primary"
-                                    onclick="return confirm('<?php echo esc_js(__('Envoyer un nouveau code à tous les nageurs non distribués correspondant aux filtres ?', 'ecole2nat')); ?>');">
+                                    onclick="return confirm('<?php echo esc_js(__('Envoyer le code permanent à tous les nageurs non distribués correspondant aux filtres ?', 'ecole2nat')); ?>');">
                                     <?php esc_html_e('Envoyer les accès non distribués', 'ecole2nat'); ?>
                                 </button>
 
                                 <button type="submit" name="e2n_action" value="send_selected" class="button"
-                                    onclick="return confirm('<?php echo esc_js(__('Les nageurs sélectionnés recevront un nouveau code. Les anciens codes seront invalidés. Continuer ?', 'ecole2nat')); ?>');">
+                                    onclick="return confirm('<?php echo esc_js(__('Renvoyer le code permanent aux nageurs sélectionnés ?', 'ecole2nat')); ?>');">
                                     <?php esc_html_e('Renvoyer aux sélectionnés', 'ecole2nat'); ?>
                                 </button>
 
                                 <button type="submit" name="e2n_action" value="prepare_all_coupons" class="button"
-                                    onclick="return confirm('<?php echo esc_js(__('Tous les nageurs affichés recevront un nouveau code pour les coupons. Les anciens codes seront invalidés. Continuer ?', 'ecole2nat')); ?>');">
+                                    onclick="return confirm('<?php echo esc_js(__('Préparer les coupons avec les codes permanents des nageurs affichés ?', 'ecole2nat')); ?>');">
                                     <?php esc_html_e('Préparer tous les coupons affichés', 'ecole2nat'); ?>
                                 </button>
 
                                 <button type="submit" name="e2n_action" value="prepare_coupons" class="button"
-                                    onclick="return confirm('<?php echo esc_js(__('La préparation régénère les codes des nageurs sélectionnés et invalide les anciens codes. Continuer ?', 'ecole2nat')); ?>');">
+                                    onclick="return confirm('<?php echo esc_js(__('Préparer les coupons avec les codes permanents des nageurs sélectionnés ?', 'ecole2nat')); ?>');">
                                     <?php esc_html_e('Préparer les coupons sélectionnés', 'ecole2nat'); ?>
                                 </button>
                             </p>
@@ -288,7 +288,7 @@ class ParentDistributionPage
     {
         $notice = isset($_GET['e2n_notice']) ? sanitize_key(wp_unslash($_GET['e2n_notice'])) : '';
         $messages = [
-            'coupons_ready' => ['success', __('Les coupons sont prêts. Les nouveaux codes sont visibles plus bas pendant 30 minutes.', 'ecole2nat')],
+            'coupons_ready' => ['success', __('Les coupons sont prêts. Les codes permanents sont visibles plus bas pendant 30 minutes.', 'ecole2nat')],
             'batch_cleared' => ['success', __('Le lot temporaire de coupons a été effacé.', 'ecole2nat')],
             'nothing_selected' => ['warning', __('Aucun nageur ne correspond à cette action.', 'ecole2nat')],
             'missing_portal' => ['error', __('Créez d’abord la page publique contenant [e2n_parent_report].', 'ecole2nat')],

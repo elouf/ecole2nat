@@ -35,7 +35,7 @@ class SwimmerRepository
         return is_array($results) ? $results : [];
     }
 
-    public function create(array $data): bool
+    public function create(array $data): int
     {
         global $wpdb;
 
@@ -76,9 +76,10 @@ class SwimmerRepository
         );
 
         if ($result === false) {
-            return false;
+            return 0;
         }
-        return $this->syncMembership((int) $wpdb->insert_id, (int) ($data['group_id'] ?? 0));
+        $swimmerId = (int) $wpdb->insert_id;
+        return $this->syncMembership($swimmerId, (int) ($data['group_id'] ?? 0)) ? $swimmerId : 0;
     }
 
     public function toggleActive(int $id): bool

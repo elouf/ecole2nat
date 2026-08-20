@@ -35,7 +35,7 @@ Exercice(s). Les inscriptions ne sont importées que lorsque la colonne
 4. Les liens **Voir le parcours** du back-office permettent une prévisualisation administrateur sans exposer le code parent.
 5. Personnalisez la signature des emails dans **Ecole2Nat' → Réglages** ; elle s'applique aussi aux renvois déclenchés depuis le portail Coach.
 
-Le code n'est jamais conservé en clair. Il n'est affiché dans l'administration qu'après sa génération ou sa régénération. Un renvoi génère donc un nouveau code et invalide l'ancien.
+Le code n'est jamais conservé en clair : il est recalculé à la demande à partir de l'identifiant du nageur et d'un secret propre à l'installation. Il est créé automatiquement, reste identique lors des affichages et renvois, et ne change qu'après une réinitialisation explicite.
 
 ## Évaluations progressives
 
@@ -44,7 +44,7 @@ Le module Évaluations permet de suivre le niveau courant de chaque nageur sur l
 
 ## Portail Coach
 
-Le shortcode `[e2n_coach_portal]` propose trois accès complémentaires aux nageurs : liste alphabétique avec recherche, classement par catégorie et semaine type permanente construite depuis les créneaux des groupes. Aucun créneau n'est associé à une date et aucune préparation de séance n'est requise. Depuis une fiche d'évaluation, un coach peut ouvrir une prévisualisation sécurisée de la fiche Parents ou régénérer et envoyer un nouveau code à l'adresse responsable enregistrée. Le code n'est jamais affiché au coach.
+Le shortcode `[e2n_coach_portal]` propose trois accès complémentaires aux nageurs : liste alphabétique avec recherche, classement par catégorie et semaine type permanente construite depuis les créneaux des groupes. Aucun créneau n'est associé à une date et aucune préparation de séance n'est requise. Depuis une fiche d'évaluation, un coach peut ouvrir une prévisualisation sécurisée de la fiche Parents, afficher et copier le code permanent, ou le renvoyer à l'adresse responsable enregistrée.
 
 Un clic sur un créneau ouvre directement le groupe. Tous les comptes Coach peuvent mettre à jour les progressions de tous les groupes actifs, individuellement ou collectivement. Les titulaires habituels restent affichés à titre informatif.
 
@@ -139,4 +139,4 @@ Depuis la v0.9.0, les évaluations, le référentiel actif et les affectations d
 
 ## Synchronisation des informations nageur
 
-Dans l’onglet `Inscriptions`, Ecole2Nat’ reconnaît notamment les colonnes `Info médicale` et `Droit à l'image`. Une cellule `Info médicale` non vide active uniquement un indicateur de santé : son texte n'est jamais stocké dans WordPress. Le droit à l’image accepte `OUI` ou `NON` (la cellule peut rester vide si l’information n’est pas connue). La colonne historique `Commentaire` est ignorée.
+Dans l’onglet `Inscriptions`, Ecole2Nat’ reconnaît notamment les colonnes `Info médicale` et `Droit à l'image`. Une cellule `Info médicale` non vide active uniquement un indicateur de santé : son texte n'est jamais stocké dans WordPress. Le droit à l’image accepte `OUI` ou `NON` (la cellule peut rester vide si l’information n’est pas connue). La colonne historique `Commentaire` est ignorée. Plusieurs emails ou téléphones responsables peuvent être séparés par `/` ou `;` ; ils sont conservés distinctement et les emails valides reçoivent chacun les envois Parents.

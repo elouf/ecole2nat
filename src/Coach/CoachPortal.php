@@ -6,6 +6,7 @@ use Ecole2Nat\Evaluation\EvaluationService;
 use Ecole2Nat\ParentPortal\ParentAccessService;
 use Ecole2Nat\ParentPortal\ParentDistributionService;
 use Ecole2Nat\Support\Config;
+use Ecole2Nat\Support\ContactList;
 
 if (!defined('ABSPATH')) { exit; }
 
@@ -35,6 +36,7 @@ class CoachPortal
         add_action('wp_ajax_e2n_coach_save_evaluation', [$this, 'ajaxSaveEvaluation']);
         add_action('wp_ajax_e2n_coach_save_note', [$this, 'ajaxSaveNote']);
         add_action('wp_ajax_e2n_coach_send_parent_code', [$this, 'ajaxSendParentCode']);
+        add_action('wp_ajax_e2n_coach_get_parent_code', [$this, 'ajaxGetParentCode']);
     }
 
     public function template(string $template): string
@@ -75,8 +77,9 @@ class CoachPortal
             'saving' => __('Enregistrement…', 'ecole2nat'),
             'saved' => __('Enregistré', 'ecole2nat'),
             'error' => __('Non enregistré — réessayer', 'ecole2nat'),
-            'confirmParentCode' => __('Envoyer un nouveau code Parents ? L’ancien code sera immédiatement invalidé.', 'ecole2nat'),
-            'sendingParentCode' => __('Envoi du nouveau code…', 'ecole2nat'),
+            'confirmParentCode' => __('Renvoyer le code Parents permanent par email ?', 'ecole2nat'),
+            'sendingParentCode' => __('Envoi du code…', 'ecole2nat'),
+            'loadingParentCode' => __('Récupération du code…', 'ecole2nat'),
         ]);
         if (!is_user_logged_in()) return '<div class="e2n-coach-login"><p>' . esc_html__('Connectez-vous pour accéder à l’espace coach.', 'ecole2nat') . '</p><a class="e2n-btn" href="' . esc_url(wp_login_url(get_permalink())) . '">' . esc_html__('Se connecter', 'ecole2nat') . '</a></div>';
         if (!$this->access->canView()) return '<p>' . esc_html__('Votre compte ne possède pas l’accès coach.', 'ecole2nat') . '</p>';
@@ -191,8 +194,9 @@ class CoachPortal
         $percentage = $total > 0 ? (int) round(($acquired / $total) * 100) : 0;
         $domains = [];
         foreach ($data['skills'] as $skill) $domains[(string) $skill['domain_name']][] = $skill;
-        $phone = $this->phoneUri((string) ($data['swimmer']['responsible_phone'] ?? ''));
-        $email = sanitize_email((string) ($data['swimmer']['responsible_email'] ?? ''));
+        $phones = ContactList::phones((string) ($data['swimmer']['responsible_phone'] ?? ''));
+        $phone = $phones !== [] ? $this->phoneUri($phones[0]) : '';
+        $emails = ContactList::emails((string) ($data['swimmer']['responsible_email'] ?? ''));
         $previewUrl = $this->parentAccess->coachPreviewUrl($swimmerId); ?>
         <a class="e2n-back" href="<?php echo esc_url($from === 'week' ? $this->base(['e2n_group' => $groupId]) : $this->originUrl($from)); ?>">← <?php echo esc_html($from === 'week' ? __('Groupe', 'ecole2nat') : $this->originLabel($from)); ?></a>
         <article class="e2n-swimmer-profile">
@@ -201,7 +205,8 @@ class CoachPortal
                 <details class="e2n-actions-menu"><summary><?php esc_html_e('Actions', 'ecole2nat'); ?> <span aria-hidden="true">•••</span></summary><div class="e2n-actions-panel">
                     <?php if ($phone !== '') : ?><a href="tel:<?php echo esc_attr($phone); ?>"><?php esc_html_e('Appeler le responsable', 'ecole2nat'); ?></a><a href="sms:<?php echo esc_attr($phone); ?>"><?php esc_html_e('Envoyer un message', 'ecole2nat'); ?></a><?php endif; ?>
                     <?php if ($previewUrl !== '') : ?><a href="<?php echo esc_url($previewUrl); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e('Voir la fiche Parents', 'ecole2nat'); ?></a><?php endif; ?>
-                    <?php if ($email !== '' && is_email($email)) : ?><button class="e2n-action-danger" type="button" data-e2n-send-parent-code data-group-id="<?php echo (int) $groupId; ?>" data-swimmer-id="<?php echo (int) $swimmerId; ?>"><?php esc_html_e('Renvoyer un code Parents', 'ecole2nat'); ?></button><?php else : ?><span class="e2n-contact-missing"><?php esc_html_e('Email responsable non renseigné', 'ecole2nat'); ?></span><?php endif; ?>
+                    <button type="button" data-e2n-show-parent-code data-group-id="<?php echo (int) $groupId; ?>" data-swimmer-id="<?php echo (int) $swimmerId; ?>"><?php esc_html_e('Afficher le code Parents', 'ecole2nat'); ?></button>
+                    <?php if ($emails !== []) : ?><button class="e2n-action-danger" type="button" data-e2n-send-parent-code data-group-id="<?php echo (int) $groupId; ?>" data-swimmer-id="<?php echo (int) $swimmerId; ?>"><?php esc_html_e('Renvoyer un code Parents', 'ecole2nat'); ?></button><?php else : ?><span class="e2n-contact-missing"><?php esc_html_e('Email responsable non renseigné', 'ecole2nat'); ?></span><?php endif; ?>
                     <span class="e2n-parent-code-status" data-e2n-parent-code-status aria-live="polite"></span>
                 </div></details>
             </header>
@@ -233,6 +238,9 @@ class CoachPortal
 
     private function maskEmail(string $email): string
     {
+        if (str_contains($email, ',')) {
+            return __('les adresses responsables', 'ecole2nat');
+        }
         $parts = explode('@', $email, 2);
         if (count($parts) !== 2) return __('l’adresse responsable', 'ecole2nat');
         $visible = mb_substr($parts[0], 0, min(2, mb_strlen($parts[0])));
@@ -292,15 +300,33 @@ class CoachPortal
                 ? __('Aucun email responsable valide n’est enregistré.', 'ecole2nat')
                 : (($result['message'] ?? '') === 'missing_portal'
                     ? __('La page du portail Parents est introuvable.', 'ecole2nat')
-                    : __('Le nouveau code n’a pas pu être envoyé.', 'ecole2nat'));
+                    : __('Le code n’a pas pu être envoyé.', 'ecole2nat'));
             wp_send_json_error(['message' => $message], 400);
         }
 
         wp_send_json_success([
             'message' => sprintf(
-                __('Nouveau code envoyé à %s.', 'ecole2nat'),
+                __('Code envoyé à %s.', 'ecole2nat'),
                 $this->maskEmail((string) ($result['email'] ?? ''))
             ),
+        ]);
+    }
+
+    public function ajaxGetParentCode(): void
+    {
+        check_ajax_referer('e2n_coach_ajax', 'nonce');
+        $groupId = absint($_POST['group_id'] ?? 0);
+        $swimmerId = absint($_POST['swimmer_id'] ?? 0);
+        if (!$this->access->canEvaluateGroup($groupId) || $this->eval->swimmerEvaluation($groupId, $swimmerId) === null) {
+            wp_send_json_error(['message' => __('Consultation non autorisée.', 'ecole2nat')], 403);
+        }
+        $result = $this->parentAccess->permanentCode($swimmerId, false);
+        if (empty($result['success'])) {
+            wp_send_json_error(['message' => __('Le code Parents n’a pas pu être récupéré.', 'ecole2nat')], 400);
+        }
+        wp_send_json_success([
+            'message' => sprintf(__('Code Parents : %s', 'ecole2nat'), (string) $result['code']),
+            'code' => (string) $result['code'],
         ]);
     }
 

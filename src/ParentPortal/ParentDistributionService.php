@@ -3,6 +3,7 @@
 namespace Ecole2Nat\ParentPortal;
 
 use Ecole2Nat\Support\Config;
+use Ecole2Nat\Support\ContactList;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -46,17 +47,18 @@ class ParentDistributionService
             return ['success' => false, 'message' => 'invalid'];
         }
 
-        $email = sanitize_email((string) ($swimmer['responsible_email'] ?? ''));
-        if ($email === '' || !is_email($email)) {
+        $emails = ContactList::emails((string) ($swimmer['responsible_email'] ?? ''));
+        if ($emails === []) {
             return ['success' => false, 'message' => 'missing_email', 'swimmer_id' => $swimmerId];
         }
+        $email = implode(', ', $emails);
 
         $portalUrl = $this->accessService->portalUrl();
         if ($portalUrl === '') {
             return ['success' => false, 'message' => 'missing_portal'];
         }
 
-        $generated = $this->accessService->generateCode($swimmerId);
+        $generated = $this->accessService->permanentCode($swimmerId);
         if (!$generated['success']) {
             return $generated;
         }
@@ -66,7 +68,7 @@ class ParentDistributionService
             __('Accès au parcours de natation de %s', 'ecole2nat'),
             (string) $swimmer['first_name']
         );
-        $sent = wp_mail($email, $subject, $this->emailBody($swimmer, $portalUrl, $code));
+        $sent = wp_mail($emails, $subject, $this->emailBody($swimmer, $portalUrl, $code));
         if (!$sent) {
             return ['success' => false, 'message' => 'mail_error', 'swimmer_id' => $swimmerId, 'email' => $email];
         }
@@ -139,7 +141,7 @@ class ParentDistributionService
             if ($swimmer === null) {
                 continue;
             }
-            $generated = $this->accessService->generateCode($swimmerId);
+            $generated = $this->accessService->permanentCode($swimmerId);
             if (!$generated['success']) {
                 continue;
             }

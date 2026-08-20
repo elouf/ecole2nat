@@ -37,10 +37,12 @@ Les principales colonnes spécifiques de `e2n_swimmers` sont :
 
 - `health_alert` : indicateur booléen signalant qu'une information de santé doit être consultée dans la source externe du club ; aucun détail médical n'est stocké ;
 - `image_rights` : `1` pour Oui, `0` pour Non et `NULL` pour Non renseigné ;
+- `responsible_email` et `responsible_phone` : listes de contacts normalisées avec le séparateur ` / ` ; chaque email est validé séparément avant stockage et envoi ;
 - `parent_message` : message explicitement destiné aux familles ;
 - `parent_access_code_hash` : empreinte HMAC du code, jamais le code en clair ;
+- `parent_access_code_generation` : génération du code permanent (`0` par défaut), incrémentée uniquement lors d'une réinitialisation explicite ;
 - `parent_access_enabled` : état de l’accès ;
-- `parent_access_created_at` : date de génération ou régénération ;
+- `parent_access_created_at` : date de création ou de réinitialisation ;
 - `parent_access_last_used_at` et `parent_access_count` : dernière consultation réussie et compteur ;
 - `parent_access_distributed_at`, `parent_access_distribution_method` et `parent_access_distributed_to` : suivi de la dernière distribution.
 

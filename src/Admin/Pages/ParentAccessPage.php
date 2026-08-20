@@ -66,7 +66,7 @@ class ParentAccessPage
                     <?php else : ?>
                         <p><strong><?php esc_html_e('Créez une page WordPress contenant le shortcode [e2n_parent_report] pour obtenir l’adresse du portail.', 'ecole2nat'); ?></strong></p>
                     <?php endif; ?>
-                    <p><?php esc_html_e('Ce code ne sera plus affiché après avoir quitté cette page. Conservez-le ou imprimez-le maintenant.', 'ecole2nat'); ?></p>
+                    <p><?php esc_html_e('Ce code permanent pourra être affiché ou renvoyé à nouveau sans être modifié.', 'ecole2nat'); ?></p>
                     <p><button type="button" class="button" onclick="window.print()"><?php esc_html_e('Imprimer le coupon', 'ecole2nat'); ?></button></p>
                 </div>
             <?php endif; ?>
@@ -80,7 +80,7 @@ class ParentAccessPage
                     </p>
 
                     <?php if (!empty($swimmer['parent_access_created_at'])) : ?>
-                        <p><?php echo esc_html(sprintf(__('Code généré le %s', 'ecole2nat'), wp_date('d/m/Y à H:i', strtotime($swimmer['parent_access_created_at'])))); ?></p>
+                        <p><?php echo esc_html(sprintf(__('Code créé ou réinitialisé le %s', 'ecole2nat'), wp_date('d/m/Y à H:i', strtotime($swimmer['parent_access_created_at'])))); ?></p>
                     <?php endif; ?>
 
                     <?php if (!empty($swimmer['parent_access_last_used_at'])) : ?>
@@ -103,10 +103,17 @@ class ParentAccessPage
 
                     <div style="display:flex;gap:8px;flex-wrap:wrap;">
                         <form method="post">
-                            <?php wp_nonce_field('e2n_generate_parent_access_' . $swimmerId); ?>
-                            <input type="hidden" name="e2n_action" value="generate_parent_access">
+                            <?php wp_nonce_field('e2n_show_parent_access_' . $swimmerId); ?>
+                            <input type="hidden" name="e2n_action" value="show_parent_access">
                             <input type="hidden" name="swimmer_id" value="<?php echo esc_attr((string) $swimmerId); ?>">
-                            <?php submit_button((int) $swimmer['parent_access_enabled'] === 1 ? __('Régénérer le code', 'ecole2nat') : __('Générer un code', 'ecole2nat'), 'primary', 'submit', false); ?>
+                            <?php submit_button(__('Afficher le code', 'ecole2nat'), 'primary', 'submit', false); ?>
+                        </form>
+
+                        <form method="post" onsubmit="return confirm('<?php echo esc_js(__('Réinitialiser ce code ? Le code actuellement remis aux parents cessera immédiatement de fonctionner.', 'ecole2nat')); ?>');">
+                            <?php wp_nonce_field('e2n_reset_parent_access_' . $swimmerId); ?>
+                            <input type="hidden" name="e2n_action" value="reset_parent_access">
+                            <input type="hidden" name="swimmer_id" value="<?php echo esc_attr((string) $swimmerId); ?>">
+                            <?php submit_button(__('Réinitialiser le code', 'ecole2nat'), 'secondary', 'submit', false); ?>
                         </form>
 
                         <?php if ((int) $swimmer['parent_access_enabled'] === 1) : ?>
@@ -127,11 +134,11 @@ class ParentAccessPage
                         <?php endif; ?>
 
                         <?php if (!empty($swimmer['responsible_email']) && $portalUrl !== '') : ?>
-                            <form method="post" style="display:inline;" onsubmit="return confirm('<?php echo esc_js(__('Un nouveau code sera généré et l’ancien sera invalidé. Envoyer le nouvel accès par email ?', 'ecole2nat')); ?>');">
+                            <form method="post" style="display:inline;">
                                 <?php wp_nonce_field('e2n_email_parent_access_' . $swimmerId); ?>
                                 <input type="hidden" name="e2n_action" value="email_parent_access">
                                 <input type="hidden" name="swimmer_id" value="<?php echo esc_attr((string) $swimmerId); ?>">
-                                <?php submit_button(__('Générer et envoyer par email', 'ecole2nat'), 'secondary', 'submit', false); ?>
+                                <?php submit_button(__('Envoyer le code par email', 'ecole2nat'), 'secondary', 'submit', false); ?>
                             </form>
                         <?php endif; ?>
                     </p>
@@ -169,9 +176,19 @@ class ParentAccessPage
 
         $action = isset($_POST['e2n_action']) ? sanitize_key(wp_unslash($_POST['e2n_action'])) : '';
 
-        if ($action === 'generate_parent_access') {
-            check_admin_referer('e2n_generate_parent_access_' . $swimmerId);
-            $result = $this->service->generateCode($swimmerId);
+        if ($action === 'show_parent_access') {
+            check_admin_referer('e2n_show_parent_access_' . $swimmerId);
+            $result = $this->service->permanentCode($swimmerId, false);
+
+            if ($result['success']) {
+                set_transient($this->service->codeTransientKey(get_current_user_id(), $swimmerId), $result['code'], 30 * MINUTE_IN_SECONDS);
+            }
+            $this->redirect($swimmerId, $result['message']);
+        }
+
+        if ($action === 'reset_parent_access') {
+            check_admin_referer('e2n_reset_parent_access_' . $swimmerId);
+            $result = $this->service->resetCode($swimmerId);
 
             if ($result['success']) {
                 set_transient(
@@ -209,10 +226,12 @@ class ParentAccessPage
     {
         $notice = isset($_GET['e2n_notice']) ? sanitize_key(wp_unslash($_GET['e2n_notice'])) : '';
         $messages = [
-            'access_generated' => ['success', __('Le code d’accès a bien été généré.', 'ecole2nat')],
+            'access_created' => ['success', __('Le code permanent a bien été créé.', 'ecole2nat')],
+            'access_retrieved' => ['success', __('Le code permanent est affiché ci-dessus.', 'ecole2nat')],
+            'access_reset' => ['success', __('Le code a été réinitialisé ; l’ancien code ne fonctionne plus.', 'ecole2nat')],
             'access_disabled' => ['success', __('L’accès parents a bien été désactivé.', 'ecole2nat')],
             'parent_message_saved' => ['success', __('Le message destiné aux parents a bien été enregistré.', 'ecole2nat')],
-            'mail_sent' => ['success', __('Le nouvel accès a été transmis par email au responsable.', 'ecole2nat')],
+            'mail_sent' => ['success', __('Le code permanent a été transmis par email au responsable.', 'ecole2nat')],
             'missing_email' => ['warning', __('Aucune adresse email responsable valide n’est renseignée.', 'ecole2nat')],
             'missing_portal' => ['warning', __('Aucune page publique contenant [e2n_parent_report] n’a été trouvée.', 'ecole2nat')],
             'mail_error' => ['error', __('WordPress n’a pas pu transmettre cet email au service d’envoi.', 'ecole2nat')],

@@ -16,9 +16,9 @@ class ParentAccessService
 
     private ParentAccessRepository $repository;
 
-    public function __construct()
+    public function __construct(?ParentAccessRepository $repository = null)
     {
-        $this->repository = new ParentAccessRepository();
+        $this->repository = $repository ?? new ParentAccessRepository();
     }
 
     public function findSwimmer(int $swimmerId): ?array
@@ -26,25 +26,55 @@ class ParentAccessService
         return $this->repository->findSwimmer($swimmerId);
     }
 
-    public function generateCode(int $swimmerId): array
+    public function permanentCode(int $swimmerId, bool $activate = true): array
     {
-        if ($this->repository->findSwimmer($swimmerId) === null) {
+        $swimmer = $this->repository->findSwimmer($swimmerId);
+        if ($swimmer === null) {
             return ['success' => false, 'message' => 'invalid'];
         }
 
-        for ($attempt = 0; $attempt < 25; $attempt++) {
-            $code = $this->randomCode();
+        $generation = max(0, (int) ($swimmer['parent_access_code_generation'] ?? 0));
+        $code = $this->derivedCode($swimmerId, $generation);
+        $hash = $this->hashCode($code);
+        if (!empty($swimmer['parent_access_code_hash']) && hash_equals((string) $swimmer['parent_access_code_hash'], $hash)) {
+            if ($activate && (int) ($swimmer['parent_access_enabled'] ?? 0) !== 1 && !$this->repository->enableAccess($swimmerId)) {
+                return ['success' => false, 'message' => 'error'];
+            }
+            return ['success' => true, 'message' => 'access_retrieved', 'code' => $this->formatCode($code)];
+        }
+
+        return $this->persistDerivedCode($swimmerId, $generation, 'access_created', $activate);
+    }
+
+    public function resetCode(int $swimmerId): array
+    {
+        $swimmer = $this->repository->findSwimmer($swimmerId);
+        if ($swimmer === null) {
+            return ['success' => false, 'message' => 'invalid'];
+        }
+        return $this->persistDerivedCode(
+            $swimmerId,
+            max(0, (int) ($swimmer['parent_access_code_generation'] ?? 0)) + 1,
+            'access_reset',
+            true
+        );
+    }
+
+    private function persistDerivedCode(int $swimmerId, int $generation, string $message, bool $enabled): array
+    {
+        for ($attempt = 0; $attempt < 25; $attempt++, $generation++) {
+            $code = $this->derivedCode($swimmerId, $generation);
             $hash = $this->hashCode($code);
 
-            if ($this->repository->codeHashExists($hash)) {
+            if ($this->repository->codeHashExists($hash, $swimmerId)) {
                 continue;
             }
 
-            if ($this->repository->saveAccessCode($swimmerId, $hash)) {
+            if ($this->repository->saveAccessCode($swimmerId, $hash, $generation, $enabled)) {
                 return [
                     'success' => true,
-                    'message' => 'access_generated',
-                    'code' => $code,
+                    'message' => $message,
+                    'code' => $this->formatCode($code),
                 ];
             }
 
@@ -256,16 +286,19 @@ class ParentAccessService
         return 'e2n_parent_code_' . $userId . '_' . $swimmerId;
     }
 
-    private function randomCode(): string
+    private function derivedCode(int $swimmerId, int $generation): string
     {
+        $bytes = hash_hmac('sha256', 'parent-code|' . $swimmerId . '|' . $generation, wp_salt('auth'), true);
         $code = '';
-        $max = strlen(self::ALPHABET) - 1;
-
         for ($index = 0; $index < self::CODE_LENGTH; $index++) {
-            $code .= self::ALPHABET[random_int(0, $max)];
+            $code .= self::ALPHABET[ord($bytes[$index]) % strlen(self::ALPHABET)];
         }
-
         return $code;
+    }
+
+    private function formatCode(string $code): string
+    {
+        return substr($code, 0, 4) . '-' . substr($code, 4);
     }
 
     private function normalizeCode(string $code): string

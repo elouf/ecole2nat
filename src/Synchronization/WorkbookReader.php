@@ -2,6 +2,7 @@
 
 namespace Ecole2Nat\Synchronization;
 
+use Ecole2Nat\Support\ContactList;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
@@ -257,8 +258,8 @@ final class WorkbookReader
             $identities[$identity] = true;
             $genderValue = $this->normalize($this->string($row, ['genre', 'sexe']));
             $gender = in_array($genderValue, ['femme', 'feminin', 'f'], true) ? 'F' : (in_array($genderValue, ['homme', 'masculin', 'm'], true) ? 'M' : '');
-            $email = sanitize_email($this->string($row, ['email', 'e-mail']));
-            $phone = $this->string($row, ['telephone', 'tel']);
+            $email = ContactList::normalizeEmails($this->string($row, ['email', 'e-mail']));
+            $phone = ContactList::normalizePhones($this->string($row, ['telephone', 'tel']));
             $healthAlert = $this->string($row, ['info médicale', 'information médicale']) !== '' ? 1 : 0;
 
             $imageRightsRaw = $this->normalize(

@@ -143,9 +143,8 @@ repositories. Éviter d’ajouter de la logique métier aux classes de rendu.
 - La prévisualisation Parents depuis le portail Coach exige une session
   autorisée et un nonce ; elle n'utilise pas le code familial et ne doit pas
   compter comme une consultation parent.
-- Le renvoi d'un code Parents depuis le portail Coach exige une confirmation,
-  un nonce et la vérification serveur du groupe et du nageur ; le nouveau code
-  ne doit jamais être affiché au coach.
+- L'affichage ou le renvoi d'un code Parents depuis le portail Coach exige un
+  nonce et la vérification serveur du groupe et du nageur.
 - Tous les emails de codes Parents utilisent l'option
   `e2n_parent_email_signature`, modifiable uniquement par un administrateur.
 - Chaque changement effectif de statut crée un événement historique avec
@@ -155,7 +154,9 @@ repositories. Éviter d’ajouter de la logique métier aux classes de rendu.
 ### Portail parents
 
 - Ne jamais stocker ni journaliser un code parent en clair.
-- Toute régénération invalide immédiatement l’ancien code.
+- Le code permanent est créé automatiquement et reste identique lors de ses
+  affichages et renvois. Seule une réinitialisation explicite invalide
+  immédiatement l'ancien code.
 - Les prévisualisations administrateur doivent rester protégées par
   capacité et nonce.
 - Ne jamais exposer l’adresse IP brute dans les journaux.

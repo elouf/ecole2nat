@@ -6,15 +6,40 @@ require __DIR__ . '/bootstrap.php';
 
 use Ecole2Nat\Coach\CoachAccessRepository;
 use Ecole2Nat\Coach\CoachAccessService;
+use Ecole2Nat\ParentPortal\ParentAccessRepository;
+use Ecole2Nat\ParentPortal\ParentAccessService;
 use Ecole2Nat\Support\GroupScheduleParser;
 use Ecole2Nat\Support\ScheduleDurationCalculator;
 use Ecole2Nat\Support\Config;
+use Ecole2Nat\Support\ContactList;
 use Ecole2Nat\Synchronization\WorkbookReader;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 final class FakeCoachAccessRepository extends CoachAccessRepository
 {
+}
+
+final class FakeParentAccessRepository extends ParentAccessRepository
+{
+    public array $swimmer = [
+        'id' => 42,
+        'parent_access_code_hash' => null,
+        'parent_access_code_generation' => 0,
+        'parent_access_enabled' => 0,
+    ];
+
+    public function findSwimmer(int $swimmerId): ?array { return $swimmerId === 42 ? $this->swimmer : null; }
+    public function codeHashExists(string $codeHash, int $excludeSwimmerId = 0): bool { return false; }
+    public function saveAccessCode(int $swimmerId, string $codeHash, int $generation, bool $enabled = true): bool
+    {
+        $this->swimmer['parent_access_code_hash'] = $codeHash;
+        $this->swimmer['parent_access_code_generation'] = $generation;
+        $this->swimmer['parent_access_enabled'] = $enabled ? 1 : 0;
+        return true;
+    }
+    public function enableAccess(int $swimmerId): bool { $this->swimmer['parent_access_enabled'] = 1; return true; }
+    public function disableAccess(int $swimmerId): bool { $this->swimmer['parent_access_enabled'] = 0; return true; }
 }
 
 $tests = 0;
@@ -85,6 +110,8 @@ expectSame(true, $service->canEvaluateGroup(4), 'Un administrateur peut évaluer
 expectSame('Les coachs', Config::parentEmailSignature(), 'Signature email par défaut');
 update_option('e2n_parent_email_signature', "Les Dauphins\nÉquipe pédagogique");
 expectSame("Les Dauphins\nÉquipe pédagogique", Config::parentEmailSignature(), 'Signature email personnalisée');
+expectSame('a@example.test / b@example.test', ContactList::normalizeEmails('a@example.test;b@example.test'), 'Emails séparés par point-virgule normalisés');
+expectSame('06 00 00 00 00 / 07 00 00 00 00', ContactList::normalizePhones("06 00 00 00 00\n07 00 00 00 00"), 'Téléphones séparés par retour ligne normalisés');
 
 $service = accessService([]);
 expectSame(false, $service->canView(), 'Un utilisateur sans capacité ne voit pas le portail');
@@ -93,6 +120,20 @@ expectSame(false, $service->canEvaluateGroup(4), 'Un utilisateur sans capacité 
 $service = accessService(['e2n_coach_access']);
 expectSame(true, $service->canEvaluateGroup(4), 'Un coach peut évaluer un groupe sans dépendre d’une date');
 expectSame(true, $service->canEvaluateGroup(9), 'Un coach peut évaluer un groupe dont il n’est pas titulaire');
+
+$parentRepository = new FakeParentAccessRepository();
+$parentService = new ParentAccessService($parentRepository);
+$firstParentCode = $parentService->permanentCode(42);
+$sameParentCode = $parentService->permanentCode(42);
+expectSame(true, $firstParentCode['success'], 'Création automatique du code Parents permanent');
+expectSame($firstParentCode['code'], $sameParentCode['code'], 'Le code Parents reste identique à la récupération');
+expectSame(9, strlen((string) $firstParentCode['code']), 'Le code Parents est présenté au format XXXX-XXXX');
+$resetParentCode = $parentService->resetCode(42);
+expectSame(false, $firstParentCode['code'] === $resetParentCode['code'], 'Une réinitialisation explicite change le code Parents');
+expectSame(1, $parentRepository->swimmer['parent_access_code_generation'], 'La réinitialisation incrémente la génération du code');
+$parentService->disable(42);
+$parentService->permanentCode(42, false);
+expectSame(0, $parentRepository->swimmer['parent_access_enabled'], 'Afficher un code désactivé ne réactive pas son accès');
 
 $service = accessService(['e2n_coach_access']);
 expectSame(true, $service->canEvaluateGroup(4), 'Les anciennes données de remplacement n’influencent plus les droits');
@@ -118,7 +159,7 @@ $groupsSheet->fromArray([
 ]);
 $spreadsheet->createSheet()->setTitle('Inscriptions')->fromArray([
     ['Nom', 'Prénom', 'Catégorie', 'Créneau 1', 'Renouvellement', 'Email', 'Téléphone', 'Info médicale', 'Commentaire'],
-    ['Martin', 'Léa', 'Némo', 'Lundi 17h15', 'OUI', 'parent@example.test', '06 01 02 03 04', 'Détail sensible', 'Ancienne remarque'],
+    ['Martin', 'Léa', 'Némo', 'Lundi 17h15', 'OUI', 'parent@example.test / second@example.test', '06 01 02 03 04 / 07 05 06 07 08', 'Détail sensible', 'Ancienne remarque'],
     ['Durand', 'Noé', 'Dauphin', 'Mardi 18h00', '', 'ignore@example.test', '', '', ''],
     ['Petit', 'Zoé', 'Avenir', 'Mercredi 19h00', 'En attente', 'ignore2@example.test', '', '', ''],
 ]);
@@ -143,8 +184,8 @@ expectSame(45, $workbook['data']['groups'][0]['durationMinutes'] ?? null, 'Lectu
 expectSame('17:15:00', $workbook['data']['groups'][0]['startTime'] ?? null, 'Lecture de l’heure depuis le nom');
 expectSame(1, $workbook['data']['swimmers'][0]['health_alert'] ?? null, 'Info médicale convertie en indicateur booléen');
 expectSame(false, array_key_exists('medical_note', $workbook['data']['swimmers'][0] ?? []), 'Texte médical absent des données analysées');
-expectSame('parent@example.test', $workbook['data']['swimmers'][0]['responsible_email'] ?? null, 'Email responsable conservé');
-expectSame('06 01 02 03 04', $workbook['data']['swimmers'][0]['responsible_phone'] ?? null, 'Téléphone responsable conservé');
+expectSame('parent@example.test / second@example.test', $workbook['data']['swimmers'][0]['responsible_email'] ?? null, 'Plusieurs emails responsables conservés séparément');
+expectSame('06 01 02 03 04 / 07 05 06 07 08', $workbook['data']['swimmers'][0]['responsible_phone'] ?? null, 'Plusieurs téléphones responsables conservés séparément');
 expectSame(1, count($workbook['data']['swimmers']), 'Inscriptions sans Renouvellement OUI ou NON ignorées');
 expectSame(3, count($workbook['data']['reference']), 'Lecture de plusieurs onglets Référentiel par catégorie');
 expectSame('Némo', $workbook['data']['reference'][0]['category'] ?? null, 'Catégorie déduite du nom de l’onglet Référentiel');

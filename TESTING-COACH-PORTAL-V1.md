@@ -27,7 +27,7 @@
 ## Migration
 
 1. Charger WordPress avec une base en version `0.8.5`, sans désactiver le plugin.
-2. Vérifier la création de `e2n_skill_level_history`, la migration de santé et la valeur `0.10.0` de l'option `e2n_db_version`.
+2. Vérifier la création de `e2n_skill_level_history`, la migration de santé, la colonne `parent_access_code_generation` et la valeur `0.11.0` de l'option `e2n_db_version`.
 3. Pour une ancienne note médicale non vide, vérifier `health_alert = 1` puis l'absence définitive de la colonne `medical_note`.
 4. Vérifier les colonnes et index documentés dans `docs/database.md`.
 5. Recharger une seconde fois : aucune erreur et aucune modification indésirable.
@@ -51,10 +51,11 @@
 6. Ouvrir un nageur depuis chacun des trois accès et vérifier que le lien retour conserve le contexte d'origine.
 7. Vérifier qu'un nageur présent dans plusieurs saisons actives n'apparaît qu'une fois, avec sa saison courante prioritaire.
 8. Sur une fiche possédant un téléphone responsable, vérifier **Appeler** et **Envoyer un message** sur mobile ; sans téléphone, vérifier leur absence.
-9. Avec un email responsable valide, cliquer sur **Renvoyer un nouveau code Parents**, annuler la confirmation et vérifier qu'aucune donnée ne change.
-10. Confirmer ensuite : vérifier l'envoi, le retour avec adresse masquée, l'invalidation de l'ancien code et la mise à jour du journal de distribution.
-11. Sans email valide, vérifier l'absence du bouton et la présence du message explicatif.
-12. Forger l'action avec un nageur hors du groupe, sans nonce ou avec un utilisateur non Coach : aucun code ne doit être généré ni envoyé.
+9. Cliquer sur **Afficher le code Parents** : vérifier le format `XXXX-XXXX`, la copie si le navigateur l'autorise et l'absence du code dans les journaux.
+10. Avec un email responsable valide, cliquer sur **Renvoyer un code Parents**, annuler la confirmation et vérifier qu'aucune donnée ne change.
+11. Confirmer ensuite : vérifier l'envoi, le retour avec adresse masquée, la conservation du même code et la mise à jour du journal de distribution.
+12. Sans email valide, vérifier l'absence du bouton d'envoi ; l'affichage du code doit rester disponible.
+13. Forger les actions d'affichage et d'envoi avec un nageur hors du groupe, sans nonce ou avec un utilisateur non Coach : aucun code ne doit être exposé ni envoyé.
 
 ## Prévisualisation Parents
 

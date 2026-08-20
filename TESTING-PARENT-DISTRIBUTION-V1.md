@@ -33,7 +33,7 @@
 
 1. Ouvrir **Accès parents** pour un nageur ayant un email responsable.
 2. Cliquer sur **Générer et envoyer par email**.
-3. Accepter la confirmation : un nouveau code est généré et invalide l'ancien.
+3. Vérifier que l'envoi utilise le code permanent déjà affichable dans le BO et ne le modifie pas.
 4. Vérifier la réception de l'email et tester le code reçu sur le portail public.
 5. Vérifier la signature personnalisée à la fin du message.
 6. Vérifier l'affichage de la date et de l'adresse de dernière transmission dans le BO.
@@ -44,9 +44,9 @@
 2. Choisir un groupe.
 3. Cliquer sur **Envoyer les accès manquants par email**.
 4. Vérifier le résumé envoyé/échec/sans email.
-5. Vérifier que seuls les nageurs sans distribution valide ont reçu un nouveau code.
+5. Vérifier que seuls les nageurs sans distribution valide ont reçu leur code permanent.
 6. Sélectionner un ou plusieurs nageurs déjà distribués et cliquer sur **Renvoyer aux sélectionnés**.
-7. Vérifier que l'ancien code ne fonctionne plus et que le nouveau fonctionne.
+7. Vérifier que le code reçu est identique au précédent et fonctionne toujours.
 
 > `wp_mail()` confirme que WordPress a remis le message au transport SMTP. Il ne garantit pas à lui seul la lecture ou la livraison finale dans la boîte du destinataire. Utiliser les journaux WP Mail SMTP si un suivi de délivrabilité plus fin est nécessaire.
 
@@ -54,7 +54,7 @@
 
 1. Sélectionner deux nageurs.
 2. Cliquer sur **Préparer les coupons sélectionnés**.
-3. Vérifier que les nouveaux codes apparaissent dans le lot temporaire.
+3. Vérifier que les codes permanents apparaissent dans le lot temporaire sans être modifiés.
 4. Imprimer : seuls les coupons doivent apparaître.
 5. Télécharger le CSV et vérifier les colonnes Nom, Prénom, Groupe, Email, Code, URL.
 6. Tester les codes générés.
@@ -67,3 +67,4 @@ Après la mise à jour et le chargement d’une page WordPress, vérifier dans `
 - `parent_access_distributed_at`
 - `parent_access_distribution_method`
 - `parent_access_distributed_to`
+- `parent_access_code_generation`

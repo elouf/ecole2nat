@@ -21,7 +21,7 @@
 
 1. Filtrer une ou plusieurs catégories.
 2. Cliquer **Préparer tous les coupons affichés**.
-3. Confirmer l'avertissement : cette action régénère les codes de tous les nageurs affichés.
+3. Confirmer l'avertissement : cette action récupère les codes permanents sans les modifier.
 4. Vérifier qu'un coupon est présent par nageur et que l'impression se fait en une seule opération.
 5. Télécharger le CSV et contrôler nom, prénom, groupe, email, code et URL.
 
@@ -35,5 +35,5 @@
 
 - Un lien Gérer ouvre toujours l'accès parent individuel.
 - Voir le parcours ouvre toujours la prévisualisation parent.
-- Les anciens codes envoyés restent valides tant qu'aucune action de régénération n'est lancée.
+- Les codes envoyés restent identiques jusqu'à une réinitialisation administrateur explicite.
 - Après envoi email, imprimer le lot temporaire n'invalide pas les codes.
