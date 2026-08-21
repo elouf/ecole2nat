@@ -14,6 +14,7 @@ use Ecole2Nat\Support\GroupScheduleParser;
 use Ecole2Nat\Support\ScheduleDurationCalculator;
 use Ecole2Nat\Support\Config;
 use Ecole2Nat\Support\ContactList;
+use Ecole2Nat\Support\Extranat;
 use Ecole2Nat\Synchronization\WorkbookReader;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -148,6 +149,8 @@ update_option('e2n_parent_email_signature', "Les Dauphins\nÉquipe pédagogique"
 expectSame("Les Dauphins\nÉquipe pédagogique", Config::parentEmailSignature(), 'Signature email personnalisée');
 expectSame('a@example.test / b@example.test', ContactList::normalizeEmails('a@example.test;b@example.test'), 'Emails séparés par point-virgule normalisés');
 expectSame('06 00 00 00 00 / 07 00 00 00 00', ContactList::normalizePhones("06 00 00 00 00\n07 00 00 00 00"), 'Téléphones séparés par retour ligne normalisés');
+expectSame('https://ffn.extranat.fr/webffn/nat_recherche.php?idact=nat&idbas=25&idrch_id=4057481', Extranat::swimmerUrl('4057481'), 'URL de la fiche Extranat construite avec la licence');
+expectSame('', Extranat::swimmerUrl(''), 'Absence de lien Extranat sans licence');
 
 $service = accessService([]);
 expectSame(false, $service->canView(), 'Un utilisateur sans capacité ne voit pas le portail');

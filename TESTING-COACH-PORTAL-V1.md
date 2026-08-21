@@ -96,3 +96,11 @@
 4. Pendant chacun de ces états, vérifier que l'indicateur coloré ne touche ni le nom de la compétence ni son historique.
 5. Vérifier que seul le pictogramme d'alerte santé est visible côté Coach, sans aucun détail médical.
 6. Vérifier l'absence de warning et de donnée sensible dans `debug.log` et les réponses AJAX.
+7. Sur une fiche de compétences, vérifier que `Fiche Extranat` apparaît sous
+   le droit à l'image uniquement lorsque le nageur possède une licence, puis
+   ouvre la bonne fiche FFN dans un nouvel onglet.
+8. Dans « Catégories », vérifier que toutes les catégories sont cochées par
+   défaut, qu'une catégorie décochée disparaît immédiatement et reste masquée
+   après rechargement et reconnexion du même coach.
+9. Vérifier que le choix d'un coach ne modifie pas celui d'un autre compte et
+   que les liens `Fiche Extranat` ne sont présents que pour les licenciés.

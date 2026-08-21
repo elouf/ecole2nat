@@ -2,6 +2,8 @@
 
 ## Non publié — 0.20.0
 
+- Ajoute un accès à la fiche de performances Extranat du nageur dans les fiches et écrans de compétition Coach et Parents lorsqu'un numéro de licence est renseigné.
+- Permet à chaque coach de choisir les catégories affichées dans la liste des nageurs, mémorise ce choix dans son profil et ajoute la fiche Extranat à chaque nageur licencié de cette vue.
 - Ajoute l'import facultatif d'un onglet `Compétitions` avec code stable, dates, période d'inscription, catégories, informations et fiche technique.
 - Ajoute l'onglet Compétitions au portail Parents avec réponses Oui/Non limitées à la période autorisée.
 - Garantit l'affichage des compétitions publiées avant l'ouverture des inscriptions, avec leurs informations mais sans formulaire actif.

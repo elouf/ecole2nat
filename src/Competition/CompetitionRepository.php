@@ -105,7 +105,7 @@ class CompetitionRepository
         $competition = $this->find($competitionId);
         if ($competition === null) return null;
         $competition['swimmers'] = $wpdb->get_results($wpdb->prepare(
-            'SELECT DISTINCT s.id,s.first_name,s.last_name,g.name group_name,r.response,r.comment,r.response_source,r.responded_at,r.parents_official,r.attendance_days,r.is_engaged,r.engaged_at,u.display_name engaged_by_name
+            'SELECT DISTINCT s.id,s.first_name,s.last_name,s.licence_number,g.name group_name,r.response,r.comment,r.response_source,r.responded_at,r.parents_official,r.attendance_days,r.is_engaged,r.engaged_at,u.display_name engaged_by_name
              FROM ' . Config::table('competitions') . ' c
              INNER JOIN ' . Config::table('swimmer_group_memberships') . ' m ON m.season_id=c.season_id
              INNER JOIN ' . Config::table('swimmers') . ' s ON s.id=m.swimmer_id AND s.is_active=1
@@ -174,7 +174,7 @@ class CompetitionRepository
     public function participants(int $competitionId): array
     {
         global $wpdb;
-        return $wpdb->get_results($wpdb->prepare('SELECT s.id,s.first_name,s.last_name,s.gender,g.name group_name,p.added_manually FROM '.Config::table('competition_participants').' p INNER JOIN '.Config::table('swimmers').' s ON s.id=p.swimmer_id LEFT JOIN '.Config::table('groups').' g ON g.id=s.group_id WHERE p.competition_id=%d ORDER BY s.last_name,s.first_name',$competitionId),ARRAY_A)?:[];
+        return $wpdb->get_results($wpdb->prepare('SELECT s.id,s.first_name,s.last_name,s.gender,s.licence_number,g.name group_name,p.added_manually FROM '.Config::table('competition_participants').' p INNER JOIN '.Config::table('swimmers').' s ON s.id=p.swimmer_id LEFT JOIN '.Config::table('groups').' g ON g.id=s.group_id WHERE p.competition_id=%d ORDER BY s.last_name,s.first_name',$competitionId),ARRAY_A)?:[];
     }
 
     public function availableParticipants(int $competitionId): array

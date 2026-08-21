@@ -124,7 +124,11 @@
 
     function post(payload) {
         var body = new FormData();
-        Object.keys(payload).forEach(function (key) { body.append(key, payload[key]); });
+        Object.keys(payload).forEach(function (key) {
+            var value = payload[key];
+            if (Array.isArray(value)) value.forEach(function (item) { body.append(key, item); });
+            else body.append(key, value);
+        });
         body.append('nonce', e2nCoachAjax.nonce);
         return fetch(e2nCoachAjax.url, { method: 'POST', credentials: 'same-origin', body: body })
             .then(function (response) {
@@ -219,6 +223,21 @@
 
     document.addEventListener('change', function (event) {
         var input = event.target;
+        if (input instanceof HTMLInputElement && input.dataset.e2nKind === 'category-visibility') {
+            var section = document.querySelector('[data-e2n-category-section="' + input.value + '"]');
+            if (section) section.hidden = !input.checked;
+            var hiddenCategories = Array.from(document.querySelectorAll('[data-e2n-kind="category-visibility"]:not(:checked)')).map(function (checkbox) { return checkbox.value; });
+            var categoryStatus = document.querySelector('[data-e2n-category-filter-status]');
+            if (categoryStatus) categoryStatus.textContent = e2nCoachAjax.saving;
+            post({ action: 'e2n_coach_save_category_visibility', 'hidden_categories[]': hiddenCategories }).then(function () {
+                if (categoryStatus) categoryStatus.textContent = e2nCoachAjax.saved;
+            }).catch(function (error) {
+                input.checked = !input.checked;
+                if (section) section.hidden = !input.checked;
+                if (categoryStatus) categoryStatus.textContent = error.message || e2nCoachAjax.error;
+            });
+            return;
+        }
         if (input instanceof HTMLInputElement && input.dataset.e2nKind === 'competition-response') {
             queueSave('competition:' + input.dataset.competitionId + ':' + input.dataset.swimmerId, {
                 action: 'e2n_coach_save_competition_response', competition_id: input.dataset.competitionId,

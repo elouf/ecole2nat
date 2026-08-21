@@ -31,7 +31,7 @@ class CoachPortalRepository {
  public function allSwimmers():array {
   global $wpdb;
   $m=Config::table('swimmer_group_memberships');$sw=Config::table('swimmers');$g=Config::table('groups');$s=Config::table('seasons');$c=Config::table('categories');
-  $rows=$wpdb->get_results("SELECT sw.id,sw.first_name,sw.last_name,sw.health_alert,sw.image_rights,
+  $rows=$wpdb->get_results("SELECT sw.id,sw.first_name,sw.last_name,sw.licence_number,sw.health_alert,sw.image_rights,
       grp.id group_id,grp.name group_name,cat.id category_id,cat.name category_name,
       sea.id season_id,sea.name season_name,sea.is_current
       FROM {$m} membership

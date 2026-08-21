@@ -4,6 +4,7 @@ namespace Ecole2Nat\ParentPortal;
 
 use Ecole2Nat\Competition\CompetitionService;
 use Ecole2Nat\Support\Config;
+use Ecole2Nat\Support\Extranat;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -301,6 +302,7 @@ class ParentPortal
                     );
                     ?>
                 </p>
+                <?php $this->extranatLink($swimmer); ?>
             </div>
 
             <div class="e2n-parent-actions">
@@ -421,7 +423,7 @@ class ParentPortal
     private function renderCompetitions(array $report, string $previewMode, string $message): void
     {
         $swimmer=$report['swimmer']; $rows=$this->competitions->forSwimmer((int)$swimmer['id']); ?>
-        <header class="e2n-parent-report-header"><div><p class="e2n-parent-eyebrow"><?php esc_html_e('Planning sportif', 'ecole2nat'); ?></p><h1><?php esc_html_e('Compétitions', 'ecole2nat'); ?></h1><p class="e2n-parent-group"><?php echo esc_html($swimmer['first_name'].' '.strtoupper((string)$swimmer['last_name'])); ?></p></div></header>
+        <header class="e2n-parent-report-header"><div><p class="e2n-parent-eyebrow"><?php esc_html_e('Planning sportif', 'ecole2nat'); ?></p><h1><?php esc_html_e('Compétitions', 'ecole2nat'); ?></h1><div class="e2n-parent-swimmer-name"><p class="e2n-parent-group"><?php echo esc_html($swimmer['first_name'].' '.strtoupper((string)$swimmer['last_name'])); ?></p><?php $this->extranatLink($swimmer); ?></div></div></header>
         <?php if ($message==='saved') : ?><div class="e2n-parent-alert is-success"><?php esc_html_e('Votre réponse a bien été enregistrée.', 'ecole2nat'); ?></div><?php elseif ($message==='closed') : ?><div class="e2n-parent-alert"><?php esc_html_e('La période d’inscription est fermée.', 'ecole2nat'); ?></div><?php elseif ($message==='engaged') : ?><div class="e2n-parent-alert"><?php esc_html_e('Votre engagement Extranat est déjà validé et votre réponse ne peut plus être modifiée.', 'ecole2nat'); ?></div><?php elseif ($message==='invalid') : ?><div class="e2n-parent-alert"><?php esc_html_e('Merci de renseigner toutes les informations demandées.', 'ecole2nat'); ?></div><?php endif; ?>
         <div class="e2n-competition-list"><?php if($rows===[]):?><section class="e2n-parent-domain-card"><p><?php esc_html_e('Aucune compétition ne concerne actuellement cette catégorie.', 'ecole2nat'); ?></p></section><?php endif; ?>
         <?php foreach($rows as $row): $state=$row['registration_state']; $response=$row['response']??'';$isEngaged=$response==='yes'&&(int)($row['is_engaged']??0)===1;$twoDays=!empty($row['end_date'])&&$row['end_date']!==$row['start_date']; ?><article class="e2n-parent-domain-card e2n-competition-card">
@@ -451,6 +453,13 @@ class ParentPortal
         $start=wp_date('d/m/Y',strtotime($competition['start_date']));
         if(empty($competition['end_date'])||$competition['end_date']===$competition['start_date'])return $start;
         return sprintf(__('Du %1$s au %2$s','ecole2nat'),$start,wp_date('d/m/Y',strtotime($competition['end_date'])));
+    }
+
+    private function extranatLink(array $swimmer): void
+    {
+        $url = Extranat::swimmerUrl($swimmer['licence_number'] ?? null);
+        if ($url === '') return; ?>
+        <a class="e2n-parent-extranat-link" href="<?php echo esc_url($url); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e('Fiche Extranat', 'ecole2nat'); ?></a><?php
     }
 
     private function attendanceDaysLabel(string $value,array $competition): string

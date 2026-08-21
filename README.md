@@ -39,6 +39,11 @@ de l'engagement Extranat.
 Chaque compétition affiche aussi l'état de la réponse familiale dans un
 cartouche distinct, qui devient vert lorsque l'engagement Extranat est validé
 par le coach.
+Lorsqu'un numéro de licence est renseigné, les fiches nageur et les écrans de
+compétition proposent aussi un accès direct à ses performances Extranat.
+Dans la vue Coach « Nageurs par catégorie », chaque coach peut masquer les
+catégories dont il n'a pas besoin ; cette préférence est conservée dans son
+profil WordPress.
 Depuis la liste du back-office, un administrateur peut supprimer définitivement
 une compétition après confirmation ; ses réponses et engagements sont alors
 supprimés avec elle.

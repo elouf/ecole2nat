@@ -136,3 +136,12 @@
 5. Vérifier que les états de catégories de compétiteur des nageurs restent
    présents et qu'une URL sans nonce ou un compte sans `manage_options` ne
    peut rien supprimer.
+
+## 9. Fiches Extranat
+
+1. Avec un nageur possédant un numéro de licence, vérifier la présence du lien
+   `Fiche Extranat` dans le suivi des engagements et dans sa fiche terrain.
+2. Vérifier que le lien contient ce numéro dans le paramètre `idrch_id` et
+   s'ouvre dans un nouvel onglet.
+3. Refaire le contrôle avec un nageur sans licence : aucun lien ne doit être
+   affiché.

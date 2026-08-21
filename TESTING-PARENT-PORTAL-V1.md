@@ -92,3 +92,10 @@ Tester la fiche avec une largeur de téléphone :
 
 Avec un administrateur connecté, répéter le contrôle entre 601 et 783 px et
 vérifier que la barre d'administration ne masque pas l'en-tête Ecole2Nat'.
+
+## 7. Fiche Extranat
+
+1. Ouvrir les onglets Progression et Compétitions d'un nageur licencié.
+2. Vérifier que `Fiche Extranat` apparaît près de son identité et ouvre sa
+   fiche de performances FFN dans un nouvel onglet.
+3. Vérifier qu'aucun lien n'est affiché lorsque la licence est absente.
