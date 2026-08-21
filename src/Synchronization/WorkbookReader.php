@@ -21,6 +21,7 @@ final class WorkbookReader
         $groupsSheet = $this->findSheet($spreadsheet, ['groupes', 'catégories', 'categories']);
         $registrationsSheet = $this->findSheet($spreadsheet, ['inscriptions', 'inscription']);
         $referenceSheets = $this->findReferenceSheets($spreadsheet);
+        $competitionsSheet = $this->findSheet($spreadsheet, ['competitions', 'competition']);
 
         $errors = [];
         if ($groupsSheet === null) {
@@ -52,6 +53,7 @@ final class WorkbookReader
             );
         }
         $swimmers = $this->readSwimmers($registrationsSheet, $errors, $warnings);
+        $competitions = $competitionsSheet !== null ? $this->readCompetitions($competitionsSheet, $errors) : [];
 
         return [
             'errors' => array_values(array_unique($errors)),
@@ -60,6 +62,7 @@ final class WorkbookReader
                 'groups' => $groups,
                 'reference' => $reference,
                 'swimmers' => $swimmers,
+                'competitions' => $competitions,
             ],
         ];
     }
@@ -261,6 +264,8 @@ final class WorkbookReader
             $email = ContactList::normalizeEmails($this->string($row, ['email', 'e-mail']));
             $phone = ContactList::normalizePhones($this->string($row, ['telephone', 'tel']));
             $healthAlert = $this->string($row, ['info médicale', 'information médicale']) !== '' ? 1 : 0;
+            $competitionText = $this->string($row, ['competition', 'categorie competition', 'catégorie compétition']);
+            $competitionCategories = $this->uniqueNormalizedLabels($competitionText);
 
             $imageRightsRaw = $this->normalize(
                 $this->string($row, ["droit à l'image", 'droit image'])
@@ -289,6 +294,7 @@ final class WorkbookReader
                 'responsible_email' => $email,
                 'responsible_phone' => $phone,
                 'health_alert' => $healthAlert,
+                'competition_categories' => $competitionCategories,
                 'image_rights' => $imageRights,
                 'category' => $category,
                 'slot' => $slot,
@@ -297,6 +303,63 @@ final class WorkbookReader
             ];
         }
         return $swimmers;
+    }
+
+    private function readCompetitions($sheet, array &$errors): array
+    {
+        $competitions = [];
+        foreach ($this->rows($sheet) as $row) {
+            $code = $this->string($row, ['code competition', 'code']);
+            $name = $this->string($row, ['nom', 'competition']);
+            if ($code === '' && $name === '') continue;
+            $startDate = $this->date($row, ['date debut', 'date']);
+            $endDate = $this->date($row, ['date fin']) ?? $startDate;
+            $registrationStart = $this->date($row, ['debut inscriptions', 'debut inscription']);
+            $registrationEnd = $this->date($row, ['fin inscriptions', 'fin inscription']);
+            $categoryText = $this->string($row, ['categories de competiteurs', 'categories', 'categorie']);
+            $targets = $this->uniqueNormalizedLabels($categoryText);
+            if ($code === '' || $name === '' || $startDate === null || $registrationStart === null || $registrationEnd === null || $targets === []) {
+                $errors[] = sprintf('Onglet Compétitions, ligne %d : Code compétition, Nom, Date début, Début inscriptions, Fin inscriptions et Catégories de compétiteurs sont obligatoires.', $row['_row']);
+                continue;
+            }
+            if ($registrationEnd < $registrationStart || $endDate < $startDate) {
+                $errors[] = sprintf('Onglet Compétitions, ligne %d : les dates de fin doivent être postérieures ou égales aux dates de début.', $row['_row']);
+                continue;
+            }
+            $key = $this->normalize($code);
+            if (isset($competitions[$key])) {
+                $errors[] = sprintf('Code compétition dupliqué : %s.', $code);
+                continue;
+            }
+            $statusRaw = $this->normalize($this->string($row, ['statut']));
+            if (!in_array($statusRaw, ['', 'publiee','publie','published','brouillon','draft','annulee','annule','cancelled'], true)) {
+                $errors[] = sprintf('Onglet Compétitions, ligne %d : statut « %s » non reconnu.', $row['_row'], $this->string($row, ['statut']));
+                continue;
+            }
+            $status = match ($statusRaw) { 'brouillon', 'draft' => 'draft', 'annulee', 'annule', 'cancelled' => 'cancelled', default => 'published' };
+            $programRaw=$this->string($row,['programme']);$programUrl=esc_url_raw($programRaw);
+            $carpoolRaw=$this->string($row,['covoiturage']);$carpoolUrl=esc_url_raw($carpoolRaw);
+            $liveffnRaw=$this->string($row,['liveffn','live ffn']);$liveffnUrl=esc_url_raw($liveffnRaw);
+            $photoAlbumRaw=$this->string($row,['album photo','album photos']);$photoAlbumUrl=esc_url_raw($photoAlbumRaw);
+            if(($programRaw!==''&&$programUrl==='')||($carpoolRaw!==''&&$carpoolUrl==='')||($liveffnRaw!==''&&$liveffnUrl==='')||($photoAlbumRaw!==''&&$photoAlbumUrl==='')){$errors[]=sprintf('Onglet Compétitions, ligne %d : le lien Programme, Covoiturage, liveFFN ou Album photo n’est pas une URL valide.',$row['_row']);continue;}
+            $normalizedTargets=array_map([$this,'normalize'],$targets);$all=in_array('tous',$normalizedTargets,true);$competitionCategories=[];
+            foreach($targets as $target)if($this->normalize($target)!=='tous')$competitionCategories[]=$target;
+            if($all && count($targets)>1){$errors[]=sprintf('Onglet Compétitions, ligne %d : TOUS ne peut pas être combiné avec une catégorie de compétiteur.',$row['_row']);continue;}
+            $competitions[$key] = [
+                'code'=>$code, 'name'=>$name, 'start_date'=>$startDate, 'end_date'=>$endDate,
+                'location'=>$this->string($row, ['lieu']),
+                'registration_opens_at'=>$registrationStart . ' 00:00:00',
+                'registration_closes_at'=>$registrationEnd . ' 23:59:59',
+                'competition_categories'=>$competitionCategories, 'target_all'=>$all?1:0,
+                'technical_document_url'=>esc_url_raw($this->string($row, ['fiche technique', 'pdf'])),
+                'program_url'=>$programUrl,
+                'carpool_url'=>$carpoolUrl, 'liveffn_url'=>$liveffnUrl,
+                'photo_album_url'=>$photoAlbumUrl,
+                'information'=>$this->string($row, ['informations', 'information']),
+                'status'=>$status,
+            ];
+        }
+        return array_values($competitions);
     }
 
     private function string(array $row, array $aliases): string
@@ -308,6 +371,19 @@ final class WorkbookReader
             }
         }
         return '';
+    }
+
+    private function uniqueNormalizedLabels(string $value): array
+    {
+        $labels = [];
+        foreach (preg_split('/[\/;\n]+/u', $value) ?: [] as $label) {
+            $label = trim($label);
+            $key = $this->normalize($label);
+            if ($key !== '' && !isset($labels[$key])) {
+                $labels[$key] = $label;
+            }
+        }
+        return array_values($labels);
     }
 
     private function date(array $row, array $aliases): ?string

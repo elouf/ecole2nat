@@ -12,11 +12,12 @@ final class SynchronizationService
     public function analyze(string $path, array $season): array
     {
         $result=$this->reader->read($path);
-        $counts=['groups'=>0,'reference_rows'=>0,'swimmers'=>0,'exercises'=>0];
+        $counts=['groups'=>0,'reference_rows'=>0,'swimmers'=>0,'exercises'=>0,'competitions'=>0];
         if(!empty($result['data'])){
             $counts['groups']=count($result['data']['groups']);
             $counts['reference_rows']=count($result['data']['reference']);
             $counts['swimmers']=count($result['data']['swimmers']);
+            $counts['competitions']=count($result['data']['competitions'] ?? []);
             foreach($result['data']['reference'] as $row)$counts['exercises']+=count($row['exercises']);
         }
         $result['counts']=$counts;

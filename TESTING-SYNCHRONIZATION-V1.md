@@ -23,6 +23,10 @@
 9. Dans un onglet Référentiel, fusionner une cellule Domaine sur plusieurs
    lignes de compétences : chaque compétence doit reprendre ce domaine sans
    erreur d'analyse.
+10. Ajouter un onglet `Compétitions` conforme et vérifier les compétitions,
+    périodes d'inscription et catégories annoncées dans l'analyse.
+11. Renseigner `U11;HANDI` dans la colonne `Compétition` d'un nageur et vérifier
+    les deux catégories. Vérifier le ciblage par recoupement ainsi que `TOUS`.
 
 ## Synchronisation
 

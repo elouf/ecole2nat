@@ -102,6 +102,55 @@ Les tables de remplacements, séances planifiées et présences sont conservées
 
 Les codes distribués en clair ne sont jamais enregistrés dans ces tables. Les lots temporaires d’email, coupons et CSV sont stockés dans des transients WordPress propres à l’administrateur.
 
+## Compétitions
+
+- `e2n_competitions` contient les compétitions d'une saison, leur code stable,
+  leurs dates, leur période d'inscription, leur fiche technique, les liens
+  facultatifs `program_url`, `carpool_url`, `liveffn_url` et
+  `photo_album_url`, et leur statut.
+- `e2n_competition_target_categories` conserve les catégories de compétiteur
+  ciblées par chaque compétition sous leur libellé et une clé normalisée.
+- `e2n_swimmer_competition_category_states` historise les changements de
+  catégories de compétiteur par nageur avec leur date d'effet, égale à la date
+  de synchronisation.
+- `e2n_swimmer_competition_state_categories` contient les zéro, une ou
+  plusieurs catégories composant chaque état.
+- `e2n_competition_registrations` conserve la réponse `yes` ou `no`, sa source
+  (`parent` ou `coach`), le booléen nullable `parents_official`, le choix
+  `attendance_days` (`both`, `first_day`, `second_day` ou `NULL`) et le suivi
+  séparé de l'engagement Extranat.
+- `e2n_competition_participants` fige les nageurs effectivement suivis au
+  démarrage de la compétition. Les engagements Extranat sont ajoutés
+  automatiquement ; `added_manually` distingue les ajouts décidés sur place.
+- `e2n_competition_performances` conserve plusieurs épreuves par participant :
+  code d'épreuve, chrono libre, commentaire, disqualification, appréciation
+  du temps de 1 à 5 et auteurs de création ou modification.
+
+`started_at` marque le passage en mode terrain. Une compétition est en cours
+tant que `closed_at` reste nul, puis clôturée lorsque cette date est renseignée.
+La reprise efface uniquement `closed_at` et `closed_by` : participants et
+performances sont conservés et restent modifiables même pendant la clôture.
+
+Les contraintes uniques `(season_id, code)` et
+`(competition_id, swimmer_id)` garantissent respectivement une compétition
+par code et saison, puis une seule réponse courante par nageur. L'absence de
+ligne d'inscription représente l'état Non renseigné. Une resynchronisation
+met à jour la compétition et ses catégories sans supprimer les réponses.
+
+La contrainte `(swimmer_id, effective_from)` garantit au plus un état quotidien
+par nageur. Une synchronisation identique ne crée rien ; une modification crée
+un état à la date courante, y compris lorsque la liste devient vide. Pour une
+compétition, le dernier état dont `effective_from` est antérieur ou égal à sa
+date de début est utilisé. Une correspondance de catégorie suffit ;
+`target_all=1` ignore ce filtre et cible tous les nageurs actifs appartenant à
+la saison de la compétition.
+
+La suppression d'une compétition constitue une cascade applicative
+transactionnelle : ses catégories ciblées, participants, performances,
+réponses et engagements sont supprimés avec elle. L'historique des catégories de
+compétiteur des nageurs est conservé, car son cycle de vie appartient au
+nageur et non à la compétition.
+
 ## Synchronisation
 
 `e2n_synchronization_logs` conserve l’historique des imports de classeurs :

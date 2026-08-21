@@ -19,6 +19,82 @@
         if (empty) empty.hidden = visible !== 0;
     });
 
+    function competitionRank(row) {
+        var response = row.querySelector('[data-e2n-kind="competition-response"]:checked');
+        var engaged = row.querySelector('[data-e2n-kind="competition-engaged"]');
+        if (response && response.value === 'yes') return engaged && engaged.checked ? 0 : 1;
+        if (response && response.value === 'no') return 2;
+        return 3;
+    }
+
+    function updateCompetitionRow(row) {
+        row.classList.remove('is-complete', 'is-pending', 'is-declined', 'is-unanswered');
+        row.classList.add(['is-complete', 'is-pending', 'is-declined', 'is-unanswered'][competitionRank(row)]);
+    }
+
+    function sortCompetitionRows(button) {
+        var card = button.closest('.e2n-card');
+        var list = card ? card.querySelector('.e2n-competition-swimmers') : null;
+        if (!list) return;
+        var mode = button.dataset.e2nCompetitionSort;
+        var rows = Array.from(list.querySelectorAll('[data-e2n-competition-swimmer]'));
+        rows.sort(function (left, right) {
+            var alpha = (left.dataset.alpha || '').localeCompare(right.dataset.alpha || '', 'fr');
+            return mode === 'status' ? competitionRank(left) - competitionRank(right) || alpha : alpha;
+        });
+        rows.forEach(function (row) { list.appendChild(row); });
+        card.querySelectorAll('[data-e2n-competition-sort]').forEach(function (sortButton) {
+            sortButton.classList.toggle('is-active', sortButton === button);
+            sortButton.setAttribute('aria-pressed', sortButton === button ? 'true' : 'false');
+        });
+    }
+
+    document.addEventListener('click', function (event) {
+        if (!(event.target instanceof Element)) return;
+        var eventButton = event.target.closest('[data-e2n-event]');
+        if (eventButton instanceof HTMLButtonElement) {
+            var performanceForm = eventButton.closest('[data-e2n-performance-form]');
+            if (!performanceForm) return;
+            if ((performanceForm.dataset.performanceId || '0') === '0') {
+                var elapsedTime = performanceForm.querySelector('[name="elapsed_time"]');
+                var comment = performanceForm.querySelector('[name="comment"]');
+                var disqualified = performanceForm.querySelector('[name="is_disqualified"]');
+                if (elapsedTime) elapsedTime.value = '';
+                if (comment) comment.value = '';
+                if (disqualified instanceof HTMLInputElement) disqualified.checked = false;
+                performanceForm.querySelectorAll('[name="time_rating"]').forEach(function (radio) { radio.checked = false; });
+            }
+            performanceForm.querySelector('[data-e2n-event-value]').value = eventButton.dataset.e2nEvent || '';
+            performanceForm.querySelectorAll('[data-e2n-event]').forEach(function (button) {
+                button.classList.toggle('is-selected', button === eventButton);
+                button.hidden = button !== eventButton;
+            });
+            performanceForm.querySelectorAll('.e2n-event-row').forEach(function (row) { row.hidden = !row.contains(eventButton); });
+            performanceForm.querySelector('[data-e2n-performance-fields]').hidden = false;
+            return;
+        }
+        var cancelEvent = event.target.closest('[data-e2n-event-cancel]');
+        if (cancelEvent instanceof HTMLButtonElement) {
+            var cancelForm = cancelEvent.closest('[data-e2n-performance-form]');
+            if (!cancelForm) return;
+            cancelForm.reset();
+            cancelForm.querySelector('[data-e2n-event-value]').value = '';
+            cancelForm.querySelectorAll('[data-e2n-event]').forEach(function (button) { button.hidden = false; button.classList.remove('is-selected'); });
+            cancelForm.querySelectorAll('.e2n-event-row').forEach(function (row) { row.hidden = false; });
+            cancelForm.querySelector('[data-e2n-performance-fields]').hidden = true;
+            return;
+        }
+        var sortButton = event.target.closest('[data-e2n-competition-sort]');
+        if (sortButton instanceof HTMLButtonElement) sortCompetitionRows(sortButton);
+    });
+
+    document.querySelectorAll('[data-e2n-performance-form]').forEach(function (form) {
+        var selected = form.querySelector('[data-e2n-event].is-selected');
+        if (!selected) return;
+        form.querySelectorAll('[data-e2n-event]').forEach(function (button) { button.hidden = button !== selected; });
+        form.querySelectorAll('.e2n-event-row').forEach(function (row) { row.hidden = !row.contains(selected); });
+    });
+
     // La recherche est entièrement locale et doit rester disponible même si
     // la configuration AJAX n'a pas été injectée (cache de page, script isolé).
     if (typeof e2nCoachAjax === 'undefined') return;
@@ -143,6 +219,30 @@
 
     document.addEventListener('change', function (event) {
         var input = event.target;
+        if (input instanceof HTMLInputElement && input.dataset.e2nKind === 'competition-response') {
+            queueSave('competition:' + input.dataset.competitionId + ':' + input.dataset.swimmerId, {
+                action: 'e2n_coach_save_competition_response', competition_id: input.dataset.competitionId,
+                swimmer_id: input.dataset.swimmerId, response: input.value
+            }, input);
+            var competitionRow = input.closest('.e2n-competition-swimmer');
+            var engagedInput = competitionRow ? competitionRow.querySelector('[data-e2n-kind="competition-engaged"]') : null;
+            if (engagedInput instanceof HTMLInputElement) { engagedInput.disabled = input.value !== 'yes'; if (input.value !== 'yes') engagedInput.checked = false; }
+            if (competitionRow) updateCompetitionRow(competitionRow);
+            var activeResponseSort = competitionRow ? competitionRow.closest('.e2n-card').querySelector('[data-e2n-competition-sort].is-active') : null;
+            if (activeResponseSort instanceof HTMLButtonElement && activeResponseSort.dataset.e2nCompetitionSort === 'status') sortCompetitionRows(activeResponseSort);
+            return;
+        }
+        if (input instanceof HTMLInputElement && input.dataset.e2nKind === 'competition-engaged') {
+            queueSave('competition:' + input.dataset.competitionId + ':' + input.dataset.swimmerId, {
+                action: 'e2n_coach_set_competition_engaged', competition_id: input.dataset.competitionId,
+                swimmer_id: input.dataset.swimmerId, engaged: input.checked ? '1' : ''
+            }, input);
+            var engagementRow = input.closest('.e2n-competition-swimmer');
+            if (engagementRow) updateCompetitionRow(engagementRow);
+            var activeEngagementSort = engagementRow ? engagementRow.closest('.e2n-card').querySelector('[data-e2n-competition-sort].is-active') : null;
+            if (activeEngagementSort instanceof HTMLButtonElement && activeEngagementSort.dataset.e2nCompetitionSort === 'status') sortCompetitionRows(activeEngagementSort);
+            return;
+        }
         if (!(input instanceof HTMLInputElement) || input.type !== 'radio' || input.dataset.e2nKind !== 'evaluation') return;
         queueSave(
             'evaluation:' + input.dataset.groupId + ':' + input.dataset.swimmerId + ':' + input.dataset.skillId,

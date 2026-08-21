@@ -45,6 +45,7 @@ final class EntityDeletionService
             ]),
             'swimmer' => $this->deleteSwimmer($id),
             'session' => $this->deleteSession($id),
+            'competition' => $this->deleteCompetition($id),
             default => ['success' => false, 'message' => 'delete_invalid'],
         };
     }
@@ -98,6 +99,7 @@ final class EntityDeletionService
             ['swimmer_group_memberships', 'season_id', __('des affectations de nageurs', 'ecole2nat')],
             ['swimmer_skill_levels', 'season_id', __('des évaluations', 'ecole2nat')],
             ['skill_level_history', 'season_id', __('de l’historique des progressions', 'ecole2nat')],
+            ['competitions', 'season_id', __('des compétitions', 'ecole2nat')],
         ]);
     }
 
@@ -111,6 +113,14 @@ final class EntityDeletionService
             $wpdb->delete(Config::table('swimmer_group_memberships'), ['swimmer_id' => $id], ['%d']);
             $wpdb->delete(Config::table('parent_access_logs'), ['swimmer_id' => $id], ['%d']);
             $wpdb->delete(Config::table('attendance'), ['swimmer_id' => $id], ['%d']);
+            $wpdb->delete(Config::table('competition_registrations'), ['swimmer_id' => $id], ['%d']);
+            $wpdb->delete(Config::table('competition_performances'), ['swimmer_id' => $id], ['%d']);
+            $wpdb->delete(Config::table('competition_participants'), ['swimmer_id' => $id], ['%d']);
+            $stateIds = $wpdb->get_col($wpdb->prepare('SELECT id FROM ' . Config::table('swimmer_competition_category_states') . ' WHERE swimmer_id = %d', $id)) ?: [];
+            foreach ($stateIds as $stateId) {
+                $wpdb->delete(Config::table('swimmer_competition_state_categories'), ['state_id' => (int) $stateId], ['%d']);
+            }
+            $wpdb->delete(Config::table('swimmer_competition_category_states'), ['swimmer_id' => $id], ['%d']);
             $deleted = $wpdb->delete(Config::table('swimmers'), ['id' => $id], ['%d']);
             if ($deleted === false || $deleted === 0) {
                 throw new \RuntimeException('delete');
@@ -146,6 +156,36 @@ final class EntityDeletionService
         } catch (\Throwable $exception) {
             $wpdb->query('ROLLBACK');
             return ['success' => false, 'message' => 'error'];
+        }
+    }
+
+    private function deleteCompetition(int $id): array
+    {
+        global $wpdb;
+
+        $wpdb->query('START TRANSACTION');
+        try {
+            if ($wpdb->delete(Config::table('competition_performances'), ['competition_id' => $id], ['%d']) === false) {
+                throw new \RuntimeException('performances');
+            }
+            if ($wpdb->delete(Config::table('competition_participants'), ['competition_id' => $id], ['%d']) === false) {
+                throw new \RuntimeException('participants');
+            }
+            if ($wpdb->delete(Config::table('competition_registrations'), ['competition_id' => $id], ['%d']) === false) {
+                throw new \RuntimeException('registrations');
+            }
+            if ($wpdb->delete(Config::table('competition_target_categories'), ['competition_id' => $id], ['%d']) === false) {
+                throw new \RuntimeException('categories');
+            }
+            $deleted = $wpdb->delete(Config::table('competitions'), ['id' => $id], ['%d']);
+            if ($deleted === false || $deleted === 0) {
+                throw new \RuntimeException('competition');
+            }
+            $wpdb->query('COMMIT');
+            return ['success' => true, 'message' => 'deleted'];
+        } catch (\Throwable $exception) {
+            $wpdb->query('ROLLBACK');
+            return ['success' => false, 'message' => 'delete_blocked', 'reason' => __('La compétition n’a pas pu être supprimée. Aucune donnée associée n’a été effacée.', 'ecole2nat')];
         }
     }
 }

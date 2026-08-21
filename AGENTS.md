@@ -64,6 +64,7 @@ Principaux domaines :
 - `src/Category`, `src/Reference`, `src/Exercise` : référentiel pédagogique
 - `src/Season`, `src/Group`, `src/Swimmer` : organisation du club
 - `src/Evaluation` : évaluations saisonnières
+- `src/Competition` : calendrier, réponses familiales et engagements Extranat
 - `src/ParentPortal` : accès et rapports parents
 - `src/Coach` : semaine type, droits et évaluations terrain
 - `templates/coach-portal.php` : gabarit autonome du portail Coach
@@ -164,6 +165,32 @@ repositories. Éviter d’ajouter de la logique métier aux classes de rendu.
 - Le portail public doit rester marqué `noindex`.
 - La chronologie d'une compétence est repliée par défaut et peut afficher le
   nom du coach, mais jamais une note interne ou un détail de santé.
+- Une réponse à une compétition vaut exclusivement `yes` ou `no` ; l'état
+  Non renseigné correspond à l'absence de réponse.
+- Les parents ne peuvent répondre que pendant la période d'inscription et
+  uniquement aux compétitions publiées concernant la catégorie du nageur.
+- La réponse familiale reste distincte de l'engagement Extranat effectué par un
+  coach et d'une réponse orale saisie par un coach.
+- La réponse familiale conserve également la participation éventuelle des
+  parents comme officiels et, pour une compétition sur deux jours, les jours
+  choisis par le nageur.
+- La colonne `Compétition` des inscriptions contient zéro, une ou plusieurs
+  catégories de compétiteur séparées par `;`. Chaque changement d'état est
+  historisé à la date de synchronisation sans effacer les états antérieurs.
+- Une compétition concerne les nageurs ayant au moins une catégorie de
+  compétiteur correspondante dans leur dernier état connu à sa date de début.
+  La valeur `TOUS` concerne tous les nageurs actifs de la saison.
+- La suppression d'une compétition supprime transactionnellement ses cibles,
+  participants, performances, réponses et engagements, sans supprimer l'historique des catégories de
+  compétiteur des nageurs.
+- Le démarrage d'une compétition fige les engagés Extranat comme participants.
+  Un démarrage forcé exclut les réponses Oui non engagées, qui peuvent ensuite
+  être ajoutées manuellement sans modifier leur réponse ni leur engagement.
+- Une compétition démarrée accepte plusieurs performances par nageur. Le retour
+  administrateur au suivi des inscriptions ne supprime pas ces performances.
+- La clôture et le redémarrage sont de simples changements d'état. Une
+  compétition clôturée conserve ses participants et autorise toujours la saisie
+  ou l'édition a posteriori de performances.
 
 ### Synchronisation
 

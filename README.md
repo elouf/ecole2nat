@@ -16,11 +16,39 @@ Plugin WordPress de suivi pédagogique pour école de natation.
 - synchronisation d’un classeur club avec saison cible ;
 - maintenance et purge contrôlée des données ;
 - portail Coach avec semaine type et évaluations rapides.
+- planning des compétitions, réponses familiales et suivi des engagements Extranat.
 
 La synchronisation attend un onglet `Référentiel <catégorie>` par référentiel
 (par exemple `Référentiel Némo`) avec les colonnes Domaine, Compétence et
 Exercice(s). Les inscriptions ne sont importées que lorsque la colonne
 `Renouvellement` contient explicitement `OUI` ou `NON`.
+
+La colonne `Compétition` de l'onglet Inscriptions accepte une ou plusieurs
+catégories de compétiteur séparées par `;`, par exemple `U11;HANDI`. Chaque
+changement est historisé à la date de sa synchronisation. L'onglet facultatif
+`Compétitions` utilise un code stable, une période de réponse et les catégories
+de compétiteur concernées. `TOUS` permet de cibler tous les nageurs actifs de
+la saison, même sans catégorie de compétiteur. Les colonnes facultatives
+`Programme`, `Covoiturage`, `liveFFN` et `Album photo` ajoutent les boutons correspondants aux portails
+Parents et Coach lorsqu'une URL est renseignée.
+
+Les familles peuvent répondre pendant la période d'inscription, indiquer si
+les parents participent comme officiels et, pour une compétition sur deux
+jours, choisir les deux jours ou un seul. Le coach conserve séparément le suivi
+de l'engagement Extranat.
+Chaque compétition affiche aussi l'état de la réponse familiale dans un
+cartouche distinct, qui devient vert lorsque l'engagement Extranat est validé
+par le coach.
+Depuis la liste du back-office, un administrateur peut supprimer définitivement
+une compétition après confirmation ; ses réponses et engagements sont alors
+supprimés avec elle.
+Le coach peut ensuite démarrer la compétition lorsque tous les nageurs ayant
+répondu Oui sont engagés sur Extranat, ou forcer ce démarrage après alerte. Le
+mode terrain suit uniquement les engagés, permet des ajouts manuels et conserve
+plusieurs performances par nageur avec épreuve, chrono, commentaire,
+disqualification et appréciation sur cinq.
+Jusqu'à dix compétitions en cours sont épinglées sous l'en-tête Coach. Elles peuvent
+être clôturées puis redémarrées sans perdre ni verrouiller les performances.
 
 ## Portail parents
 

@@ -25,6 +25,7 @@ final class SynchronizationRepository
             'swimmers' => $wpdb->get_results('SELECT * FROM ' . Config::table('swimmers'), ARRAY_A) ?: [],
             'season_skills' => $wpdb->get_results('SELECT * FROM ' . Config::table('season_skills'), ARRAY_A) ?: [],
             'memberships' => $wpdb->get_results('SELECT * FROM ' . Config::table('swimmer_group_memberships'), ARRAY_A) ?: [],
+            'competitions' => $wpdb->get_results('SELECT * FROM ' . Config::table('competitions'), ARRAY_A) ?: [],
         ];
     }
 
@@ -78,6 +79,9 @@ final class SynchronizationRepository
             $existing = $row['licence_number']!=='' ? ($swimmerLicence[$this->normalize($row['licence_number'])]??null) : ($swimmerIdentity[$this->key($row['last_name'],$row['first_name'],(string)$row['birth_date'])]??null);
             $plan['swimmers'][$existing?'updated':'created']++;
         }
+        $competitionMap=[];
+        foreach ($snapshot['competitions'] as $row) $competitionMap[(int)$row['season_id'].'|'.$this->normalize($row['code'])]=$row;
+        foreach (($data['competitions'] ?? []) as $row) $plan['competitions'][isset($competitionMap[$seasonId.'|'.$this->normalize($row['code'])])?'updated':'created']++;
         return $plan;
     }
 
@@ -94,6 +98,7 @@ final class SynchronizationRepository
             $this->syncSeasonSkills((int) $season['id'], $skillIds, $stats);
             $this->syncExercises($data['reference'], $skillIds, $stats);
             $this->syncSwimmers($data['swimmers'], $groupIds, (int) $season['id'], $stats);
+            $this->syncCompetitions($data['competitions'] ?? [], (int) $season['id'], $stats);
             $wpdb->query('COMMIT');
             $this->log($filename, $userId, 'success', $stats, []);
             return ['success' => true, 'stats' => $stats, 'errors' => []];
@@ -288,12 +293,42 @@ final class SynchronizationRepository
                 $sql=$wpdb->prepare("INSERT INTO {$membership} (swimmer_id,season_id,group_id,created_at,updated_at) VALUES (%d,%d,%d,%s,%s) ON DUPLICATE KEY UPDATE group_id=VALUES(group_id),updated_at=VALUES(updated_at)",$swimmerId,$seasonId,$groupId,current_time('mysql'),current_time('mysql'));
                 if($wpdb->query($sql)===false) throw new \RuntimeException('Impossible d’historiser le groupe de '.$row['first_name'].' '.$row['last_name'].' : '.$wpdb->last_error);
             }
+            $this->syncSwimmerCompetitionCategories($swimmerId,$row['competition_categories']??[],$row['first_name'].' '.$row['last_name']);
+        }
+    }
+
+    private function syncSwimmerCompetitionCategories(int $swimmerId,array $categoryNames,string $swimmerName):void
+    {
+        global $wpdb;
+        $states=Config::table('swimmer_competition_category_states');$categories=Config::table('swimmer_competition_state_categories');$today=current_time('Y-m-d');
+        $latestStateId=(int)$wpdb->get_var($wpdb->prepare("SELECT id FROM {$states} WHERE swimmer_id=%d ORDER BY effective_from DESC,id DESC LIMIT 1",$swimmerId));
+        $currentKeys=$latestStateId>0?array_map('strval',$wpdb->get_col($wpdb->prepare("SELECT category_key FROM {$categories} WHERE state_id=%d ORDER BY category_key",$latestStateId))?:[]):[];
+        $wanted=[];foreach($categoryNames as $categoryName){$key=$this->normalize($categoryName);if($key!=='')$wanted[$key]=$categoryName;}ksort($wanted);sort($currentKeys);
+        if($currentKeys===array_keys($wanted))return;
+        $stateId=(int)$wpdb->get_var($wpdb->prepare("SELECT id FROM {$states} WHERE swimmer_id=%d AND effective_from=%s LIMIT 1",$swimmerId,$today));
+        if($stateId<=0){if($wpdb->insert($states,['swimmer_id'=>$swimmerId,'effective_from'=>$today,'created_at'=>current_time('mysql')],['%d','%s','%s'])===false)throw new \RuntimeException('Impossible d’historiser les catégories de compétition de '.$swimmerName.' : '.$wpdb->last_error);$stateId=(int)$wpdb->insert_id;}
+        elseif($wpdb->update($states,['updated_at'=>current_time('mysql')],['id'=>$stateId],['%s'],['%d'])===false)throw new \RuntimeException('Impossible de mettre à jour les catégories de compétition de '.$swimmerName.' : '.$wpdb->last_error);
+        if($wpdb->delete($categories,['state_id'=>$stateId],['%d'])===false)throw new \RuntimeException('Impossible de mettre à jour les catégories de compétition de '.$swimmerName.' : '.$wpdb->last_error);
+        foreach($wanted as $key=>$categoryName){if($wpdb->insert($categories,['state_id'=>$stateId,'category_name'=>$categoryName,'category_key'=>$key,'created_at'=>current_time('mysql')],['%d','%s','%s','%s'])===false)throw new \RuntimeException('Impossible d’enregistrer la catégorie de compétition '.$categoryName.' pour '.$swimmerName.' : '.$wpdb->last_error);}
+    }
+
+    private function syncCompetitions(array $rows, int $seasonId, array &$stats): void
+    {
+        global $wpdb;
+        $table=Config::table('competitions'); $links=Config::table('competition_target_categories');
+        foreach($rows as $row){
+            $existing=$wpdb->get_row($wpdb->prepare("SELECT * FROM {$table} WHERE season_id=%d AND code=%s LIMIT 1",$seasonId,$row['code']),ARRAY_A);
+            $payload=['season_id'=>$seasonId,'code'=>$row['code'],'name'=>$row['name'],'start_date'=>$row['start_date'],'end_date'=>$row['end_date'],'location'=>$row['location'],'registration_opens_at'=>$row['registration_opens_at'],'registration_closes_at'=>$row['registration_closes_at'],'technical_document_url'=>$row['technical_document_url'],'program_url'=>$row['program_url'],'carpool_url'=>$row['carpool_url'],'liveffn_url'=>$row['liveffn_url'],'photo_album_url'=>$row['photo_album_url'],'information'=>$row['information'],'target_all'=>$row['target_all'],'status'=>$row['status']];
+            if(!$existing){$payload['created_at']=current_time('mysql');if($wpdb->insert($table,$payload)===false)throw new \RuntimeException('Impossible de créer la compétition '.$row['name'].' : '.$wpdb->last_error);$competitionId=(int)$wpdb->insert_id;$stats['competitions']['created']++;}
+            else{$competitionId=(int)$existing['id'];$payload['updated_at']=current_time('mysql');if($wpdb->update($table,$payload,['id'=>$competitionId])===false)throw new \RuntimeException('Impossible de mettre à jour la compétition '.$row['name'].' : '.$wpdb->last_error);$stats['competitions']['updated']++;}
+            if($wpdb->delete($links,['competition_id'=>$competitionId],['%d'])===false)throw new \RuntimeException('Impossible de mettre à jour les catégories de compétiteurs de '.$row['name'].'.');
+            foreach($row['competition_categories'] as $categoryName){if($wpdb->insert($links,['competition_id'=>$competitionId,'category_name'=>$categoryName,'category_key'=>$this->normalize($categoryName),'created_at'=>current_time('mysql')],['%d','%s','%s','%s'])===false)throw new \RuntimeException('Impossible d’associer la catégorie de compétiteur '.$categoryName.' à '.$row['name'].'.');}
         }
     }
 
     private function log(string $filename,int $userId,string $status,array $stats,array $errors):void
     { global $wpdb; $wpdb->insert(Config::table('synchronization_logs'),['filename'=>$filename,'status'=>$status,'summary'=>wp_json_encode($stats),'errors'=>wp_json_encode($errors),'created_by'=>$userId,'created_at'=>current_time('mysql')],['%s','%s','%s','%s','%d','%s']); }
-    private function emptyStats():array{ $keys=['seasons','categories','groups','domains','skills','season_skills','exercises','swimmers'];$r=[];foreach($keys as $k)$r[$k]=['created'=>0,'updated'=>0,'unchanged'=>0];return$r; }
+    private function emptyStats():array{ $keys=['seasons','categories','groups','domains','skills','season_skills','exercises','swimmers','competitions'];$r=[];foreach($keys as $k)$r[$k]=['created'=>0,'updated'=>0,'unchanged'=>0];return$r; }
     private function key(string ...$parts):string{return implode('|',array_map([$this,'normalize'],$parts));}
     private function normalize(string $value):string{$value=remove_accents(mb_strtolower(trim($value)));return trim(preg_replace('/\s+/',' ',preg_replace('/[^a-z0-9]+/u',' ',$value)?:'')?:'');}
 }

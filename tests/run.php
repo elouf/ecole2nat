@@ -6,6 +6,8 @@ require __DIR__ . '/bootstrap.php';
 
 use Ecole2Nat\Coach\CoachAccessRepository;
 use Ecole2Nat\Coach\CoachAccessService;
+use Ecole2Nat\Competition\CompetitionService;
+use Ecole2Nat\Competition\CompetitionRepository;
 use Ecole2Nat\ParentPortal\ParentAccessRepository;
 use Ecole2Nat\ParentPortal\ParentAccessService;
 use Ecole2Nat\Support\GroupScheduleParser;
@@ -40,6 +42,40 @@ final class FakeParentAccessRepository extends ParentAccessRepository
     }
     public function enableAccess(int $swimmerId): bool { $this->swimmer['parent_access_enabled'] = 1; return true; }
     public function disableAccess(int $swimmerId): bool { $this->swimmer['parent_access_enabled'] = 0; return true; }
+}
+
+final class FakeCompetitionRepository extends CompetitionRepository
+{
+    public array $saved = [];
+    public bool $engaged = false;
+    public bool $started = true;
+    public bool $participant = true;
+
+    public function forSwimmer(int $swimmerId): array
+    {
+        return [[
+            'id' => 1,
+            'status' => 'published',
+            'start_date' => '2026-10-10',
+            'registration_opens_at' => '2026-09-25 00:00:00',
+            'registration_closes_at' => '2026-10-04 23:59:59',
+        ]];
+    }
+
+    public function find(int $competitionId): ?array
+    {
+        return ['id'=>$competitionId,'status'=>'published','start_date'=>'2026-08-22','end_date'=>'2026-08-23','registration_opens_at'=>'2026-08-10 00:00:00','registration_closes_at'=>'2026-08-20 23:59:59'];
+    }
+    public function eligible(int $competitionId,int $swimmerId):bool{return true;}
+    public function isEngaged(int $competitionId,int $swimmerId):bool{return $this->engaged;}
+    public function isStarted(int $competitionId):bool{return $this->started;}
+    public function isParticipant(int $competitionId,int $swimmerId):bool{return $this->participant;}
+    public function savePerformance(int $competitionId,int $swimmerId,int $performanceId,array $data,int $userId):bool
+    { $this->saved=$data+compact('competitionId','swimmerId','performanceId','userId');return true; }
+    public function deletePerformance(int $competitionId,int $swimmerId,int $performanceId):bool
+    { $this->saved=compact('competitionId','swimmerId','performanceId');return true; }
+    public function saveResponse(int $competitionId,int $swimmerId,string $response,string $comment,string $source,?int $userId,?bool $parentsOfficial=null,?string $attendanceDays=null):bool
+    { $this->saved=compact('competitionId','swimmerId','response','comment','source','userId','parentsOfficial','attendanceDays');return true; }
 }
 
 $tests = 0;
@@ -135,6 +171,36 @@ $parentService->disable(42);
 $parentService->permanentCode(42, false);
 expectSame(0, $parentRepository->swimmer['parent_access_enabled'], 'Afficher un code désactivé ne réactive pas son accès');
 
+$competitionService = new CompetitionService();
+expectSame('upcoming', $competitionService->registrationState(['status'=>'published','registration_opens_at'=>'2026-08-18 00:00:00','registration_closes_at'=>'2026-08-20 23:59:59']), 'Inscriptions futures non modifiables');
+expectSame('open', $competitionService->registrationState(['status'=>'published','registration_opens_at'=>'2026-08-10 00:00:00','registration_closes_at'=>'2026-08-20 23:59:59']), 'Inscriptions ouvertes dans la période');
+expectSame('closed', $competitionService->registrationState(['status'=>'published','registration_opens_at'=>'2026-08-01 00:00:00','registration_closes_at'=>'2026-08-16 23:59:59']), 'Inscriptions closes après échéance');
+expectSame('cancelled', $competitionService->registrationState(['status'=>'cancelled','registration_opens_at'=>'2026-08-10 00:00:00','registration_closes_at'=>'2026-08-20 23:59:59']), 'Compétition annulée prioritaire sur la période');
+$upcomingCompetitions = (new CompetitionService(new FakeCompetitionRepository()))->forSwimmer(42);
+expectSame(1, count($upcomingCompetitions), 'Une compétition publiée reste visible avant l’ouverture des inscriptions');
+expectSame('upcoming', $upcomingCompetitions[0]['registration_state'] ?? null, 'Une compétition visible avant ouverture reste non modifiable');
+$competitionRepository = new FakeCompetitionRepository();
+$competitionResponseService = new CompetitionService($competitionRepository);
+expectSame('invalid', $competitionResponseService->saveParentResponse(1,42,'yes','',true,'')['message'], 'Le choix des jours est obligatoire pour une participation sur deux jours');
+expectSame('saved', $competitionResponseService->saveParentResponse(1,42,'yes','Note',true,'first_day')['message'], 'Une réponse complète sur deux jours est enregistrée');
+expectSame(true, $competitionRepository->saved['parentsOfficial'] ?? null, 'La participation des parents comme officiels est conservée');
+expectSame('first_day', $competitionRepository->saved['attendanceDays'] ?? null, 'Le premier jour choisi est conservé');
+expectSame('saved', $competitionResponseService->saveParentResponse(1,42,'no','',false,'both')['message'], 'Un refus reste enregistrable sans choix de jours');
+expectSame('', $competitionRepository->saved['attendanceDays'] ?? null, 'Un refus efface le choix de jours devenu sans objet');
+$competitionRepository->engaged = true;
+expectSame('engaged', $competitionResponseService->saveParentResponse(1,42,'no','',false,'')['message'], 'Une réponse parent est verrouillée après validation Extranat');
+$competitionRepository->engaged = false;
+expectSame(18, count($competitionResponseService->events()), 'Le référentiel terrain expose les 18 épreuves attendues');
+expectSame(true, $competitionResponseService->savePerformance(1,42,0,['event_code'=>'100NL','elapsed_time'=>'1:02.34','comment'=>'Bonne course','time_rating'=>4],7), 'Une performance valide est enregistrée');
+expectSame('100NL', $competitionRepository->saved['event_code'] ?? null, 'Le code épreuve est normalisé et conservé');
+expectSame(false, $competitionResponseService->savePerformance(1,42,0,['event_code'=>'25NL','time_rating'=>4],7), 'Une épreuve inconnue est refusée');
+expectSame(false, $competitionResponseService->savePerformance(1,42,0,['event_code'=>'100NL','time_rating'=>6],7), 'Une appréciation supérieure à cinq est refusée');
+$competitionRepository->participant = false;
+expectSame(false, $competitionResponseService->savePerformance(1,42,0,['event_code'=>'100NL','time_rating'=>4],7), 'Un non-participant ne peut pas recevoir de performance');
+$competitionRepository->participant = true;
+expectSame(true, $competitionResponseService->deletePerformance(1,42,9), 'Une performance appartenant au participant peut être supprimée');
+expectSame(9, $competitionRepository->saved['performanceId'] ?? null, 'La suppression cible la performance demandée');
+
 $service = accessService(['e2n_coach_access']);
 expectSame(true, $service->canEvaluateGroup(4), 'Les anciennes données de remplacement n’influencent plus les droits');
 
@@ -158,8 +224,8 @@ $groupsSheet->fromArray([
     ['Némo Lundi 17h15', 'Némo', 45],
 ]);
 $spreadsheet->createSheet()->setTitle('Inscriptions')->fromArray([
-    ['Nom', 'Prénom', 'Catégorie', 'Créneau 1', 'Renouvellement', 'Email', 'Téléphone', 'Info médicale', 'Commentaire'],
-    ['Martin', 'Léa', 'Némo', 'Lundi 17h15', 'OUI', 'parent@example.test / second@example.test', '06 01 02 03 04 / 07 05 06 07 08', 'Détail sensible', 'Ancienne remarque'],
+    ['Nom', 'Prénom', 'Catégorie', 'Créneau 1', 'Renouvellement', 'Email', 'Téléphone', 'Info médicale', 'Commentaire', 'Compétition'],
+    ['Martin', 'Léa', 'Némo', 'Lundi 17h15', 'OUI', 'parent@example.test / second@example.test', '06 01 02 03 04 / 07 05 06 07 08', 'Détail sensible', 'Ancienne remarque', 'U11;u11;HANDI'],
     ['Durand', 'Noé', 'Dauphin', 'Mardi 18h00', '', 'ignore@example.test', '', '', ''],
     ['Petit', 'Zoé', 'Avenir', 'Mercredi 19h00', 'En attente', 'ignore2@example.test', '', '', ''],
 ]);
@@ -172,6 +238,11 @@ $spreadsheet->getSheetByName('Référentiel Némo')->mergeCells('A2:A3');
 $spreadsheet->createSheet()->setTitle('Référentiel Dauphin')->fromArray([
     ['Domaine', 'Compétence', 'Exercices'],
     ['Propulsion', 'Se déplacer sur le ventre', 'Battements avec planche'],
+]);
+$spreadsheet->createSheet()->setTitle('Compétitions')->fromArray([
+    ['Code compétition','Nom','Date début','Date fin','Lieu','Début inscriptions','Fin inscriptions','Catégories de compétiteurs','Fiche technique','Programme','Covoiturage','liveFFN','Album photo','Informations','Statut'],
+    ['MEETING-2026','Meeting de rentrée','2026-09-20','2026-09-20','Brest','2026-08-20','2026-09-10','U11;HANDI','https://example.test/meeting.pdf','https://example.test/programme.pdf','https://example.test/covoiturage','https://example.test/live','https://example.test/photos','Prévoir le pique-nique','Publiée'],
+    ['INTERNE-2026','Compétition interne','2026-10-10','2026-10-10','Brest','2026-09-01','2026-10-01','TOUS','','','','','','','Brouillon'],
 ]);
 $temporaryBase = tempnam(sys_get_temp_dir(), 'e2n-tests-');
 if ($temporaryBase === false) throw new RuntimeException('Impossible de créer le fichier de test temporaire.');
@@ -186,12 +257,22 @@ expectSame(1, $workbook['data']['swimmers'][0]['health_alert'] ?? null, 'Info m�
 expectSame(false, array_key_exists('medical_note', $workbook['data']['swimmers'][0] ?? []), 'Texte médical absent des données analysées');
 expectSame('parent@example.test / second@example.test', $workbook['data']['swimmers'][0]['responsible_email'] ?? null, 'Plusieurs emails responsables conservés séparément');
 expectSame('06 01 02 03 04 / 07 05 06 07 08', $workbook['data']['swimmers'][0]['responsible_phone'] ?? null, 'Plusieurs téléphones responsables conservés séparément');
+expectSame(['U11', 'HANDI'], $workbook['data']['swimmers'][0]['competition_categories'] ?? null, 'Catégories de compétiteur multiples lues depuis les inscriptions');
 expectSame(1, count($workbook['data']['swimmers']), 'Inscriptions sans Renouvellement OUI ou NON ignorées');
 expectSame(3, count($workbook['data']['reference']), 'Lecture de plusieurs onglets Référentiel par catégorie');
 expectSame('Némo', $workbook['data']['reference'][0]['category'] ?? null, 'Catégorie déduite du nom de l’onglet Référentiel');
 expectSame('Immersion', $workbook['data']['reference'][1]['domain'] ?? null, 'Domaine repris depuis une cellule fusionnée');
 expectSame(false, array_key_exists('domainCode', $workbook['data']['reference'][0] ?? []), 'Code domaine absent des données analysées');
 expectSame(false, array_key_exists('skillCode', $workbook['data']['reference'][0] ?? []), 'Code compétence absent des données analysées');
+expectSame('MEETING-2026', $workbook['data']['competitions'][0]['code'] ?? null, 'Lecture du code stable de compétition');
+expectSame('https://example.test/programme.pdf', $workbook['data']['competitions'][0]['program_url'] ?? null, 'Lecture du lien vers le programme');
+expectSame('https://example.test/covoiturage', $workbook['data']['competitions'][0]['carpool_url'] ?? null, 'Lecture du lien de covoiturage');
+expectSame('https://example.test/live', $workbook['data']['competitions'][0]['liveffn_url'] ?? null, 'Lecture du lien liveFFN');
+expectSame('https://example.test/photos', $workbook['data']['competitions'][0]['photo_album_url'] ?? null, 'Lecture du lien vers l’album photo');
+expectSame(['U11', 'HANDI'], $workbook['data']['competitions'][0]['competition_categories'] ?? null, 'Lecture de plusieurs catégories de compétiteur ciblées');
+expectSame(0, $workbook['data']['competitions'][0]['target_all'] ?? null, 'Une liste de catégories ne cible pas tous les nageurs');
+expectSame('2026-09-10 23:59:59', $workbook['data']['competitions'][0]['registration_closes_at'] ?? null, 'Fin des inscriptions incluse jusqu’à la fin de journée');
+expectSame(1, $workbook['data']['competitions'][1]['target_all'] ?? null, 'TOUS cible toute la saison');
 unlink($workbookPath);
 
 if ($failures !== []) {

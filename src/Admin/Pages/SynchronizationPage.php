@@ -99,6 +99,7 @@ final class SynchronizationPage
                 <tr><th><?php esc_html_e('Lignes du référentiel','ecole2nat'); ?></th><td><?php echo esc_html((string)$counts['reference_rows']); ?></td></tr>
                 <tr><th><?php esc_html_e('Exercices repérés','ecole2nat'); ?></th><td><?php echo esc_html((string)$counts['exercises']); ?></td></tr>
                 <tr><th><?php esc_html_e('Nageurs','ecole2nat'); ?></th><td><?php echo esc_html((string)$counts['swimmers']); ?></td></tr>
+                <tr><th><?php esc_html_e('Compétitions','ecole2nat'); ?></th><td><?php echo esc_html((string)$counts['competitions']); ?></td></tr>
             </tbody></table>
             <?php if($a['warnings']!==[]): ?><div class="notice notice-warning inline"><p><strong><?php esc_html_e('Avertissements','ecole2nat'); ?></strong></p><ul><?php foreach(array_slice($a['warnings'],0,30) as $warning): ?><li><?php echo esc_html($warning); ?></li><?php endforeach; ?></ul></div><?php endif; ?>
             <?php if($a['errors']!==[]): ?><div class="notice notice-error inline"><p><strong><?php esc_html_e('Erreurs bloquantes','ecole2nat'); ?></strong></p><ul><?php foreach($a['errors'] as $error): ?><li><?php echo esc_html($error); ?></li><?php endforeach; ?></ul></div><?php else: ?>

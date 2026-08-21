@@ -1,6 +1,38 @@
 # Changelog
 
-## Non publié — 0.19.0
+## Non publié — 0.20.0
+
+- Ajoute l'import facultatif d'un onglet `Compétitions` avec code stable, dates, période d'inscription, catégories, informations et fiche technique.
+- Ajoute l'onglet Compétitions au portail Parents avec réponses Oui/Non limitées à la période autorisée.
+- Garantit l'affichage des compétitions publiées avant l'ouverture des inscriptions, avec leurs informations mais sans formulaire actif.
+- Ajoute l'onglet Compétitions au portail Coach avec suivi Oui, Non, Non renseigné, saisie orale et validation des engagements Extranat.
+- Ajoute un écran administrateur de correction des compétitions importées et porte le schéma à `0.12.7`.
+- Rejoue la migration après le remplacement du classement annuel des compétiteurs par l'historique daté de leurs états.
+- Historise chaque changement des catégories de compétiteur d'un nageur à la date de synchronisation, puis cible une compétition avec l'état applicable à sa date ou avec `TOUS`.
+- Refuse désormais les statuts de compétition inconnus pendant l'analyse du classeur.
+- Affiche les deux dates des compétitions sur plusieurs jours et respecte les sauts de ligne des informations importées.
+- Enregistre la participation des parents comme officiels et, sur deux jours, les jours choisis par le nageur.
+- Ajoute au suivi Coach un tri alphabétique ou par avancement et colore les inscriptions terminées, en attente d'engagement Extranat ou refusées.
+- Replie le briefing dans le portail Parents et modernise les actions de consultation de la fiche technique et d'enregistrement de la réponse.
+- Ajoute au portail Parents un cartouche d'état de réponse, vert après validation Extranat, et les liens facultatifs Programme, Covoiturage, liveFFN et Album photo importés avec la compétition.
+- Signale en rouge le dépassement du délai d'inscription lorsqu'un nageur n'a pas répondu.
+- Verrouille la réponse familiale après validation Extranat et remplace le formulaire par les consignes à suivre en cas de forfait.
+- Affiche également dans la fiche compétition Coach les liens vers la fiche technique, le programme, le covoiturage, liveFFN et l'album photo.
+- Uniformise les liens documentaires des compétitions avec un bouton blanc bordé dans les portails Parents et Coach.
+- Ajoute le démarrage d'une compétition, bloqué tant que les réponses Oui ne sont pas toutes engagées sur Extranat sauf forçage explicite, puis un mode terrain limité aux participants Extranat ou ajoutés manuellement.
+- Permet de saisir plusieurs performances par nageur avec épreuve, chrono, commentaire, disqualification et appréciation du temps sur cinq, puis de les rééditer.
+- Autorise un administrateur à revenir au suivi des inscriptions sans supprimer les performances déjà saisies.
+- Repositionne l'action de démarrage face au titre de la compétition et corrige l'espacement du lien de forçage dans l'alerte.
+- Réinitialise les champs de performance lors du choix d'une nouvelle épreuve afin de ne pas reprendre le chrono précédent restauré par le navigateur.
+- Rend le contrôle de disqualification plus visible et tactile avec une grande case rouge accessible au clavier.
+- Revient automatiquement à la liste des participants après l'enregistrement réussi d'une performance pour accélérer la saisie au bord du bassin.
+- Regroupe les épreuves par nage et harmonise l'ordre et les libellés des champs de performance.
+- Aligne les actions de performance à droite et colore les performances enregistrées du rouge au vert selon leur appréciation de une à cinq étoiles.
+- Sépare visuellement les performances existantes du formulaire et permet de supprimer une épreuve après confirmation.
+- Présente l'action Annuler du formulaire de performance comme un bouton secondaire cohérent avec les autres actions.
+- Masque la barre d'administration WordPress sur le front pour les coachs non administrateurs et ajoute un accès Tableau de bord dans leur menu utilisateur.
+- Épingle sous l'en-tête jusqu'à dix compétitions en cours et permet de les clôturer ou redémarrer sans bloquer l'édition a posteriori des performances.
+- Permet de supprimer une compétition depuis sa liste d'administration, après confirmation, avec suppression transactionnelle de ses catégories ciblées, réponses et engagements.
 
 - Préserve les emails et téléphones multiples séparés par `/` ou `;` lors de la synchronisation et envoie les accès Parents à chaque adresse email valide.
 - Crée automatiquement pour chaque nageur un code Parents permanent, récupérable sans stockage en clair et inchangé lors des affichages, coupons ou renvois.

@@ -1,5 +1,13 @@
 # Recette — Portail Coach simplifié
 
+## Barre WordPress et menu utilisateur
+
+1. Avec un compte Coach non administrateur, vérifier que la barre WordPress
+   est masquée sur le portail et sur les autres pages publiques.
+2. Ouvrir l'avatar, vérifier l'ordre Nom, Tableau de bord, Déconnexion, puis
+   vérifier que Tableau de bord ouvre bien le BO autorisé au coach.
+3. Avec un administrateur, vérifier que la barre WordPress reste visible.
+
 ## Présentation et navigation
 
 1. Ouvrir le portail Coach sur ordinateur et vérifier que l'en-tête, le pied

@@ -78,6 +78,131 @@ class Installer
 
         dbDelta($sql);
 
+        $tableName = Config::table('competitions');
+        $sql = "CREATE TABLE {$tableName} (
+            id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+            season_id bigint(20) unsigned NOT NULL,
+            code varchar(100) NOT NULL,
+            name varchar(180) NOT NULL,
+            start_date date NOT NULL,
+            end_date date NULL,
+            location varchar(180) NULL,
+            registration_opens_at datetime NOT NULL,
+            registration_closes_at datetime NOT NULL,
+            technical_document_url text NULL,
+            program_url text NULL,
+            carpool_url text NULL,
+            liveffn_url text NULL,
+            photo_album_url text NULL,
+            information text NULL,
+            target_all tinyint(1) NOT NULL DEFAULT 0,
+            status varchar(20) NOT NULL DEFAULT 'published',
+            started_at datetime NULL,
+            started_by bigint(20) unsigned NULL,
+            start_forced tinyint(1) NOT NULL DEFAULT 0,
+            closed_at datetime NULL,
+            closed_by bigint(20) unsigned NULL,
+            created_at datetime NOT NULL,
+            updated_at datetime NULL,
+            PRIMARY KEY  (id),
+            UNIQUE KEY season_code (season_id,code),
+            KEY start_date (start_date),
+            KEY status (status)
+        ) {$charsetCollate};";
+        dbDelta($sql);
+
+        $tableName = Config::table('competition_participants');
+        $sql = "CREATE TABLE {$tableName} (
+            competition_id bigint(20) unsigned NOT NULL,
+            swimmer_id bigint(20) unsigned NOT NULL,
+            added_manually tinyint(1) NOT NULL DEFAULT 0,
+            added_at datetime NOT NULL,
+            added_by bigint(20) unsigned NULL,
+            PRIMARY KEY  (competition_id,swimmer_id),
+            KEY swimmer_id (swimmer_id)
+        ) {$charsetCollate};";
+        dbDelta($sql);
+
+        $tableName = Config::table('competition_performances');
+        $sql = "CREATE TABLE {$tableName} (
+            id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+            competition_id bigint(20) unsigned NOT NULL,
+            swimmer_id bigint(20) unsigned NOT NULL,
+            event_code varchar(20) NOT NULL,
+            elapsed_time varchar(30) NULL,
+            comment text NULL,
+            is_disqualified tinyint(1) NOT NULL DEFAULT 0,
+            time_rating tinyint(1) NULL,
+            created_by bigint(20) unsigned NOT NULL,
+            updated_by bigint(20) unsigned NULL,
+            created_at datetime NOT NULL,
+            updated_at datetime NULL,
+            PRIMARY KEY  (id),
+            KEY competition_swimmer (competition_id,swimmer_id),
+            KEY event_code (event_code)
+        ) {$charsetCollate};";
+        dbDelta($sql);
+
+        $tableName = Config::table('competition_target_categories');
+        $sql = "CREATE TABLE {$tableName} (
+            competition_id bigint(20) unsigned NOT NULL,
+            category_name varchar(100) NOT NULL,
+            category_key varchar(100) NOT NULL,
+            created_at datetime NOT NULL,
+            PRIMARY KEY  (competition_id,category_key),
+            KEY category_key (category_key)
+        ) {$charsetCollate};";
+        dbDelta($sql);
+
+        $tableName = Config::table('swimmer_competition_category_states');
+        $sql = "CREATE TABLE {$tableName} (
+            id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+            swimmer_id bigint(20) unsigned NOT NULL,
+            effective_from date NOT NULL,
+            created_at datetime NOT NULL,
+            updated_at datetime NULL,
+            PRIMARY KEY  (id),
+            UNIQUE KEY swimmer_effective_from (swimmer_id,effective_from),
+            KEY effective_from (effective_from)
+        ) {$charsetCollate};";
+        dbDelta($sql);
+
+        $tableName = Config::table('swimmer_competition_state_categories');
+        $sql = "CREATE TABLE {$tableName} (
+            state_id bigint(20) unsigned NOT NULL,
+            category_name varchar(100) NOT NULL,
+            category_key varchar(100) NOT NULL,
+            created_at datetime NOT NULL,
+            PRIMARY KEY  (state_id,category_key),
+            KEY category_key (category_key)
+        ) {$charsetCollate};";
+        dbDelta($sql);
+
+        $tableName = Config::table('competition_registrations');
+        $sql = "CREATE TABLE {$tableName} (
+            id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+            competition_id bigint(20) unsigned NOT NULL,
+            swimmer_id bigint(20) unsigned NOT NULL,
+            response varchar(10) NOT NULL,
+            comment text NULL,
+            response_source varchar(20) NOT NULL DEFAULT 'parent',
+            responded_at datetime NOT NULL,
+            responded_by bigint(20) unsigned NULL,
+            parents_official tinyint(1) NULL,
+            attendance_days varchar(20) NULL,
+            is_engaged tinyint(1) NOT NULL DEFAULT 0,
+            engaged_at datetime NULL,
+            engaged_by bigint(20) unsigned NULL,
+            created_at datetime NOT NULL,
+            updated_at datetime NULL,
+            PRIMARY KEY  (id),
+            UNIQUE KEY competition_swimmer (competition_id,swimmer_id),
+            KEY swimmer_id (swimmer_id),
+            KEY response (response),
+            KEY is_engaged (is_engaged)
+        ) {$charsetCollate};";
+        dbDelta($sql);
+
         $tableName = Config::table('categories');
 
         $sql = "CREATE TABLE {$tableName} (
