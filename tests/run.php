@@ -73,6 +73,8 @@ final class FakeCompetitionRepository extends CompetitionRepository
     public function isParticipant(int $competitionId,int $swimmerId):bool{return $this->participant;}
     public function savePerformance(int $competitionId,int $swimmerId,int $performanceId,array $data,int $userId):bool
     { $this->saved=$data+compact('competitionId','swimmerId','performanceId','userId');return true; }
+    public function saveTimedPerformance(int $competitionId,int $swimmerId,int $performanceId,array $data,int $userId):int
+    { $this->saved=$data+compact('competitionId','swimmerId','performanceId','userId');return $performanceId>0?$performanceId:91; }
     public function deletePerformance(int $competitionId,int $swimmerId,int $performanceId):bool
     { $this->saved=compact('competitionId','swimmerId','performanceId');return true; }
     public function saveResponse(int $competitionId,int $swimmerId,string $response,string $comment,string $source,?int $userId,?bool $parentsOfficial=null,?string $attendanceDays=null):bool
@@ -198,6 +200,10 @@ expectSame(true, $competitionResponseService->savePerformance(1,42,0,['event_cod
 expectSame('100NL', $competitionRepository->saved['event_code'] ?? null, 'Le code épreuve est normalisé et conservé');
 expectSame(false, $competitionResponseService->savePerformance(1,42,0,['event_code'=>'25NL','time_rating'=>4],7), 'Une épreuve inconnue est refusée');
 expectSame(false, $competitionResponseService->savePerformance(1,42,0,['event_code'=>'100NL','time_rating'=>6],7), 'Une appréciation supérieure à cinq est refusée');
+$timed=$competitionResponseService->saveTimedPerformance(1,42,0,['event_code'=>'100NL','elapsed_time'=>'1:02.34','comment'=>'Série','time_rating'=>5],7);
+expectSame(true, $timed['success'], 'Un arrêt chronométré valide crée immédiatement une performance');
+expectSame(91, $timed['performance_id'], 'L’identifiant de la performance chronométrée est retourné au portail');
+expectSame(false, $competitionResponseService->saveTimedPerformance(1,42,0,['event_code'=>'100NL','elapsed_time'=>'62 secondes'],7)['success'], 'Un chrono forgé au mauvais format est refusé');
 $competitionRepository->participant = false;
 expectSame(false, $competitionResponseService->savePerformance(1,42,0,['event_code'=>'100NL','time_rating'=>4],7), 'Un non-participant ne peut pas recevoir de performance');
 $competitionRepository->participant = true;
@@ -243,9 +249,9 @@ $spreadsheet->createSheet()->setTitle('Référentiel Dauphin')->fromArray([
     ['Propulsion', 'Se déplacer sur le ventre', 'Battements avec planche'],
 ]);
 $spreadsheet->createSheet()->setTitle('Compétitions')->fromArray([
-    ['Code compétition','Nom','Date début','Date fin','Lieu','Début inscriptions','Fin inscriptions','Catégories de compétiteurs','Fiche technique','Programme','Covoiturage','liveFFN','Album photo','Informations','Statut'],
-    ['MEETING-2026','Meeting de rentrée','2026-09-20','2026-09-20','Brest','2026-08-20','2026-09-10','U11;HANDI','https://example.test/meeting.pdf','https://example.test/programme.pdf','https://example.test/covoiturage','https://example.test/live','https://example.test/photos','Prévoir le pique-nique','Publiée'],
-    ['INTERNE-2026','Compétition interne','2026-10-10','2026-10-10','Brest','2026-09-01','2026-10-01','TOUS','','','','','','','Brouillon'],
+    ['Code compétition','Nom','Date début','Date fin','Lieu','Bassin','Début inscriptions','Fin inscriptions','Catégories de compétiteurs','Fiche technique','Programme','Covoiturage','liveFFN','Album photo','Informations','Statut'],
+    ['MEETING-2026','Meeting de rentrée','2026-09-20','2026-09-20','Brest','25m','2026-08-20','2026-09-10','U11;HANDI','https://example.test/meeting.pdf','https://example.test/programme.pdf','https://example.test/covoiturage','https://example.test/live','https://example.test/photos','Prévoir le pique-nique','Publiée'],
+    ['INTERNE-2026','Compétition interne','2026-10-10','2026-10-10','Brest','50m','2026-09-01','2026-10-01','TOUS','','','','','','','','Brouillon'],
 ]);
 $temporaryBase = tempnam(sys_get_temp_dir(), 'e2n-tests-');
 if ($temporaryBase === false) throw new RuntimeException('Impossible de créer le fichier de test temporaire.');
@@ -268,6 +274,7 @@ expectSame('Immersion', $workbook['data']['reference'][1]['domain'] ?? null, 'Do
 expectSame(false, array_key_exists('domainCode', $workbook['data']['reference'][0] ?? []), 'Code domaine absent des données analysées');
 expectSame(false, array_key_exists('skillCode', $workbook['data']['reference'][0] ?? []), 'Code compétence absent des données analysées');
 expectSame('MEETING-2026', $workbook['data']['competitions'][0]['code'] ?? null, 'Lecture du code stable de compétition');
+expectSame('25m', $workbook['data']['competitions'][0]['pool_length'] ?? null, 'Lecture de la longueur du bassin de compétition');
 expectSame('https://example.test/programme.pdf', $workbook['data']['competitions'][0]['program_url'] ?? null, 'Lecture du lien vers le programme');
 expectSame('https://example.test/covoiturage', $workbook['data']['competitions'][0]['carpool_url'] ?? null, 'Lecture du lien de covoiturage');
 expectSame('https://example.test/live', $workbook['data']['competitions'][0]['liveffn_url'] ?? null, 'Lecture du lien liveFFN');
@@ -276,6 +283,10 @@ expectSame(['U11', 'HANDI'], $workbook['data']['competitions'][0]['competition_c
 expectSame(0, $workbook['data']['competitions'][0]['target_all'] ?? null, 'Une liste de catégories ne cible pas tous les nageurs');
 expectSame('2026-09-10 23:59:59', $workbook['data']['competitions'][0]['registration_closes_at'] ?? null, 'Fin des inscriptions incluse jusqu’à la fin de journée');
 expectSame(1, $workbook['data']['competitions'][1]['target_all'] ?? null, 'TOUS cible toute la saison');
+$spreadsheet->getSheetByName('Compétitions')->setCellValue('F2','33m');
+(new Xlsx($spreadsheet))->save($workbookPath);
+$invalidPoolWorkbook=(new WorkbookReader())->read($workbookPath);
+expectSame(true, count(array_filter($invalidPoolWorkbook['errors'], static fn(string $error):bool=>str_contains($error,'bassin doit être 25m ou 50m')))>0, 'Une longueur de bassin inconnue est refusée');
 unlink($workbookPath);
 
 if ($failures !== []) {

@@ -87,6 +87,7 @@ class Installer
             start_date date NOT NULL,
             end_date date NULL,
             location varchar(180) NULL,
+            pool_length varchar(3) NULL,
             registration_opens_at datetime NOT NULL,
             registration_closes_at datetime NOT NULL,
             technical_document_url text NULL,

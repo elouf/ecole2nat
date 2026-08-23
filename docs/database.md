@@ -105,7 +105,8 @@ Les codes distribués en clair ne sont jamais enregistrés dans ces tables. Les 
 ## Compétitions
 
 - `e2n_competitions` contient les compétitions d'une saison, leur code stable,
-  leurs dates, leur période d'inscription, leur fiche technique, les liens
+  leurs dates, leur lieu, leur longueur de bassin `pool_length` (`25m`, `50m`
+  ou `NULL`), leur période d'inscription, leur fiche technique, les liens
   facultatifs `program_url`, `carpool_url`, `liveffn_url` et
   `photo_album_url`, et leur statut.
 - `e2n_competition_target_categories` conserve les catégories de compétiteur

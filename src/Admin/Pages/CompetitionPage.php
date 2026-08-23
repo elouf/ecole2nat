@@ -74,6 +74,7 @@ final class CompetitionPage
                 <tr><th><?php esc_html_e('Dates', 'ecole2nat'); ?></th><td><input type="date" name="start_date" value="<?php echo esc_attr($row['start_date']); ?>" required> — <input type="date" name="end_date" value="<?php echo esc_attr($row['end_date']); ?>"></td></tr>
                 <tr><th><?php esc_html_e('Inscriptions', 'ecole2nat'); ?></th><td><input type="date" name="registration_start" value="<?php echo esc_attr(substr($row['registration_opens_at'], 0, 10)); ?>" required> — <input type="date" name="registration_end" value="<?php echo esc_attr(substr($row['registration_closes_at'], 0, 10)); ?>" required></td></tr>
                 <tr><th><?php esc_html_e('Lieu', 'ecole2nat'); ?></th><td><input class="regular-text" name="location" value="<?php echo esc_attr($row['location']); ?>"></td></tr>
+                <tr><th><?php esc_html_e('Bassin', 'ecole2nat'); ?></th><td><select name="pool_length"><option value=""><?php esc_html_e('Non renseigné', 'ecole2nat'); ?></option><option value="25m" <?php selected($row['pool_length']??'', '25m'); ?>>25m</option><option value="50m" <?php selected($row['pool_length']??'', '50m'); ?>>50m</option></select></td></tr>
                 <tr><th><?php esc_html_e('Fiche technique', 'ecole2nat'); ?></th><td><input class="large-text" type="url" name="technical_document_url" value="<?php echo esc_attr($row['technical_document_url']); ?>"></td></tr>
                 <tr><th><?php esc_html_e('Programme', 'ecole2nat'); ?></th><td><input class="large-text" type="url" name="program_url" value="<?php echo esc_attr($row['program_url']); ?>"></td></tr>
                 <tr><th><?php esc_html_e('Covoiturage', 'ecole2nat'); ?></th><td><input class="large-text" type="url" name="carpool_url" value="<?php echo esc_attr($row['carpool_url']); ?>"></td></tr>
@@ -101,6 +102,7 @@ final class CompetitionPage
             'start_date' => sanitize_text_field($_POST['start_date'] ?? ''),
             'end_date' => sanitize_text_field($_POST['end_date'] ?? ''),
             'location' => sanitize_text_field(wp_unslash($_POST['location'] ?? '')),
+            'pool_length' => in_array($_POST['pool_length'] ?? '', ['25m','50m'], true) ? $_POST['pool_length'] : '',
             'registration_opens_at' => sanitize_text_field($_POST['registration_start'] ?? '') . ' 00:00:00',
             'registration_closes_at' => sanitize_text_field($_POST['registration_end'] ?? '') . ' 23:59:59',
             'technical_document_url' => esc_url_raw(wp_unslash($_POST['technical_document_url'] ?? '')),

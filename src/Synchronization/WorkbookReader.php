@@ -337,6 +337,8 @@ final class WorkbookReader
                 continue;
             }
             $status = match ($statusRaw) { 'brouillon', 'draft' => 'draft', 'annulee', 'annule', 'cancelled' => 'cancelled', default => 'published' };
+            $poolLength=mb_strtolower(trim($this->string($row,['bassin'])));
+            if($poolLength!==''&&!in_array($poolLength,['25m','50m'],true)){$errors[]=sprintf('Onglet Compétitions, ligne %d : le bassin doit être 25m ou 50m.',$row['_row']);continue;}
             $programRaw=$this->string($row,['programme']);$programUrl=esc_url_raw($programRaw);
             $carpoolRaw=$this->string($row,['covoiturage']);$carpoolUrl=esc_url_raw($carpoolRaw);
             $liveffnRaw=$this->string($row,['liveffn','live ffn']);$liveffnUrl=esc_url_raw($liveffnRaw);
@@ -348,6 +350,7 @@ final class WorkbookReader
             $competitions[$key] = [
                 'code'=>$code, 'name'=>$name, 'start_date'=>$startDate, 'end_date'=>$endDate,
                 'location'=>$this->string($row, ['lieu']),
+                'pool_length'=>$poolLength,
                 'registration_opens_at'=>$registrationStart . ' 00:00:00',
                 'registration_closes_at'=>$registrationEnd . ' 23:59:59',
                 'competition_categories'=>$competitionCategories, 'target_all'=>$all?1:0,

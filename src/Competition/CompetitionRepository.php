@@ -199,6 +199,16 @@ class CompetitionRepository
         return $wpdb->insert($table,$data+['competition_id'=>$competitionId,'swimmer_id'=>$swimmerId,'created_by'=>$userId,'created_at'=>$now])!==false;
     }
 
+    public function saveTimedPerformance(int $competitionId,int $swimmerId,int $performanceId,array $data,int $userId): int
+    {
+        global $wpdb;$table=Config::table('competition_performances');$now=current_time('mysql');
+        if($performanceId>0){
+            $updated=$wpdb->update($table,$data+['updated_by'=>$userId,'updated_at'=>$now],['id'=>$performanceId,'competition_id'=>$competitionId,'swimmer_id'=>$swimmerId]);
+            return $updated===false?0:$performanceId;
+        }
+        return $wpdb->insert($table,$data+['competition_id'=>$competitionId,'swimmer_id'=>$swimmerId,'created_by'=>$userId,'created_at'=>$now])===false?0:(int)$wpdb->insert_id;
+    }
+
     public function deletePerformance(int $competitionId,int $swimmerId,int $performanceId): bool
     {
         global $wpdb;

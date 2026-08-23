@@ -1,6 +1,9 @@
 # Changelog
 
-## Non publié — 0.20.0
+## Non publié — 0.21.0
+
+- Ajoute au mode terrain Coach un chronomètre de série avec départ commun, arrêt et enregistrement immédiats par nageur, saisie des commentaires, de la disqualification et de l'appréciation pendant la course, ainsi qu'une restauration après rechargement de la page.
+- Retire l'affichage redondant du chrono global et ajoute la longueur de bassin `25m` ou `50m` aux compétitions importées, corrigées dans le back-office et affichées dans les portails Coach et Parents ; porte le schéma à `0.12.8`.
 
 - Ajoute un accès à la fiche de performances Extranat du nageur dans les fiches et écrans de compétition Coach et Parents lorsqu'un numéro de licence est renseigné.
 - Permet à chaque coach de choisir les catégories affichées dans la liste des nageurs, mémorise ce choix dans son profil et ajoute la fiche Extranat à chaque nageur licencié de cette vue.

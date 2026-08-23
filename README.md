@@ -26,8 +26,9 @@ Exercice(s). Les inscriptions ne sont importées que lorsque la colonne
 La colonne `Compétition` de l'onglet Inscriptions accepte une ou plusieurs
 catégories de compétiteur séparées par `;`, par exemple `U11;HANDI`. Chaque
 changement est historisé à la date de sa synchronisation. L'onglet facultatif
-`Compétitions` utilise un code stable, une période de réponse et les catégories
-de compétiteur concernées. `TOUS` permet de cibler tous les nageurs actifs de
+`Compétitions` utilise un code stable, une période de réponse, un champ facultatif
+`Bassin` limité à `25m` ou `50m`, et les catégories de compétiteur concernées.
+`TOUS` permet de cibler tous les nageurs actifs de
 la saison, même sans catégorie de compétiteur. Les colonnes facultatives
 `Programme`, `Covoiturage`, `liveFFN` et `Album photo` ajoutent les boutons correspondants aux portails
 Parents et Coach lorsqu'une URL est renseignée.
@@ -52,6 +53,9 @@ répondu Oui sont engagés sur Extranat, ou forcer ce démarrage après alerte. 
 mode terrain suit uniquement les engagés, permet des ajouts manuels et conserve
 plusieurs performances par nageur avec épreuve, chrono, commentaire,
 disqualification et appréciation sur cinq.
+Il propose également un chronomètre de série : le coach choisit l'épreuve et les
+participants, lance un départ commun puis arrête et enregistre chaque nageur
+individuellement, tout en continuant à saisir ses observations pendant la course.
 Jusqu'à dix compétitions en cours sont épinglées sous l'en-tête Coach. Elles peuvent
 être clôturées puis redémarrées sans perdre ni verrouiller les performances.
 

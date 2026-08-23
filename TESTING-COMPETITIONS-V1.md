@@ -2,14 +2,14 @@
 
 ## Migration et synchronisation
 
-1. Mettre à jour le plugin sans le désactiver et vérifier la version DB `0.12.7`.
+1. Mettre à jour le plugin sans le désactiver et vérifier la version DB `0.12.8`.
 2. Vérifier les tables `e2n_competitions`,
    `e2n_competition_target_categories`,
    `e2n_swimmer_competition_category_states`,
    `e2n_swimmer_competition_state_categories` et
    `e2n_competition_registrations`, ainsi que leurs index uniques documentés.
 3. Importer un onglet `Compétitions` comportant Code compétition, Nom, Date
-   début, Date fin, Lieu, Début inscriptions, Fin inscriptions, Catégories de
+   début, Date fin, Lieu, Bassin, Début inscriptions, Fin inscriptions, Catégories de
    compétiteurs, Fiche technique, Programme, Covoiturage, liveFFN, Album photo,
    Informations et Statut.
 4. Relancer le même fichier : aucune compétition en double et aucune réponse
@@ -28,6 +28,8 @@
 10. Relancer deux fois un fichier inchangé : aucun nouvel état ne doit être
     créé. Vider ensuite la cellule et vérifier la création d'un état vide sans
     suppression de l'historique antérieur.
+11. Importer successivement `25m` puis `50m` dans la colonne `Bassin` et vérifier
+    leur conservation. Une autre valeur doit bloquer l'analyse avec une erreur.
 
 ## Portail Parents
 
@@ -120,10 +122,30 @@
     modifiables.
 13. Redémarrer la compétition avec le bouton Play : son raccourci doit revenir
     sans modifier la liste des participants ni les performances.
+14. Dans « Chronométrer une série », choisir une épreuve et au moins deux
+    participants. Vérifier que leurs cartes apparaissent, que Départ lance un
+    chrono commun et que chaque bouton Stop fige puis enregistre immédiatement
+    le temps propre au nageur sans arrêter les autres.
+15. Pendant la course, saisir un commentaire, une disqualification et une note,
+    puis arrêter le nageur : toutes les valeurs doivent être enregistrées. Les
+    modifications postérieures à l'arrêt doivent être sauvegardées automatiquement.
+16. Recharger la page pendant une série : l'épreuve, les participants, les temps
+    déjà arrêtés et le chronomètre encore actif doivent être restaurés.
+17. Simuler une erreur réseau lors d'un arrêt : le temps doit rester affiché,
+    l'erreur doit être visible et le bouton doit permettre de réessayer.
+18. Vérifier sur mobile/tablette la taille des boutons Départ et Stop, puis tester
+    au clavier le choix de l'épreuve, des participants et des évaluations.
+19. Forger l'appel AJAX avec nonce invalide, utilisateur non autorisé, nageur non
+    participant, épreuve inconnue ou chrono mal formé : aucun enregistrement ne
+    doit être créé.
+20. Vérifier que le chronomètre global n'est plus affiché : seuls les chronos des
+    nageurs sélectionnés évoluent et se figent individuellement.
+21. Vérifier que la liste Coach affiche Date · Catégorie · Lieu · Bassin, que la
+    fiche Coach affiche le bassin après le lieu et que la liste Parents fait de même.
 
 ## Administration
 
-1. Ouvrir Ecole2Nat' → Compétitions et corriger les dates, le lieu, les
+1. Ouvrir Ecole2Nat' → Compétitions et corriger les dates, le lieu, le bassin, les
    catégories, la fiche technique, le programme, le covoiturage, liveFFN,
    l'album photo, les informations et le statut.
 2. Vérifier qu'une correction ne supprime aucune réponse ni engagement.

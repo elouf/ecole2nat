@@ -141,6 +141,151 @@
             });
     }
 
+    document.querySelectorAll('[data-e2n-race-timer]').forEach(function (timer) {
+        var competitionId = timer.dataset.competitionId;
+        var eventSelect = timer.querySelector('[data-e2n-race-event]');
+        var play = timer.querySelector('[data-e2n-race-play]');
+        var reset = timer.querySelector('[data-e2n-race-reset]');
+        var message = timer.querySelector('[data-e2n-race-message]');
+        var selectors = Array.from(timer.querySelectorAll('[data-e2n-race-select]'));
+        var cards = Array.from(timer.querySelectorAll('[data-e2n-race-card]'));
+        var storageKey = 'e2n-race-' + competitionId;
+        var running = false;
+        var startMark = 0;
+        var startEpoch = 0;
+        var frame = 0;
+        var wakeLock = null;
+        var saveTimers = new WeakMap();
+
+        function formatElapsed(milliseconds) {
+            var centiseconds = Math.max(0, Math.floor(milliseconds / 10));
+            var minutes = Math.floor(centiseconds / 6000);
+            var seconds = Math.floor((centiseconds % 6000) / 100);
+            var hundredths = centiseconds % 100;
+            return minutes + ':' + String(seconds).padStart(2, '0') + '.' + String(hundredths).padStart(2, '0');
+        }
+        function cardFor(id) { return cards.find(function (card) { return card.dataset.swimmerId === String(id); }); }
+        function selectedCards() { return cards.filter(function (card) { return !card.hidden; }); }
+        function elapsed() { return running ? performance.now() - startMark : 0; }
+        function persist() {
+            if (!eventSelect.value || selectedCards().length === 0) { sessionStorage.removeItem(storageKey); return; }
+            var state = { event: eventSelect.value, running: running, startEpoch: startEpoch, swimmers: {} };
+            selectedCards().forEach(function (card) {
+                state.swimmers[card.dataset.swimmerId] = {
+                    performanceId: card.dataset.performanceId || '0', stopped: card.classList.contains('is-stopped'),
+                    time: card.querySelector('[data-e2n-race-time]').value,
+                    comment: card.querySelector('[data-e2n-race-comment]').value,
+                    dq: card.querySelector('[data-e2n-race-dq]').checked,
+                    rating: (card.querySelector('input[type="radio"]:checked') || {}).value || ''
+                };
+            });
+            sessionStorage.setItem(storageKey, JSON.stringify(state));
+        }
+        function tick() {
+            if (!running) return;
+            var value = formatElapsed(elapsed());
+            selectedCards().forEach(function (card) {
+                if (!card.classList.contains('is-stopped')) card.querySelector('[data-e2n-race-time]').value = value;
+            });
+            frame = window.requestAnimationFrame(tick);
+        }
+        function saveCard(card) {
+            var time = card.querySelector('[data-e2n-race-time]').value;
+            if (!time) return Promise.resolve();
+            var status = card.querySelector('[data-e2n-race-card-status]');
+            status.className = 'e2n-race-card-status is-saving'; status.textContent = e2nCoachAjax.saving;
+            return post({
+                action: 'e2n_coach_save_timed_performance', competition_id: competitionId,
+                swimmer_id: card.dataset.swimmerId, performance_id: card.dataset.performanceId || '0',
+                event_code: eventSelect.value, elapsed_time: time,
+                comment: card.querySelector('[data-e2n-race-comment]').value,
+                is_disqualified: card.querySelector('[data-e2n-race-dq]').checked ? '1' : '',
+                time_rating: (card.querySelector('input[type="radio"]:checked') || {}).value || '0'
+            }).then(function (json) {
+                card.dataset.performanceId = String(json.data.performance_id);
+                status.className = 'e2n-race-card-status is-saved'; status.textContent = json.data.message;
+                persist();
+            }).catch(function (error) {
+                status.className = 'e2n-race-card-status is-error'; status.textContent = error.message || e2nCoachAjax.error;
+                card.querySelector('[data-e2n-race-stop]').disabled = false;
+                throw error;
+            });
+        }
+        function finishIfComplete() {
+            if (selectedCards().every(function (card) { return card.classList.contains('is-stopped'); })) {
+                running = false; window.cancelAnimationFrame(frame); reset.hidden = false;
+                message.textContent = 'Série terminée.';
+                if (wakeLock) wakeLock.release().catch(function () {});
+                persist();
+            }
+        }
+        function toggleCard(selector) {
+            var card = cardFor(selector.value); if (!card) return;
+            card.hidden = !selector.checked;
+            if (!selector.checked) { card.classList.remove('is-stopped'); card.dataset.performanceId = '0'; }
+            persist();
+        }
+        selectors.forEach(function (selector) { selector.addEventListener('change', function () { toggleCard(selector); }); });
+        play.addEventListener('click', function () {
+            if (!eventSelect.value || selectedCards().length === 0) { message.textContent = e2nCoachAjax.selectRace; return; }
+            running = true; startMark = performance.now(); startEpoch = Date.now();
+            eventSelect.disabled = true; selectors.forEach(function (selector) { selector.disabled = true; });
+            selectedCards().forEach(function (card) { card.querySelector('[data-e2n-race-stop]').disabled = false; });
+            play.disabled = true; reset.hidden = false; message.textContent = 'Chronomètre en cours…';
+            if (navigator.wakeLock) navigator.wakeLock.request('screen').then(function (lock) { wakeLock = lock; }).catch(function () {});
+            persist(); tick();
+        });
+        timer.addEventListener('click', function (event) {
+            var stop = event.target.closest('[data-e2n-race-stop]'); if (!(stop instanceof HTMLButtonElement)) return;
+            var card = stop.closest('[data-e2n-race-card]');
+            if (!card.classList.contains('is-stopped')) {
+                card.querySelector('[data-e2n-race-time]').value = formatElapsed(elapsed());
+                card.classList.add('is-stopped'); stop.disabled = true;
+            }
+            saveCard(card).finally(finishIfComplete);
+        });
+        timer.addEventListener('input', function (event) {
+            var card = event.target.closest('[data-e2n-race-card]');
+            if (!card || card.dataset.performanceId === '0') { persist(); return; }
+            window.clearTimeout(saveTimers.get(card));
+            saveTimers.set(card, window.setTimeout(function () { saveCard(card).catch(function () {}); }, 500));
+        });
+        timer.addEventListener('change', function (event) {
+            var card = event.target.closest('[data-e2n-race-card]');
+            if (card && card.dataset.performanceId !== '0') saveCard(card).catch(function () {});
+        });
+        reset.addEventListener('click', function () {
+            if (running && !window.confirm(e2nCoachAjax.confirmRaceReset)) return;
+            running = false; window.cancelAnimationFrame(frame); sessionStorage.removeItem(storageKey);
+            eventSelect.disabled = false; eventSelect.value = ''; play.disabled = false; reset.hidden = true; message.textContent = '';
+            selectors.forEach(function (selector) { selector.checked = false; selector.disabled = false; });
+            cards.forEach(function (card) {
+                card.hidden = true; card.classList.remove('is-stopped'); card.dataset.performanceId = '0';
+                card.querySelector('[data-e2n-race-time]').value = ''; card.querySelector('[data-e2n-race-comment]').value = '';
+                card.querySelector('[data-e2n-race-dq]').checked = false; card.querySelectorAll('input[type="radio"]').forEach(function (radio) { radio.checked = false; });
+                card.querySelector('[data-e2n-race-card-status]').textContent = '';
+            });
+        });
+        try {
+            var restored = JSON.parse(sessionStorage.getItem(storageKey) || 'null');
+            if (restored && restored.event && restored.swimmers) {
+                eventSelect.value = restored.event;
+                Object.keys(restored.swimmers).forEach(function (id) {
+                    var selector = selectors.find(function (item) { return item.value === id; }); var card = cardFor(id); var saved = restored.swimmers[id];
+                    if (!selector || !card) return; selector.checked = true; card.hidden = false; card.dataset.performanceId = saved.performanceId || '0';
+                    card.querySelector('[data-e2n-race-time]').value = saved.time || ''; card.querySelector('[data-e2n-race-comment]').value = saved.comment || ''; card.querySelector('[data-e2n-race-dq]').checked = !!saved.dq;
+                    var rating = card.querySelector('input[type="radio"][value="' + saved.rating + '"]'); if (rating) rating.checked = true;
+                    if (saved.stopped) card.classList.add('is-stopped');
+                });
+                if (restored.running) {
+                    running = true; startEpoch = restored.startEpoch; startMark = performance.now() - Math.max(0, Date.now() - startEpoch);
+                    eventSelect.disabled = true; selectors.forEach(function (selector) { selector.disabled = true; }); play.disabled = true; reset.hidden = false;
+                    selectedCards().forEach(function (card) { card.querySelector('[data-e2n-race-stop]').disabled = card.classList.contains('is-stopped'); }); tick();
+                } else { reset.hidden = false; }
+            }
+        } catch (error) { sessionStorage.removeItem(storageKey); }
+    });
+
     document.addEventListener('click', function (event) {
         if (!(event.target instanceof Element)) return;
         var showButton = event.target.closest('[data-e2n-show-parent-code]');

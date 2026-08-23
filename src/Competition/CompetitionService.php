@@ -67,12 +67,24 @@ class CompetitionService
     public function performances(int $competitionId,int $swimmerId): array { return $this->repository->performances($competitionId,$swimmerId); }
     public function savePerformance(int $competitionId,int $swimmerId,int $performanceId,array $input,int $userId): bool
     {
-        $event=sanitize_key((string)($input['event_code']??''));$event=strtoupper($event);$rating=absint($input['time_rating']??0);
-        if(!$this->repository->isStarted($competitionId)||!$this->repository->isParticipant($competitionId,$swimmerId)||!in_array($event,self::EVENTS,true)||$rating>5)return false;
-        return $this->repository->savePerformance($competitionId,$swimmerId,$performanceId,['event_code'=>$event,'elapsed_time'=>sanitize_text_field((string)($input['elapsed_time']??'')),'comment'=>sanitize_textarea_field((string)($input['comment']??'')),'is_disqualified'=>!empty($input['is_disqualified'])?1:0,'time_rating'=>$rating>0?$rating:null],$userId);
+        $data=$this->performanceData($competitionId,$swimmerId,$input);
+        return $data!==null&&$this->repository->savePerformance($competitionId,$swimmerId,$performanceId,$data,$userId);
+    }
+    public function saveTimedPerformance(int $competitionId,int $swimmerId,int $performanceId,array $input,int $userId): array
+    {
+        $data=$this->performanceData($competitionId,$swimmerId,$input);
+        if($data===null||!preg_match('/^\d{1,3}:\d{2}\.\d{2}$/',$data['elapsed_time']))return ['success'=>false,'message'=>'invalid'];
+        $savedId=$this->repository->saveTimedPerformance($competitionId,$swimmerId,$performanceId,$data,$userId);
+        return ['success'=>$savedId>0,'message'=>$savedId>0?'saved':'error','performance_id'=>$savedId];
     }
     public function deletePerformance(int $competitionId,int $swimmerId,int $performanceId): bool
     { return $performanceId>0&&$this->repository->isStarted($competitionId)&&$this->repository->isParticipant($competitionId,$swimmerId)&&$this->repository->deletePerformance($competitionId,$swimmerId,$performanceId); }
+    private function performanceData(int $competitionId,int $swimmerId,array $input): ?array
+    {
+        $event=strtoupper(sanitize_key((string)($input['event_code']??'')));$rating=absint($input['time_rating']??0);
+        if(!$this->repository->isStarted($competitionId)||!$this->repository->isParticipant($competitionId,$swimmerId)||!in_array($event,self::EVENTS,true)||$rating>5)return null;
+        return ['event_code'=>$event,'elapsed_time'=>sanitize_text_field((string)($input['elapsed_time']??'')),'comment'=>sanitize_textarea_field((string)($input['comment']??'')),'is_disqualified'=>!empty($input['is_disqualified'])?1:0,'time_rating'=>$rating>0?$rating:null];
+    }
     public function setEngaged(int $competitionId, int $swimmerId, bool $engaged, int $userId): bool
     {
         $competition=$this->repository->find($competitionId);
