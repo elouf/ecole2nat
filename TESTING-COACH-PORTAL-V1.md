@@ -40,6 +40,10 @@
 4. Vérifier les colonnes et index documentés dans `docs/database.md`.
 5. Recharger une seconde fois : aucune erreur et aucune modification indésirable.
 6. Vérifier aussi une installation sur base vide.
+7. Depuis une base en `0.12.8`, charger le plugin sans le réactiver et vérifier
+   la création de `e2n_training_performances`, de ses index métier et la valeur
+   `0.13.0` de `e2n_db_version`, ainsi que la colonne et l'index `series_key`
+   des deux tables de performances. Recharger une seconde fois sans erreur.
 
 ## Semaine type
 
@@ -48,6 +52,20 @@
 3. Vérifier les horaires, les titulaires habituels et les groupes sans créneau reconnu.
 4. Cliquer sur un créneau : la liste des nageurs et l'évaluation collective sont directement accessibles.
 5. Vérifier l'absence de séance prévue, présence, remplacement et action de préparation.
+6. Sous la liste ou l'évaluation collective, choisir une épreuve et deux
+   nageurs dans « Chronométrer une série ». Vérifier que Départ reste désactivé
+   tant que l'un de ces choix manque, puis arrêter chaque nageur séparément.
+7. Vérifier l'enregistrement immédiat des deux chronos dans
+   `e2n_training_performances`, avec le groupe, la saison, le nageur et le coach.
+8. Répéter la même épreuve pour le même nageur : les deux tentatives doivent
+   être conservées. Tester aussi `25PAP`, `25DOS`, `25BRASSE` et `25NL`.
+9. Ouvrir la fiche Coach du nageur : « Historique des chronos » doit présenter
+   ensemble les entrées Entraînement et Compétition, dans l'ordre décroissant,
+   avec leur contexte et leur auteur.
+10. Forger l'appel AJAX avec un autre groupe, un nageur hors du groupe, un nonce
+    invalide ou un utilisateur non autorisé : aucune ligne ne doit être écrite.
+11. Vérifier que le module est initialement remplacé par le bouton
+    « Chronométrer une série », puis que ce bouton ouvre le module complet.
 
 ## Accès aux nageurs
 
@@ -104,3 +122,49 @@
    après rechargement et reconnexion du même coach.
 9. Vérifier que le choix d'un coach ne modifie pas celui d'un autre compte et
    que les liens `Fiche Extranat` ne sont présents que pour les licenciés.
+10. Ouvrir « Chronométrer une série » : seuls les nageurs appartenant aux
+    catégories cochées doivent être proposés, sans doublon. Cocher et décocher
+    plusieurs catégories doit mettre à jour cette liste immédiatement.
+11. Enregistrer deux nageurs issus de groupes différents et vérifier que chaque
+    chrono conserve le groupe réel du nageur et apparaît dans son historique.
+12. Supprimer un seul chrono après confirmation : les autres nageurs de la
+    série doivent rester enregistrés. Recharger et contrôler sa disparition.
+13. Supprimer ensuite une série entière : tous ses chronos, y compris ceux de
+    groupes différents, doivent disparaître sans toucher aux autres séries.
+14. Forger une suppression avec un identifiant, une clé de série, un groupe ou
+    un nonce incorrect : aucune performance ne doit être supprimée.
+15. Terminer entièrement une série, quitter la page puis revenir : le module
+    doit être vierge. Recharger en revanche pendant une course active doit
+    toujours restaurer l'épreuve, les nageurs et les chronos en cours.
+16. En mode réduit, vérifier qu'une poubelle apparaît sur chaque ligne après
+    l'enregistrement du chrono, reste utilisable sur smartphone et supprime
+    uniquement le chrono correspondant après confirmation. La ligne doit
+    disparaître et le nageur doit être décoché dans la liste des participants.
+17. Vérifier que « Nouvelle série » est présenté comme un bouton blanc bordé de
+    bleu et reste lisible et tactile sur téléphone.
+18. Avec un nageur possédant des chronos variés, ouvrir « Rapport des chronos »
+    et vérifier le regroupement dans l'ordre PAP, DOS, BRASSE, NL puis 4N, avec
+    les distances croissantes et les libellés `100 4N`, `200 4N`, `400 4N`.
+19. Pour chaque épreuve, contrôler que la courbe place les jours en abscisse et
+    les chronos en ordonnée, du temps le plus faible au plus élevé. Survoler les
+    points puis ouvrir le détail pour retrouver date, contexte, coach, note,
+    disqualification et commentaire.
+20. Vérifier une épreuve avec un seul temps, plusieurs temps le même jour et des
+    temps répartis sur plusieurs jours, sur ordinateur et smartphone.
+21. Survoler puis focaliser au clavier un point : la date et le chrono doivent
+    apparaître. Cliquer ou toucher un point doit maintenir cette information ;
+    cliquer ailleurs dans le graphique doit la masquer.
+22. Pour chaque épreuve, vérifier que la borne basse de l'axe vertical est
+    exactement le meilleur chrono du nageur et la borne haute exactement son
+    moins bon chrono, sans marge ajoutée. Avec un seul chrono, le point doit
+    rester centré sans erreur.
+23. Ouvrir la fiche Coach d'un nageur appartenant à une catégorie sans
+    compétence associée : aucun résumé « Progression » ni bloc de compétences
+    vide ne doit être affiché, tandis que le rapport des chronos reste
+    disponible si le nageur possède des temps.
+24. Vérifier que le rapport des chronos et toutes ses épreuves sont visibles au
+    chargement, mais que les graphiques sont masqués. Chaque épreuve doit
+    afficher son meilleur temps non disqualifié et sa date.
+25. Ouvrir puis masquer un graphique avec son bouton, puis utiliser « Afficher
+    tous les graphiques » et « Masquer tous les graphiques ». Vérifier les
+    libellés, les états `aria-expanded` et le comportement sur smartphone.

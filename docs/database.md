@@ -125,7 +125,30 @@ Les codes distribués en clair ne sont jamais enregistrés dans ces tables. Les 
   automatiquement ; `added_manually` distingue les ajouts décidés sur place.
 - `e2n_competition_performances` conserve plusieurs épreuves par participant :
   code d'épreuve, chrono libre, commentaire, disqualification, appréciation
-  du temps de 1 à 5 et auteurs de création ou modification.
+  du temps de 1 à 5 et auteurs de création ou modification. `series_key` est
+  nullable : il relie uniquement les performances issues d'un même départ
+  collectif ; une saisie individuelle conserve `NULL`.
+- `e2n_training_performances` conserve chaque chrono réalisé depuis un groupe
+  de la semaine type : groupe et saison au moment de la saisie, nageur, code
+  d'épreuve, chrono, commentaire, disqualification, appréciation et auteurs.
+  Plusieurs lignes peuvent porter la même épreuve pour préserver toutes les
+  tentatives. Les index `(swimmer_id, created_at)` et `(group_id, created_at)`
+  permettent de relire l'historique par nageur ou par groupe. Leur
+  `series_key` commun permet de supprimer atomiquement toutes les performances
+  enregistrées lors d'un même départ, y compris lorsque plusieurs groupes
+  étaient mélangés depuis la vue Catégories.
+
+La suppression d'un chrono collectif cible son identifiant et son contexte.
+La suppression d'une série cible son `series_key` et ne supprime aucune autre
+donnée métier. Les clés de série sont validées côté serveur et indexées dans
+les deux tables de performances.
+
+L'historique Coach des chronos réunit au rendu les performances d'entraînement
+et de compétition sans fusionner leurs cycles de vie. La date `created_at`
+représente le moment réel de la saisie ; aucune séance planifiée ou datée n'est
+créée. La suppression d'un nageur supprime ses chronos d'entraînement, tandis
+qu'un groupe ou une saison encore référencé par ces chronos ne peut pas être
+supprimé.
 
 `started_at` marque le passage en mode terrain. Une compétition est en cours
 tant que `closed_at` reste nul, puis clôturée lorsque cette date est renseignée.

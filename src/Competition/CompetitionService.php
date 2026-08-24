@@ -2,11 +2,12 @@
 
 namespace Ecole2Nat\Competition;
 
+use Ecole2Nat\Performance\EventCatalog;
+
 if (!defined('ABSPATH')) { exit; }
 
 class CompetitionService
 {
-    private const EVENTS=['50PAP','100PAP','200PAP','50DOS','100DOS','200DOS','50BRASSE','100BRASSE','200BRASSE','50NL','100NL','200NL','400NL','800NL','1500NL','1004N','2004N','4004N'];
     public function __construct(private ?CompetitionRepository $repository = null)
     {
         $this->repository ??= new CompetitionRepository();
@@ -53,7 +54,7 @@ class CompetitionService
         unset($row);return $rows;
     }
     public function coachDetail(int $competitionId): ?array { return $this->repository->coachDetail($competitionId); }
-    public function events(): array { return self::EVENTS; }
+    public function events(): array { return EventCatalog::all(); }
     public function unengagedYesNames(int $competitionId): array { return $this->repository->unengagedYesNames($competitionId); }
     public function start(int $competitionId,int $userId,bool $forced): array
     { $competition=$this->repository->find($competitionId);if($competition===null||($competition['status']??'')!=='published')return ['success'=>false,'message'=>'invalid'];$missing=$this->repository->unengagedYesNames($competitionId);if($missing!==[]&&!$forced)return ['success'=>false,'message'=>'missing','names'=>$missing];return ['success'=>$this->repository->start($competitionId,$userId,$forced),'message'=>'started']; }
@@ -74,15 +75,20 @@ class CompetitionService
     {
         $data=$this->performanceData($competitionId,$swimmerId,$input);
         if($data===null||!preg_match('/^\d{1,3}:\d{2}\.\d{2}$/',$data['elapsed_time']))return ['success'=>false,'message'=>'invalid'];
+        $seriesKey=$this->seriesKey((string)($input['series_key']??''));if($seriesKey==='')return ['success'=>false,'message'=>'invalid'];$data['series_key']=$seriesKey;
         $savedId=$this->repository->saveTimedPerformance($competitionId,$swimmerId,$performanceId,$data,$userId);
         return ['success'=>$savedId>0,'message'=>$savedId>0?'saved':'error','performance_id'=>$savedId];
     }
     public function deletePerformance(int $competitionId,int $swimmerId,int $performanceId): bool
     { return $performanceId>0&&$this->repository->isStarted($competitionId)&&$this->repository->isParticipant($competitionId,$swimmerId)&&$this->repository->deletePerformance($competitionId,$swimmerId,$performanceId); }
+    public function deleteSeries(int $competitionId,string $seriesKey): bool
+    { $seriesKey=$this->seriesKey($seriesKey);return $seriesKey!==''&&$this->repository->isStarted($competitionId)&&$this->repository->deleteSeries($competitionId,$seriesKey)>0; }
+    private function seriesKey(string $value): string
+    { $value=strtolower(trim($value));return preg_match('/^[a-z0-9-]{12,36}$/',$value)?$value:''; }
     private function performanceData(int $competitionId,int $swimmerId,array $input): ?array
     {
         $event=strtoupper(sanitize_key((string)($input['event_code']??'')));$rating=absint($input['time_rating']??0);
-        if(!$this->repository->isStarted($competitionId)||!$this->repository->isParticipant($competitionId,$swimmerId)||!in_array($event,self::EVENTS,true)||$rating>5)return null;
+        if(!$this->repository->isStarted($competitionId)||!$this->repository->isParticipant($competitionId,$swimmerId)||!EventCatalog::contains($event)||$rating>5)return null;
         return ['event_code'=>$event,'elapsed_time'=>sanitize_text_field((string)($input['elapsed_time']??'')),'comment'=>sanitize_textarea_field((string)($input['comment']??'')),'is_disqualified'=>!empty($input['is_disqualified'])?1:0,'time_rating'=>$rating>0?$rating:null];
     }
     public function setEngaged(int $competitionId, int $swimmerId, bool $engaged, int $userId): bool

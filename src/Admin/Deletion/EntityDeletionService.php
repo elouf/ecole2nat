@@ -42,6 +42,7 @@ final class EntityDeletionService
                 ['group_substitutions', 'group_id', __('des remplacements de coachs', 'ecole2nat')],
                 ['scheduled_sessions', 'group_id', __('des séances planifiées', 'ecole2nat')],
                 ['attendance', 'group_id', __('des pointages de présence', 'ecole2nat')],
+                ['training_performances', 'group_id', __('des chronos d’entraînement', 'ecole2nat')],
             ]),
             'swimmer' => $this->deleteSwimmer($id),
             'session' => $this->deleteSession($id),
@@ -100,6 +101,7 @@ final class EntityDeletionService
             ['swimmer_skill_levels', 'season_id', __('des évaluations', 'ecole2nat')],
             ['skill_level_history', 'season_id', __('de l’historique des progressions', 'ecole2nat')],
             ['competitions', 'season_id', __('des compétitions', 'ecole2nat')],
+            ['training_performances', 'season_id', __('des chronos d’entraînement', 'ecole2nat')],
         ]);
     }
 
@@ -115,6 +117,7 @@ final class EntityDeletionService
             $wpdb->delete(Config::table('attendance'), ['swimmer_id' => $id], ['%d']);
             $wpdb->delete(Config::table('competition_registrations'), ['swimmer_id' => $id], ['%d']);
             $wpdb->delete(Config::table('competition_performances'), ['swimmer_id' => $id], ['%d']);
+            $wpdb->delete(Config::table('training_performances'), ['swimmer_id' => $id], ['%d']);
             $wpdb->delete(Config::table('competition_participants'), ['swimmer_id' => $id], ['%d']);
             $stateIds = $wpdb->get_col($wpdb->prepare('SELECT id FROM ' . Config::table('swimmer_competition_category_states') . ' WHERE swimmer_id = %d', $id)) ?: [];
             foreach ($stateIds as $stateId) {

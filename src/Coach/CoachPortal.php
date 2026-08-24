@@ -6,6 +6,8 @@ use Ecole2Nat\Competition\CompetitionService;
 use Ecole2Nat\Evaluation\EvaluationService;
 use Ecole2Nat\ParentPortal\ParentAccessService;
 use Ecole2Nat\ParentPortal\ParentDistributionService;
+use Ecole2Nat\Performance\EventCatalog;
+use Ecole2Nat\Performance\PerformanceService;
 use Ecole2Nat\Support\Config;
 use Ecole2Nat\Support\ContactList;
 use Ecole2Nat\Support\Extranat;
@@ -20,6 +22,7 @@ class CoachPortal
     private ParentAccessService $parentAccess;
     private ParentDistributionService $parentDistribution;
     private CompetitionService $competitions;
+    private PerformanceService $performances;
     private string $competitionNotice = '';
     private array $competitionMissing = [];
 
@@ -31,6 +34,7 @@ class CoachPortal
         $this->parentAccess = new ParentAccessService();
         $this->parentDistribution = new ParentDistributionService();
         $this->competitions = new CompetitionService();
+        $this->performances = new PerformanceService();
     }
 
     public function register(): void
@@ -47,6 +51,9 @@ class CoachPortal
         add_action('wp_ajax_e2n_coach_save_competition_response', [$this, 'ajaxSaveCompetitionResponse']);
         add_action('wp_ajax_e2n_coach_set_competition_engaged', [$this, 'ajaxSetCompetitionEngaged']);
         add_action('wp_ajax_e2n_coach_save_timed_performance', [$this, 'ajaxSaveTimedPerformance']);
+        add_action('wp_ajax_e2n_coach_save_training_performance', [$this, 'ajaxSaveTrainingPerformance']);
+        add_action('wp_ajax_e2n_coach_delete_timed_performance', [$this, 'ajaxDeleteTimedPerformance']);
+        add_action('wp_ajax_e2n_coach_delete_timed_series', [$this, 'ajaxDeleteTimedSeries']);
         add_action('wp_ajax_e2n_coach_save_category_visibility', [$this, 'ajaxSaveCategoryVisibility']);
     }
 
@@ -100,6 +107,10 @@ class CoachPortal
             'loadingParentCode' => __('Récupération du code…', 'ecole2nat'),
             'selectRace' => __('Choisissez une épreuve et au moins un nageur.', 'ecole2nat'),
             'confirmRaceReset' => __('Abandonner le chronométrage en cours ?', 'ecole2nat'),
+            'confirmDeleteRaceTime' => __('Supprimer définitivement ce chrono ?', 'ecole2nat'),
+            'confirmDeleteRaceSeries' => __('Supprimer définitivement toute cette série et tous ses chronos ?', 'ecole2nat'),
+            'raceTimeDeleted' => __('Chrono supprimé.', 'ecole2nat'),
+            'raceSeriesDeleted' => __('Série supprimée.', 'ecole2nat'),
         ]);
         if (!is_user_logged_in()) return '<div class="e2n-coach-login"><p>' . esc_html__('Connectez-vous pour accéder à l’espace coach.', 'ecole2nat') . '</p><a class="e2n-btn" href="' . esc_url(wp_login_url(get_permalink())) . '">' . esc_html__('Se connecter', 'ecole2nat') . '</a></div>';
         if (!$this->access->canView()) return '<p>' . esc_html__('Votre compte ne possède pas l’accès coach.', 'ecole2nat') . '</p>';
@@ -189,6 +200,7 @@ class CoachPortal
         <?php if ($categories === []) : ?><section class="e2n-card"><p><?php esc_html_e('Aucun nageur actif à afficher.', 'ecole2nat'); ?></p></section><?php else : ?>
             <fieldset class="e2n-category-filters"><legend><?php esc_html_e('Catégories affichées', 'ecole2nat'); ?></legend><?php foreach ($categories as $categoryId => $categoryData) : ?><label><input type="checkbox" value="<?php echo (int) $categoryId; ?>" data-e2n-kind="category-visibility" <?php checked(!in_array((int) $categoryId, $hiddenCategories, true)); ?>> <span><?php echo esc_html($categoryData['name']); ?></span></label><?php endforeach; ?><span class="e2n-category-filter-status" data-e2n-category-filter-status aria-live="polite"></span></fieldset>
             <div class="e2n-category-list"><?php foreach ($categories as $categoryId => $categoryData) : $groups = $categoryData['groups']; ksort($groups, SORT_NATURAL | SORT_FLAG_CASE); ?><section class="e2n-card" data-e2n-category-section="<?php echo (int) $categoryId; ?>" <?php echo in_array((int) $categoryId, $hiddenCategories, true) ? 'hidden' : ''; ?>><h2><?php echo esc_html($categoryData['name']); ?></h2><?php foreach ($groups as $group => $rows) : ?><h3><?php echo esc_html($group); ?></h3><div class="e2n-swimmers"><?php foreach ($rows as $swimmer) : $this->categorySwimmerLink($swimmer); endforeach; ?></div><?php endforeach; ?></section><?php endforeach; ?></div>
+            <?php $uniqueSwimmers = []; foreach ($swimmers as $swimmer) $uniqueSwimmers[(int) $swimmer['id']] = $swimmer; $this->raceTimer('training-categories', 0, array_values($uniqueSwimmers), true, true); ?>
         <?php endif; ?></div><?php
     }
 
@@ -215,6 +227,7 @@ class CoachPortal
         <?php if ($context['skills'] !== []) : ?><section class="e2n-card"><h2><?php esc_html_e('Évaluation collective rapide', 'ecole2nat'); ?></h2><p><?php esc_html_e('Choisissez une compétence pour mettre à jour tout le groupe.', 'ecole2nat'); ?></p><div class="e2n-skill-picker">
         <?php $domain = ''; foreach ($context['skills'] as $skill) : if ($domain !== $skill['domain_name']) { $domain = $skill['domain_name']; echo '<h3>' . esc_html($domain) . '</h3>'; } ?><a class="e2n-skill-link" href="<?php echo esc_url($this->base(['e2n_group' => $groupId, 'e2n_collective_skill' => (int) $skill['id'], 'e2n_from' => $from])); ?>"><?php echo esc_html($skill['name']); ?></a><?php endforeach; ?>
         </div></section><?php endif;
+        $this->raceTimer('training', $groupId, $context['swimmers'], true);
     }
 
     private function swimmer(int $groupId, int $swimmerId, string $from): void
@@ -230,7 +243,8 @@ class CoachPortal
         $phones = ContactList::phones((string) ($data['swimmer']['responsible_phone'] ?? ''));
         $phone = $phones !== [] ? $this->phoneUri($phones[0]) : '';
         $emails = ContactList::emails((string) ($data['swimmer']['responsible_email'] ?? ''));
-        $previewUrl = $this->parentAccess->coachPreviewUrl($swimmerId); ?>
+        $previewUrl = $this->parentAccess->coachPreviewUrl($swimmerId);
+        $performanceHistory = $this->performances->historyForSwimmer($swimmerId); ?>
         <a class="e2n-back" href="<?php echo esc_url($from === 'week' ? $this->base(['e2n_group' => $groupId]) : $this->originUrl($from)); ?>">← <?php echo esc_html($from === 'week' ? __('Groupe', 'ecole2nat') : $this->originLabel($from)); ?></a>
         <article class="e2n-swimmer-profile">
             <header class="e2n-swimmer-heading">
@@ -243,14 +257,15 @@ class CoachPortal
                     <span class="e2n-parent-code-status" data-e2n-parent-code-status aria-live="polite"></span>
                 </div></details>
             </header>
-            <section class="e2n-progress-summary" aria-label="<?php esc_attr_e('Résumé de la progression', 'ecole2nat'); ?>"><div><strong><?php esc_html_e('Progression', 'ecole2nat'); ?></strong><span><?php echo esc_html(sprintf(__('%1$d acquises · %2$d en cours · %3$d au total', 'ecole2nat'), $acquired, $inProgress, $total)); ?></span></div><div class="e2n-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="<?php echo (int) $percentage; ?>"><span style="width:<?php echo (int) $percentage; ?>%"></span></div><b><?php echo (int) $percentage; ?> %</b></section>
-            <section class="e2n-card e2n-progress-card"><div class="e2n-autosave-status" data-e2n-save-status aria-live="polite"></div><div class="e2n-skills">
+            <?php if ($total > 0) : ?><section class="e2n-progress-summary" aria-label="<?php esc_attr_e('Résumé de la progression', 'ecole2nat'); ?>"><div><strong><?php esc_html_e('Progression', 'ecole2nat'); ?></strong><span><?php echo esc_html(sprintf(__('%1$d acquises · %2$d en cours · %3$d au total', 'ecole2nat'), $acquired, $inProgress, $total)); ?></span></div><div class="e2n-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="<?php echo (int) $percentage; ?>"><span style="width:<?php echo (int) $percentage; ?>%"></span></div><b><?php echo (int) $percentage; ?> %</b></section><?php endif; ?>
+            <?php $this->performanceHistory($performanceHistory); ?>
+            <?php if ($total > 0) : ?><section class="e2n-card e2n-progress-card"><div class="e2n-autosave-status" data-e2n-save-status aria-live="polite"></div><div class="e2n-skills">
                 <?php foreach ($domains as $domain => $skills) : ?><section class="e2n-domain"><h2><?php echo esc_html($domain); ?></h2>
                     <?php foreach ($skills as $skill) : ?><article class="e2n-skill"><div class="e2n-skill-name"><strong><?php echo esc_html($skill['name']); ?></strong><?php $this->history($skill['history']); ?></div><div class="e2n-choice-group e2n-choice-group--evaluation" role="radiogroup" aria-label="<?php echo esc_attr($skill['name']); ?>">
                     <?php foreach ($this->eval->statuses() as $value => $label) : ?><label class="e2n-choice e2n-choice--<?php echo esc_attr($value); ?>"><input type="radio" name="status[<?php echo (int) $skill['id']; ?>]" value="<?php echo esc_attr($value); ?>" data-e2n-kind="evaluation" data-group-id="<?php echo (int) $groupId; ?>" data-swimmer-id="<?php echo (int) $swimmerId; ?>" data-skill-id="<?php echo (int) $skill['id']; ?>" <?php checked($skill['status'], $value); ?>><span><?php echo esc_html($label); ?></span></label><?php endforeach; ?></div>
                     <details class="e2n-note-editor" <?php echo $skill['notes'] !== '' ? 'open' : ''; ?>><summary><?php echo esc_html($skill['notes'] !== '' ? __('Note interne renseignée', 'ecole2nat') : __('Ajouter une note', 'ecole2nat')); ?></summary><textarea rows="2" data-e2n-kind="note" data-group-id="<?php echo (int) $groupId; ?>" data-swimmer-id="<?php echo (int) $swimmerId; ?>" data-skill-id="<?php echo (int) $skill['id']; ?>" placeholder="<?php esc_attr_e('Note interne', 'ecole2nat'); ?>"><?php echo esc_textarea($skill['notes']); ?></textarea></details></article><?php endforeach; ?>
                 </section><?php endforeach; ?>
-            </div></section>
+            </div></section><?php endif; ?>
         </article><?php
     }
 
@@ -342,19 +357,19 @@ class CoachPortal
         <section class="e2n-card"><div class="e2n-competition-section-head"><h2><?php esc_html_e('Nageurs engagés','ecole2nat'); ?></h2><?php if(current_user_can('manage_options')):?><form method="post" onsubmit="return confirm('<?php echo esc_js(__('Revenir au suivi des inscriptions ? Les performances déjà saisies seront conservées.','ecole2nat')); ?>');"><?php wp_nonce_field('e2n_competition_day_'.$competitionId); ?><input type="hidden" name="e2n_competition_action" value="stop"><button class="e2n-link-button" type="submit"><?php esc_html_e('Revenir aux inscriptions','ecole2nat'); ?></button></form><?php endif; ?></div>
         <div class="e2n-swimmers"><?php foreach($participants as $participant):?><a href="<?php echo esc_url($this->base(['e2n_view'=>'competitions','e2n_competition'=>$competitionId,'e2n_competitor'=>(int)$participant['id']])); ?>"><strong><?php echo esc_html($participant['first_name'].' '.$participant['last_name']); ?></strong><span><?php echo esc_html($participant['group_name']??''); ?></span></a><?php endforeach; ?></div>
         <?php $available=$this->competitions->availableParticipants($competitionId);if($available!==[]):?><details class="e2n-add-competitor"><summary><?php esc_html_e('Ajouter un nageur non inscrit','ecole2nat'); ?></summary><form method="post" class="e2n-inline"><?php wp_nonce_field('e2n_competition_day_'.$competitionId); ?><input type="hidden" name="e2n_competition_action" value="add_participant"><select name="swimmer_id" required><option value=""><?php esc_html_e('Choisir un nageur…','ecole2nat'); ?></option><?php foreach($available as $swimmer):?><option value="<?php echo (int)$swimmer['id']; ?>"><?php echo esc_html($swimmer['first_name'].' '.$swimmer['last_name'].' · '.($swimmer['group_name']??'')); ?></option><?php endforeach; ?></select><button class="e2n-btn" type="submit"><?php esc_html_e('Ajouter','ecole2nat'); ?></button></form></details><?php endif; ?></section>
-        <?php $this->raceTimer($competitionId,$participants); ?><?php
+        <?php $this->raceTimer('competition',$competitionId,$participants); ?><?php
     }
 
-    private function raceTimer(int $competitionId,array $participants): void
+    private function raceTimer(string $contextType,int $contextId,array $participants,bool $collapsed=false,bool $filterCategories=false): void
     {
-        if($participants===[])return;$groups=['Papillon'=>['50PAP','100PAP','200PAP'],'Dos'=>['50DOS','100DOS','200DOS'],'Brasse'=>['50BRASSE','100BRASSE','200BRASSE'],'Nage libre'=>['50NL','100NL','200NL','400NL','800NL','1500NL'],'4 nages'=>['1004N','2004N','4004N']]; ?>
-        <section class="e2n-card e2n-race-timer" data-e2n-race-timer data-competition-id="<?php echo $competitionId; ?>">
-            <div class="e2n-race-heading"><div><h2><?php esc_html_e('Chronométrer une série','ecole2nat'); ?></h2><p><?php esc_html_e('Une épreuve, un départ commun, un arrêt individuel par nageur.','ecole2nat'); ?></p></div></div>
+        if($participants===[])return;$groups=EventCatalog::groups();if($collapsed):?><details class="e2n-race-launcher" data-e2n-race-launcher><summary><span aria-hidden="true">⏱</span> <?php esc_html_e('Chronométrer une série','ecole2nat'); ?></summary><?php endif; ?>
+        <section class="e2n-card e2n-race-timer" data-e2n-race-timer data-context-type="<?php echo esc_attr($contextType); ?>" data-context-id="<?php echo $contextId; ?>">
+            <div class="e2n-race-heading"><div><h2><?php echo esc_html($collapsed ? __('Préparer la série','ecole2nat') : __('Chronométrer une série','ecole2nat')); ?></h2><p><?php esc_html_e('Une épreuve, un départ commun, un arrêt individuel par nageur.','ecole2nat'); ?></p></div><button type="button" class="e2n-race-view-toggle" data-e2n-race-view-toggle data-compact-label="<?php esc_attr_e('Mode réduit','ecole2nat'); ?>" data-detailed-label="<?php esc_attr_e('Mode complet','ecole2nat'); ?>" aria-pressed="false"><span data-e2n-race-view-icon aria-hidden="true">▤</span> <span data-e2n-race-view-label><?php esc_html_e('Mode réduit','ecole2nat'); ?></span></button></div>
             <label class="e2n-race-event"><span><?php esc_html_e('Épreuve','ecole2nat'); ?></span><select data-e2n-race-event><option value=""><?php esc_html_e('Choisir une épreuve…','ecole2nat'); ?></option><?php foreach($groups as $label=>$events):?><optgroup label="<?php echo esc_attr($label); ?>"><?php foreach($events as $event):?><option value="<?php echo esc_attr($event); ?>"><?php echo esc_html($event); ?></option><?php endforeach; ?></optgroup><?php endforeach; ?></select></label>
-            <fieldset class="e2n-race-participants"><legend><?php esc_html_e('Participants','ecole2nat'); ?></legend><?php foreach($participants as $participant):$id=(int)$participant['id'];?><label><input type="checkbox" value="<?php echo $id; ?>" data-e2n-race-select><span><?php echo esc_html($participant['first_name'].' '.$participant['last_name']); ?><small><?php echo esc_html($participant['group_name']??''); ?></small></span></label><?php endforeach; ?></fieldset>
-            <div class="e2n-race-actions"><button type="button" class="e2n-btn e2n-race-play" data-e2n-race-play>▶ <?php esc_html_e('Départ','ecole2nat'); ?></button><button type="button" class="e2n-link-button" data-e2n-race-reset hidden><?php esc_html_e('Nouvelle série','ecole2nat'); ?></button><span data-e2n-race-message role="status"></span></div>
-            <div class="e2n-race-cards"><?php foreach($participants as $participant):$id=(int)$participant['id'];?><article class="e2n-race-card" data-e2n-race-card data-swimmer-id="<?php echo $id; ?>" data-performance-id="0" hidden><div class="e2n-race-card-head"><div><h3><?php echo esc_html($participant['first_name'].' '.$participant['last_name']); ?></h3><small><?php echo esc_html($participant['group_name']??''); ?></small></div><button type="button" data-e2n-race-stop disabled>■ <?php esc_html_e('Stop','ecole2nat'); ?></button></div><label><?php esc_html_e('Chrono','ecole2nat'); ?><input type="text" data-e2n-race-time placeholder="1:23.45"></label><fieldset><legend><?php esc_html_e('Évaluation du temps','ecole2nat'); ?></legend><div class="e2n-stars"><?php for($star=1;$star<=5;$star++):?><label><input type="radio" name="race_rating_<?php echo $id; ?>" value="<?php echo $star; ?>"><span><?php echo str_repeat('★',$star); ?></span></label><?php endfor; ?></div></fieldset><label><?php esc_html_e('Commentaire','ecole2nat'); ?><textarea rows="2" data-e2n-race-comment></textarea></label><label class="e2n-check"><input type="checkbox" data-e2n-race-dq> <?php echo esc_html(($participant['gender']??'')==='F'?__('Disqualifiée','ecole2nat'):__('Disqualifié','ecole2nat')); ?></label><span class="e2n-race-card-status" data-e2n-race-card-status role="status"></span></article><?php endforeach; ?></div>
-        </section><?php
+            <fieldset class="e2n-race-participants"><legend><?php esc_html_e('Participants','ecole2nat'); ?></legend><?php foreach($participants as $participant):$id=(int)$participant['id'];$categoryId=$filterCategories?(int)($participant['category_id']??0):0;?><label data-e2n-race-participant data-category-id="<?php echo $categoryId; ?>"><input type="checkbox" value="<?php echo $id; ?>" data-e2n-race-select><span><?php echo esc_html($participant['first_name'].' '.$participant['last_name']); ?><small><?php echo esc_html($participant['group_name']??''); ?></small></span></label><?php endforeach; ?></fieldset>
+            <div class="e2n-race-actions"><button type="button" class="e2n-btn e2n-race-play" data-e2n-race-play disabled>▶ <?php esc_html_e('Départ','ecole2nat'); ?></button><button type="button" class="e2n-link-button" data-e2n-race-reset hidden><?php esc_html_e('Nouvelle série','ecole2nat'); ?></button><button type="button" class="e2n-race-delete-series" data-e2n-race-delete-series hidden><?php esc_html_e('Supprimer la série','ecole2nat'); ?></button><span data-e2n-race-message role="status"></span></div>
+            <div class="e2n-race-cards"><?php foreach($participants as $participant):$id=(int)$participant['id'];$participantGroupId=$filterCategories?(int)($participant['group_id']??0):$contextId;$categoryId=$filterCategories?(int)($participant['category_id']??0):0;?><article class="e2n-race-card" data-e2n-race-card data-swimmer-id="<?php echo $id; ?>" data-group-id="<?php echo $participantGroupId; ?>" data-category-id="<?php echo $categoryId; ?>" data-performance-id="0" hidden><div class="e2n-race-card-head"><div><h3><?php echo esc_html($participant['first_name'].' '.$participant['last_name']); ?></h3></div><button type="button" data-e2n-race-stop disabled>■ <?php esc_html_e('Stop','ecole2nat'); ?></button></div><label class="e2n-race-time-field"><?php esc_html_e('Chrono','ecole2nat'); ?><input type="text" data-e2n-race-time placeholder="1:23.45"></label><fieldset><legend><?php esc_html_e('Évaluation du temps','ecole2nat'); ?></legend><div class="e2n-stars"><?php for($star=1;$star<=5;$star++):?><label><input type="radio" name="race_rating_<?php echo esc_attr($contextType.'_'.$contextId.'_'.$id); ?>" value="<?php echo $star; ?>"><span><?php echo str_repeat('★',$star); ?></span></label><?php endfor; ?></div></fieldset><label class="e2n-race-comment-field"><?php esc_html_e('Commentaire','ecole2nat'); ?><textarea rows="2" data-e2n-race-comment></textarea></label><label class="e2n-check"><input type="checkbox" data-e2n-race-dq> <?php echo esc_html(($participant['gender']??'')==='F'?__('Disqualifiée','ecole2nat'):__('Disqualifié','ecole2nat')); ?></label><div class="e2n-race-card-foot"><span class="e2n-race-card-status" data-e2n-race-card-status role="status"></span><button type="button" class="e2n-race-delete-time" data-e2n-race-delete-time hidden><?php esc_html_e('Supprimer ce chrono','ecole2nat'); ?></button></div></article><?php endforeach; ?></div>
+        </section><?php if($collapsed):?></details><?php endif;
     }
 
     private function competitionSwimmer(array $competition,array $swimmer): void
@@ -363,7 +378,7 @@ class CoachPortal
         <a class="e2n-back" href="<?php echo esc_url($this->base(['e2n_view'=>'competitions','e2n_competition'=>$competitionId])); ?>">← <?php esc_html_e('Participants','ecole2nat'); ?></a><section class="e2n-card"><div class="e2n-competition-swimmer-heading"><h2><?php echo esc_html($swimmer['first_name'].' '.$swimmer['last_name']); ?></h2><?php $this->extranatLink($swimmer); ?></div>
         <?php if($performances!==[]):?><div class="e2n-performance-list"><?php foreach($performances as $performance):$rating=(int)($performance['time_rating']??0);?><a class="<?php echo $rating>=1&&$rating<=5?'is-rating-'.$rating:'is-unrated'; ?>" href="<?php echo esc_url($this->base(['e2n_view'=>'competitions','e2n_competition'=>$competitionId,'e2n_competitor'=>$swimmerId,'e2n_performance'=>(int)$performance['id']])); ?>"><strong><?php echo esc_html($performance['event_code']); ?></strong><span><?php echo esc_html($performance['elapsed_time']?:__('Chrono non renseigné','ecole2nat')); ?><?php if($rating>0):?> · <?php echo esc_html(str_repeat('★',$rating)); ?><?php endif; ?><?php if(!empty($performance['is_disqualified'])):?> · <?php esc_html_e('Disqualification','ecole2nat'); ?><?php endif; ?></span></a><?php endforeach; ?></div><?php endif; ?>
         <form method="post" class="e2n-performance-form" data-e2n-performance-form data-performance-id="<?php echo (int)($editing['id']??0); ?>"><?php wp_nonce_field('e2n_competition_day_'.$competitionId); ?><input type="hidden" name="e2n_competition_action" value="save_performance"><input type="hidden" name="swimmer_id" value="<?php echo $swimmerId; ?>"><input type="hidden" name="performance_id" value="<?php echo (int)($editing['id']??0); ?>"><input type="hidden" name="event_code" value="<?php echo esc_attr($editing['event_code']??''); ?>" data-e2n-event-value>
-        <?php $eventGroups=['PAP'=>['50PAP','100PAP','200PAP'],'DOS'=>['50DOS','100DOS','200DOS'],'BRASSE'=>['50BRASSE','100BRASSE','200BRASSE'],'NL'=>['50NL','100NL','200NL','400NL','800NL','1500NL'],'4N'=>['1004N','2004N','4004N']]; ?><div class="e2n-event-grid" data-e2n-event-grid><?php foreach($eventGroups as $stroke=>$events):?><div class="e2n-event-row"><strong><?php echo esc_html($stroke); ?></strong><div><?php foreach($events as $event):?><button type="button" data-e2n-event="<?php echo esc_attr($event); ?>" class="<?php echo ($editing['event_code']??'')===$event?'is-selected':''; ?>"><?php echo esc_html($event); ?></button><?php endforeach; ?></div></div><?php endforeach; ?></div>
+        <?php $eventGroups=EventCatalog::groups(); ?><div class="e2n-event-grid" data-e2n-event-grid><?php foreach($eventGroups as $stroke=>$events):?><div class="e2n-event-row"><strong><?php echo esc_html($stroke); ?></strong><div><?php foreach($events as $event):?><button type="button" data-e2n-event="<?php echo esc_attr($event); ?>" class="<?php echo ($editing['event_code']??'')===$event?'is-selected':''; ?>"><?php echo esc_html($event); ?></button><?php endforeach; ?></div></div><?php endforeach; ?></div>
         <div class="e2n-performance-fields" data-e2n-performance-fields <?php echo $editing===null?'hidden':''; ?>><label><?php esc_html_e('Chrono','ecole2nat'); ?><input name="elapsed_time" value="<?php echo esc_attr($editing['elapsed_time']??''); ?>" placeholder="1:23.45"></label><fieldset><legend><?php esc_html_e('Évaluation du temps','ecole2nat'); ?></legend><div class="e2n-stars"><?php for($star=1;$star<=5;$star++):?><label><input type="radio" name="time_rating" value="<?php echo $star; ?>" <?php checked((int)($editing['time_rating']??0),$star); ?>><span><?php echo str_repeat('★',$star); ?></span></label><?php endfor; ?></div></fieldset><label><?php esc_html_e('Commentaire','ecole2nat'); ?><textarea name="comment" rows="3"><?php echo esc_textarea($editing['comment']??''); ?></textarea></label><label class="e2n-check"><input type="checkbox" name="is_disqualified" value="1" <?php checked((int)($editing['is_disqualified']??0),1); ?>> <?php echo esc_html(($swimmer['gender']??'')==='F'?__('Disqualifiée','ecole2nat'):__('Disqualifié','ecole2nat')); ?></label><div class="e2n-inline e2n-performance-actions"><button class="e2n-btn" type="submit"><?php esc_html_e('Enregistrer','ecole2nat'); ?></button><button class="e2n-link-button" type="button" data-e2n-event-cancel><?php esc_html_e('Annuler','ecole2nat'); ?></button><?php if($editing!==null):?><button class="e2n-delete-performance" type="submit" name="e2n_competition_action" value="delete_performance" onclick="return confirm('<?php echo esc_js(__('Supprimer définitivement cette épreuve ?','ecole2nat')); ?>');"><?php esc_html_e('Supprimer','ecole2nat'); ?></button><?php endif; ?></div></div></form></section><?php
     }
 
@@ -387,6 +402,57 @@ class CoachPortal
         if ($history === []) return; ?>
         <details class="e2n-skill-history"><summary aria-label="<?php esc_attr_e('Afficher l’historique', 'ecole2nat'); ?>">◷ <?php esc_html_e('Historique', 'ecole2nat'); ?></summary><ul><?php foreach ($history as $event) : ?><li><time><?php echo esc_html(wp_date('d/m/Y', strtotime((string) $event['changed_at']))); ?></time> · <?php echo esc_html($this->statusLabel((string) $event['status'])); ?> · <?php echo esc_html((string) ($event['evaluator_name'] ?: __('Coach', 'ecole2nat'))); ?></li><?php endforeach; ?></ul></details><?php
     }
+
+    private function performanceHistory(array $history): void
+    {
+        if ($history === []) return;
+        $byEvent = [];
+        foreach ($history as $performance) {
+            $event = strtoupper((string) ($performance['event_code'] ?? ''));
+            if (EventCatalog::contains($event)) $byEvent[$event][] = $performance;
+        }
+        if ($byEvent === []) return; ?>
+        <section class="e2n-card e2n-performance-history" data-e2n-performance-report><header class="e2n-performance-history-head"><div><strong><?php esc_html_e('Rapport des chronos', 'ecole2nat'); ?></strong><small><?php echo esc_html(sprintf(_n('%d chrono', '%d chronos', count($history), 'ecole2nat'), count($history))); ?></small></div><button type="button" data-e2n-toggle-all-charts data-show-label="<?php esc_attr_e('Afficher tous les graphiques', 'ecole2nat'); ?>" data-hide-label="<?php esc_attr_e('Masquer tous les graphiques', 'ecole2nat'); ?>" aria-expanded="false"><?php esc_html_e('Afficher tous les graphiques', 'ecole2nat'); ?></button></header><div class="e2n-performance-report"><?php foreach (EventCatalog::all() as $event) : if (empty($byEvent[$event])) continue; $performances = $byEvent[$event]; usort($performances, static fn(array $left, array $right): int => strcmp((string) $left['performed_at'], (string) $right['performed_at'])); $best = $this->bestPerformance($performances); ?><section class="e2n-performance-event"><header><h3><?php echo esc_html($this->eventLabel($event)); ?></h3><div class="e2n-performance-event-summary"><?php if ($best !== null) : ?><span><?php echo esc_html(sprintf(__('Meilleur : %1$s · %2$s', 'ecole2nat'), (string) $best['elapsed_time'], wp_date('d/m/Y', strtotime((string) $best['performed_at'])))); ?></span><?php endif; ?><button type="button" data-e2n-toggle-chart data-show-label="<?php esc_attr_e('Afficher le graphique', 'ecole2nat'); ?>" data-hide-label="<?php esc_attr_e('Masquer le graphique', 'ecole2nat'); ?>" aria-expanded="false"><?php esc_html_e('Afficher le graphique', 'ecole2nat'); ?></button></div></header><div data-e2n-event-chart hidden><?php $this->performanceChart($event, $performances); ?></div><details class="e2n-performance-details"><summary><?php esc_html_e('Voir le détail des temps', 'ecole2nat'); ?></summary><div class="e2n-performance-history-list"><?php foreach (array_reverse($performances) as $performance) : $this->performanceHistoryRow($performance); endforeach; ?></div></details></section><?php endforeach; ?></div></section><?php
+    }
+
+    private function bestPerformance(array $performances): ?array
+    {
+        $best = null;
+        $bestTime = null;
+        foreach ($performances as $performance) {
+            if (!empty($performance['is_disqualified'])) continue;
+            $time = $this->elapsedCentiseconds((string) ($performance['elapsed_time'] ?? ''));
+            if ($time !== null && ($bestTime === null || $time < $bestTime)) { $best = $performance; $bestTime = $time; }
+        }
+        return $best;
+    }
+
+    private function performanceChart(string $event, array $performances): void
+    {
+        $points = [];
+        foreach ($performances as $performance) {
+            $centiseconds = $this->elapsedCentiseconds((string) ($performance['elapsed_time'] ?? ''));
+            $timestamp = strtotime(substr((string) ($performance['performed_at'] ?? ''), 0, 10) . ' 00:00:00');
+            if ($centiseconds !== null && $timestamp !== false) $points[] = ['time' => $centiseconds, 'date' => $timestamp, 'row' => $performance];
+        }
+        if ($points === []) return;
+        $width=720;$height=230;$left=62;$right=18;$top=18;$bottom=42;$plotWidth=$width-$left-$right;$plotHeight=$height-$top-$bottom;
+        $dates=array_column($points,'date');$times=array_column($points,'time');$minDate=min($dates);$maxDate=max($dates);$minTime=min($times);$maxTime=max($times);$low=$minTime;$high=$maxTime;
+        $coordinates=[];foreach($points as $point){$x=$left+($maxDate===$minDate?$plotWidth/2:(($point['date']-$minDate)/($maxDate-$minDate))*$plotWidth);$y=$top+($high===$low?$plotHeight/2:(($high-$point['time'])/($high-$low))*$plotHeight);$coordinates[]=round($x,1).','.round($y,1);} ?>
+        <div class="e2n-performance-chart" data-e2n-performance-chart><output class="e2n-chart-tooltip" data-e2n-chart-tooltip aria-live="polite" hidden></output><svg viewBox="0 0 <?php echo $width.' '.$height; ?>" role="img" aria-label="<?php echo esc_attr(sprintf(__('Progression chronométrique en %s', 'ecole2nat'), $this->eventLabel($event))); ?>"><line class="e2n-chart-axis" x1="<?php echo $left; ?>" y1="<?php echo $top; ?>" x2="<?php echo $left; ?>" y2="<?php echo $height-$bottom; ?>"/><line class="e2n-chart-axis" x1="<?php echo $left; ?>" y1="<?php echo $height-$bottom; ?>" x2="<?php echo $width-$right; ?>" y2="<?php echo $height-$bottom; ?>"/><line class="e2n-chart-grid" x1="<?php echo $left; ?>" y1="<?php echo $top+$plotHeight/2; ?>" x2="<?php echo $width-$right; ?>" y2="<?php echo $top+$plotHeight/2; ?>"/><text class="e2n-chart-label" x="<?php echo $left-8; ?>" y="<?php echo $top+4; ?>" text-anchor="end"><?php echo esc_html($this->formatCentiseconds($high)); ?></text><text class="e2n-chart-label" x="<?php echo $left-8; ?>" y="<?php echo $height-$bottom+4; ?>" text-anchor="end"><?php echo esc_html($this->formatCentiseconds($low)); ?></text><text class="e2n-chart-label" x="<?php echo $left; ?>" y="<?php echo $height-12; ?>"><?php echo esc_html(wp_date('d/m/Y',$minDate)); ?></text><text class="e2n-chart-label" x="<?php echo $width-$right; ?>" y="<?php echo $height-12; ?>" text-anchor="end"><?php echo esc_html(wp_date('d/m/Y',$maxDate)); ?></text><?php if(count($coordinates)>1):?><polyline class="e2n-chart-line" points="<?php echo esc_attr(implode(' ',$coordinates)); ?>"/><?php endif; ?><?php foreach($points as $index=>$point):[$x,$y]=array_map('floatval',explode(',',$coordinates[$index]));$pointDate=wp_date('d/m/Y',$point['date']);$pointTime=(string)$point['row']['elapsed_time'];?><circle class="e2n-chart-point" cx="<?php echo $x; ?>" cy="<?php echo $y; ?>" r="5" tabindex="0" role="button" data-e2n-chart-point data-date="<?php echo esc_attr($pointDate); ?>" data-time="<?php echo esc_attr($pointTime); ?>" aria-label="<?php echo esc_attr($pointDate.' · '.$pointTime); ?>"><title><?php echo esc_html($pointDate.' · '.$pointTime); ?></title></circle><?php endforeach; ?></svg></div><?php
+    }
+
+    private function performanceHistoryRow(array $performance): void
+    {
+        $rating=(int)($performance['time_rating']??0);?><article><div><strong><?php echo esc_html((string)$performance['elapsed_time']); ?></strong><?php if($rating>0):?><span><?php echo esc_html(str_repeat('★',$rating)); ?></span><?php endif; ?><?php if(!empty($performance['is_disqualified'])):?><span><?php esc_html_e('Disqualification','ecole2nat'); ?></span><?php endif; ?></div><div><time><?php echo esc_html(wp_date('d/m/Y H:i',strtotime((string)$performance['performed_at']))); ?></time><span><?php echo esc_html($performance['source']==='competition'?sprintf(__('Compétition · %s','ecole2nat'),(string)$performance['context_name']):sprintf(__('Entraînement · %s','ecole2nat'),(string)$performance['context_name'])); ?></span><?php if(!empty($performance['coach_name'])):?><span><?php echo esc_html(sprintf(__('Saisi par %s','ecole2nat'),(string)$performance['coach_name'])); ?></span><?php endif; ?></div><?php if(!empty($performance['comment'])):?><p><?php echo nl2br(esc_html((string)$performance['comment'])); ?></p><?php endif; ?></article><?php
+    }
+
+    private function elapsedCentiseconds(string $elapsed): ?int
+    { return preg_match('/^(\d{1,3}):(\d{2})\.(\d{2})$/',$elapsed,$matches)?((int)$matches[1]*6000+(int)$matches[2]*100+(int)$matches[3]):null; }
+    private function formatCentiseconds(int $value): string
+    { return sprintf('%d:%02d.%02d',intdiv($value,6000),intdiv($value%6000,100),$value%100); }
+    private function eventLabel(string $event): string
+    { return preg_replace('/^(100|200|400)4N$/','$1 4N',$event)??$event; }
 
     public function ajaxSaveEvaluation(): void
     {
@@ -476,6 +542,59 @@ class CoachPortal
         $result=$this->competitions->saveTimedPerformance(absint($_POST['competition_id']??0),absint($_POST['swimmer_id']??0),absint($_POST['performance_id']??0),wp_unslash($_POST),get_current_user_id());
         if(empty($result['success']))wp_send_json_error(['message'=>__('Performance non enregistrée. Vérifiez les champs.','ecole2nat')],400);
         wp_send_json_success(['message'=>__('Performance enregistrée.','ecole2nat'),'performance_id'=>(int)$result['performance_id']]);
+    }
+
+    public function ajaxSaveTrainingPerformance(): void
+    {
+        check_ajax_referer('e2n_coach_ajax', 'nonce');
+        $groupId = absint($_POST['group_id'] ?? 0);
+        $swimmerId = absint($_POST['swimmer_id'] ?? 0);
+        if (!$this->access->canEvaluateGroup($groupId)) {
+            wp_send_json_error(['message' => __('Enregistrement non autorisé.', 'ecole2nat')], 403);
+        }
+        $evaluation = $this->eval->swimmerEvaluation($groupId, $swimmerId);
+        if ($evaluation === null) {
+            wp_send_json_error(['message' => __('Ce nageur n’appartient pas à ce groupe actif.', 'ecole2nat')], 403);
+        }
+        $result = $this->performances->saveTrainingTimed(
+            $groupId,
+            (int) $evaluation['group']['season_id'],
+            $swimmerId,
+            absint($_POST['performance_id'] ?? 0),
+            wp_unslash($_POST),
+            get_current_user_id()
+        );
+        if (empty($result['success'])) {
+            wp_send_json_error(['message' => __('Chrono non enregistré. Vérifiez les champs.', 'ecole2nat')], 400);
+        }
+        wp_send_json_success(['message' => __('Chrono d’entraînement enregistré.', 'ecole2nat'), 'performance_id' => (int) $result['performance_id']]);
+    }
+
+    public function ajaxDeleteTimedPerformance(): void
+    {
+        check_ajax_referer('e2n_coach_ajax', 'nonce');
+        $type=sanitize_key(wp_unslash((string)($_POST['context_type']??'')));$swimmerId=absint($_POST['swimmer_id']??0);$performanceId=absint($_POST['performance_id']??0);
+        if($type==='competition'){
+            if(!$this->access->canView()||!$this->competitions->deletePerformance(absint($_POST['competition_id']??0),$swimmerId,$performanceId))wp_send_json_error(['message'=>__('Chrono non supprimé.','ecole2nat')],400);
+        }else{
+            $groupId=absint($_POST['group_id']??0);if(!$this->access->canEvaluateGroup($groupId))wp_send_json_error(['message'=>__('Suppression non autorisée.','ecole2nat')],403);
+            $evaluation=$this->eval->swimmerEvaluation($groupId,$swimmerId);if($evaluation===null||!$this->performances->deleteTrainingPerformance($groupId,(int)$evaluation['group']['season_id'],$swimmerId,$performanceId))wp_send_json_error(['message'=>__('Chrono non supprimé.','ecole2nat')],400);
+        }
+        wp_send_json_success(['message'=>__('Chrono supprimé.','ecole2nat')]);
+    }
+
+    public function ajaxDeleteTimedSeries(): void
+    {
+        check_ajax_referer('e2n_coach_ajax', 'nonce');
+        $type=sanitize_key(wp_unslash((string)($_POST['context_type']??'')));$seriesKey=sanitize_text_field(wp_unslash((string)($_POST['series_key']??'')));
+        if($type==='competition'){
+            if(!$this->access->canView()||!$this->competitions->deleteSeries(absint($_POST['competition_id']??0),$seriesKey))wp_send_json_error(['message'=>__('Série non supprimée.','ecole2nat')],400);
+        }else{
+            $groups=$this->performances->trainingSeriesGroups($seriesKey);if($groups===[])wp_send_json_error(['message'=>__('Série introuvable.','ecole2nat')],404);
+            foreach($groups as $groupId)if(!$this->access->canEvaluateGroup($groupId))wp_send_json_error(['message'=>__('Suppression non autorisée.','ecole2nat')],403);
+            if(!$this->performances->deleteTrainingSeries($seriesKey))wp_send_json_error(['message'=>__('Série non supprimée.','ecole2nat')],400);
+        }
+        wp_send_json_success(['message'=>__('Série supprimée.','ecole2nat')]);
     }
 
     public function ajaxSaveCategoryVisibility(): void

@@ -215,6 +215,13 @@ class CompetitionRepository
         return $wpdb->delete(Config::table('competition_performances'),['id'=>$performanceId,'competition_id'=>$competitionId,'swimmer_id'=>$swimmerId],['%d','%d','%d'])===1;
     }
 
+    public function deleteSeries(int $competitionId,string $seriesKey): int
+    {
+        global $wpdb;
+        $deleted=$wpdb->delete(Config::table('competition_performances'),['competition_id'=>$competitionId,'series_key'=>$seriesKey],['%d','%s']);
+        return $deleted===false?-1:(int)$deleted;
+    }
+
     public function isParticipant(int $competitionId,int $swimmerId): bool
     { global $wpdb; return (int)$wpdb->get_var($wpdb->prepare('SELECT COUNT(*) FROM '.Config::table('competition_participants').' WHERE competition_id=%d AND swimmer_id=%d',$competitionId,$swimmerId))>0; }
     public function isStarted(int $competitionId): bool

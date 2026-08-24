@@ -142,6 +142,28 @@
     nageurs sélectionnés évoluent et se figent individuellement.
 21. Vérifier que la liste Coach affiche Date · Catégorie · Lieu · Bassin, que la
     fiche Coach affiche le bassin après le lieu et que la liste Parents fait de même.
+22. Sélectionner au moins quatre nageurs, basculer en `Mode réduit` avant puis
+    pendant la course et vérifier que chaque ligne ne conserve que le nom, le
+    chrono et le bouton Stop, sans interrompre ni réinitialiser les chronos.
+23. Revenir au `Mode complet` et vérifier que commentaires, disqualification,
+    appréciation et statut de sauvegarde ont conservé leurs valeurs. Recharger
+    ensuite la page : le mode choisi sur cet appareil doit être restauré.
+24. En mode complet, vérifier que le groupe du nageur n'est plus répété et que
+    le contrôle rouge de disqualification est identique à celui de la saisie
+    individuelle. En mode réduit à 390, 768 et 1024 px, vérifier que le nom, le
+    chrono et Stop restent centrés verticalement sur une même ligne.
+25. Vérifier que Départ reste grisé avec seulement une épreuve ou seulement un
+    nageur sélectionné, puis devient actif dès que les deux critères sont
+    remplis. Retirer l'un des deux avant le départ doit le désactiver à nouveau.
+26. Vérifier que `25PAP`, `25DOS`, `25BRASSE` et `25NL` sont proposés dans le
+    chronomètre collectif et dans la saisie individuelle, puis qu'ils sont
+    enregistrés comme les épreuves plus longues.
+27. Dans le chronomètre collectif, supprimer un chrono isolé puis une série
+    entière après leurs confirmations respectives. Vérifier que la première
+    action préserve les autres chronos et que la seconde ne supprime ni les
+    participants, ni leurs engagements, ni une autre série.
+28. Basculer en mode réduit après les arrêts et supprimer un chrono avec la
+    poubelle de sa ligne ; les autres chronos doivent rester présents.
 
 ## Administration
 

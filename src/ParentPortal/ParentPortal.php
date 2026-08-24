@@ -3,6 +3,8 @@
 namespace Ecole2Nat\ParentPortal;
 
 use Ecole2Nat\Competition\CompetitionService;
+use Ecole2Nat\Performance\EventCatalog;
+use Ecole2Nat\Performance\PerformanceService;
 use Ecole2Nat\Support\Config;
 use Ecole2Nat\Support\Extranat;
 
@@ -14,11 +16,13 @@ class ParentPortal
 {
     private ParentAccessService $service;
     private CompetitionService $competitions;
+    private PerformanceService $performances;
 
     public function __construct()
     {
         $this->service = new ParentAccessService();
         $this->competitions = new CompetitionService();
+        $this->performances = new PerformanceService();
     }
 
     public function register(): void
@@ -244,6 +248,7 @@ class ParentPortal
         $total = (int) $report['total'];
         $acquired = (int) $counts['acquired'];
         $percentage = $total > 0 ? (int) round(($acquired / $total) * 100) : 0;
+        $performanceHistory = $this->performances->historyForSwimmer((int) $swimmer['id']);
         ?>
         <?php if ($previewMode !== '') : ?>
             <div class="e2n-parent-alert e2n-parent-preview-banner">
@@ -321,6 +326,7 @@ class ParentPortal
             </div>
         </header>
 
+        <?php if ($total > 0) : ?>
         <div class="e2n-parent-summary-card">
             <div>
                 <span class="e2n-parent-summary-number"><?php echo esc_html((string) $acquired); ?></span>
@@ -402,6 +408,9 @@ class ParentPortal
                 </article>
             <?php endforeach; ?>
         </div>
+        <?php endif; ?>
+
+        <?php $this->renderPerformanceReport($performanceHistory); ?>
 
         <?php if (!empty($swimmer['parent_message'])) : ?>
             <aside class="e2n-parent-message-card">
@@ -411,6 +420,52 @@ class ParentPortal
         <?php endif; ?>
         <?php
     }
+
+    private function renderPerformanceReport(array $history): void
+    {
+        if ($history === []) return;
+        $byEvent = [];
+        foreach ($history as $performance) {
+            $event = strtoupper((string) ($performance['event_code'] ?? ''));
+            if (EventCatalog::contains($event)) $byEvent[$event][] = $performance;
+        }
+        if ($byEvent === []) return; ?>
+        <section class="e2n-parent-chrono-report" data-e2n-performance-report><header class="e2n-parent-chrono-head"><div><strong><?php esc_html_e('Rapport des chronos', 'ecole2nat'); ?></strong><small><?php echo esc_html(sprintf(_n('%d chrono', '%d chronos', count($history), 'ecole2nat'), count($history))); ?></small></div><button type="button" data-e2n-toggle-all-charts data-show-label="<?php esc_attr_e('Afficher tous les graphiques', 'ecole2nat'); ?>" data-hide-label="<?php esc_attr_e('Masquer tous les graphiques', 'ecole2nat'); ?>" aria-expanded="false"><?php esc_html_e('Afficher tous les graphiques', 'ecole2nat'); ?></button></header><div class="e2n-parent-performance-report"><?php foreach (EventCatalog::all() as $event) : if (empty($byEvent[$event])) continue; $performances = $byEvent[$event]; usort($performances, static fn(array $left, array $right): int => strcmp((string) $left['performed_at'], (string) $right['performed_at'])); $best = $this->bestPerformance($performances); ?><section class="e2n-parent-performance-event"><header><h2><?php echo esc_html($this->eventLabel($event)); ?></h2><div class="e2n-parent-performance-event-summary"><?php if ($best !== null) : ?><span><?php echo esc_html(sprintf(__('Meilleur : %1$s · %2$s', 'ecole2nat'), (string) $best['elapsed_time'], wp_date('d/m/Y', strtotime((string) $best['performed_at'])))); ?></span><?php endif; ?><button type="button" data-e2n-toggle-chart data-show-label="<?php esc_attr_e('Afficher le graphique', 'ecole2nat'); ?>" data-hide-label="<?php esc_attr_e('Masquer le graphique', 'ecole2nat'); ?>" aria-expanded="false"><?php esc_html_e('Afficher le graphique', 'ecole2nat'); ?></button></div></header><div data-e2n-event-chart hidden><?php $this->renderPerformanceChart($event, $performances); ?></div><details class="e2n-parent-performance-details"><summary><?php esc_html_e('Voir le détail des temps', 'ecole2nat'); ?></summary><div class="e2n-parent-performance-list"><?php foreach (array_reverse($performances) as $performance) : ?><article><div><strong><?php echo esc_html((string) $performance['elapsed_time']); ?></strong><?php if (!empty($performance['is_disqualified'])) : ?><span><?php esc_html_e('Disqualification', 'ecole2nat'); ?></span><?php endif; ?></div><div><time><?php echo esc_html(wp_date('d/m/Y H:i', strtotime((string) $performance['performed_at']))); ?></time><span><?php echo esc_html($performance['source'] === 'competition' ? sprintf(__('Compétition · %s', 'ecole2nat'), (string) $performance['context_name']) : sprintf(__('Entraînement · %s', 'ecole2nat'), (string) $performance['context_name'])); ?></span></div></article><?php endforeach; ?></div></details></section><?php endforeach; ?></div></section><?php
+    }
+
+    private function bestPerformance(array $performances): ?array
+    {
+        $best = null;
+        $bestTime = null;
+        foreach ($performances as $performance) {
+            if (!empty($performance['is_disqualified'])) continue;
+            $time = $this->elapsedCentiseconds((string) ($performance['elapsed_time'] ?? ''));
+            if ($time !== null && ($bestTime === null || $time < $bestTime)) { $best = $performance; $bestTime = $time; }
+        }
+        return $best;
+    }
+
+    private function renderPerformanceChart(string $event, array $performances): void
+    {
+        $points = [];
+        foreach ($performances as $performance) {
+            $centiseconds = $this->elapsedCentiseconds((string) ($performance['elapsed_time'] ?? ''));
+            $timestamp = strtotime(substr((string) ($performance['performed_at'] ?? ''), 0, 10) . ' 00:00:00');
+            if ($centiseconds !== null && $timestamp !== false) $points[] = ['time' => $centiseconds, 'date' => $timestamp, 'row' => $performance];
+        }
+        if ($points === []) return;
+        $width=720;$height=230;$left=62;$right=18;$top=18;$bottom=42;$plotWidth=$width-$left-$right;$plotHeight=$height-$top-$bottom;
+        $dates=array_column($points,'date');$times=array_column($points,'time');$minDate=min($dates);$maxDate=max($dates);$low=min($times);$high=max($times);
+        $coordinates=[];foreach($points as $point){$x=$left+($maxDate===$minDate?$plotWidth/2:(($point['date']-$minDate)/($maxDate-$minDate))*$plotWidth);$y=$top+($high===$low?$plotHeight/2:(($high-$point['time'])/($high-$low))*$plotHeight);$coordinates[]=round($x,1).','.round($y,1);} ?>
+        <div class="e2n-parent-performance-chart" data-e2n-performance-chart><output class="e2n-parent-chart-tooltip" data-e2n-chart-tooltip aria-live="polite" hidden></output><svg viewBox="0 0 <?php echo $width.' '.$height; ?>" role="img" aria-label="<?php echo esc_attr(sprintf(__('Progression chronométrique en %s', 'ecole2nat'), $this->eventLabel($event))); ?>"><line class="e2n-parent-chart-axis" x1="<?php echo $left; ?>" y1="<?php echo $top; ?>" x2="<?php echo $left; ?>" y2="<?php echo $height-$bottom; ?>"/><line class="e2n-parent-chart-axis" x1="<?php echo $left; ?>" y1="<?php echo $height-$bottom; ?>" x2="<?php echo $width-$right; ?>" y2="<?php echo $height-$bottom; ?>"/><line class="e2n-parent-chart-grid" x1="<?php echo $left; ?>" y1="<?php echo $top+$plotHeight/2; ?>" x2="<?php echo $width-$right; ?>" y2="<?php echo $top+$plotHeight/2; ?>"/><text class="e2n-parent-chart-label" x="<?php echo $left-8; ?>" y="<?php echo $top+4; ?>" text-anchor="end"><?php echo esc_html($this->formatCentiseconds($high)); ?></text><text class="e2n-parent-chart-label" x="<?php echo $left-8; ?>" y="<?php echo $height-$bottom+4; ?>" text-anchor="end"><?php echo esc_html($this->formatCentiseconds($low)); ?></text><text class="e2n-parent-chart-label" x="<?php echo $left; ?>" y="<?php echo $height-12; ?>"><?php echo esc_html(wp_date('d/m/Y',$minDate)); ?></text><text class="e2n-parent-chart-label" x="<?php echo $width-$right; ?>" y="<?php echo $height-12; ?>" text-anchor="end"><?php echo esc_html(wp_date('d/m/Y',$maxDate)); ?></text><?php if(count($coordinates)>1):?><polyline class="e2n-parent-chart-line" points="<?php echo esc_attr(implode(' ',$coordinates)); ?>"/><?php endif; ?><?php foreach($points as $index=>$point):[$x,$y]=array_map('floatval',explode(',',$coordinates[$index]));$pointDate=wp_date('d/m/Y',$point['date']);$pointTime=(string)$point['row']['elapsed_time'];?><circle class="e2n-parent-chart-point" cx="<?php echo $x; ?>" cy="<?php echo $y; ?>" r="5" tabindex="0" role="button" data-e2n-chart-point data-date="<?php echo esc_attr($pointDate); ?>" data-time="<?php echo esc_attr($pointTime); ?>" aria-label="<?php echo esc_attr($pointDate.' · '.$pointTime); ?>"><title><?php echo esc_html($pointDate.' · '.$pointTime); ?></title></circle><?php endforeach; ?></svg></div><?php
+    }
+
+    private function elapsedCentiseconds(string $elapsed): ?int
+    { return preg_match('/^(\d{1,3}):(\d{2})\.(\d{2})$/',$elapsed,$matches)?((int)$matches[1]*6000+(int)$matches[2]*100+(int)$matches[3]):null; }
+    private function formatCentiseconds(int $value): string
+    { return sprintf('%d:%02d.%02d',intdiv($value,6000),intdiv($value%6000,100),$value%100); }
+    private function eventLabel(string $event): string
+    { return preg_replace('/^(100|200|400)4N$/','$1 4N',$event)??$event; }
 
     private function renderParentNavigation(string $view): void
     { ?>

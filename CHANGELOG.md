@@ -2,6 +2,22 @@
 
 ## Non publié — 0.21.0
 
+- Masque les résumés et blocs de progression dans les portails Coach et Parents lorsqu'une catégorie ne possède aucune compétence, tout en conservant le rapport des chronos.
+- Ajoute au portail Parents le rapport chronométrique par épreuve avec courbes et détail des temps, sans exposer les commentaires internes, les étoiles ni l'identité du coach.
+- Laisse le rapport chronométrique ouvert, replie ses graphiques par défaut et ajoute des commandes globales ou par épreuve, avec le meilleur temps validé et sa date sur chaque ligne.
+- Réutilise le chronomètre de série sur chaque groupe de la semaine type, conserve tous les chronos d'entraînement et les réunit avec ceux de compétition dans l'historique de la fiche nageur.
+- Ajoute le chronomètre à la vue Catégories avec une liste de nageurs synchronisée sur les catégories cochées, dédupliquée, et replie les chronomètres hors compétition derrière un bouton d'ouverture.
+- Ajoute les épreuves `25PAP`, `25DOS`, `25BRASSE` et `25NL` aux chronométrages d'entraînement et de compétition, ainsi que la table `e2n_training_performances` ; porte le schéma à `0.12.9`.
+- Identifie durablement les départs collectifs et permet, après confirmation, de supprimer un chrono isolé ou toute sa série dans chacun des chronomètres ; porte le schéma à `0.13.0`.
+- Réinitialise le chronomètre lors d'un retour sur la page après une série terminée, tout en conservant la restauration de sécurité d'une course réellement en cours.
+- Affiche en mode réduit un bouton poubelle par nageur pour supprimer immédiatement son chrono sans repasser en mode complet.
+- Retire immédiatement la ligne d'un nageur après la suppression de son chrono et présente « Nouvelle série » comme un bouton secondaire blanc bordé de bleu.
+- Transforme le rapport Coach des chronos en groupes ordonnés par épreuve et ajoute pour chacun une courbe de progression par jour, avec le détail des temps conservé à la demande.
+- Affiche la date et le chrono d'un point de progression au survol, au focus ou au toucher, avec maintien de l'infobulle après un clic.
+- Utilise comme bornes verticales exactes le meilleur et le moins bon chrono du nageur pour chaque épreuve, sans valeurs artificielles d'encadrement.
+- Ajoute au chronomètre de série un mode réduit mémorisé sur l'appareil, limité au nom du nageur, à son chrono et au bouton Stop pour garder plusieurs arrêts visibles sur smartphone.
+- Aligne sur une seule ligne les trois contrôles du mode réduit, retire le groupe redondant des cartes complètes et harmonise leur contrôle de disqualification avec la saisie individuelle.
+- Désactive le bouton Départ du chronomètre tant qu'une épreuve et au moins un nageur ne sont pas sélectionnés.
 - Ajoute au mode terrain Coach un chronomètre de série avec départ commun, arrêt et enregistrement immédiats par nageur, saisie des commentaires, de la disqualification et de l'appréciation pendant la course, ainsi qu'une restauration après rechargement de la page.
 - Retire l'affichage redondant du chrono global et ajoute la longueur de bassin `25m` ou `50m` aux compétitions importées, corrigées dans le back-office et affichées dans les portails Coach et Parents ; porte le schéma à `0.12.8`.
 

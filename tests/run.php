@@ -10,6 +10,8 @@ use Ecole2Nat\Competition\CompetitionService;
 use Ecole2Nat\Competition\CompetitionRepository;
 use Ecole2Nat\ParentPortal\ParentAccessRepository;
 use Ecole2Nat\ParentPortal\ParentAccessService;
+use Ecole2Nat\Performance\PerformanceRepository;
+use Ecole2Nat\Performance\PerformanceService;
 use Ecole2Nat\Support\GroupScheduleParser;
 use Ecole2Nat\Support\ScheduleDurationCalculator;
 use Ecole2Nat\Support\Config;
@@ -21,6 +23,21 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 final class FakeCoachAccessRepository extends CoachAccessRepository
 {
+}
+
+final class FakePerformanceRepository extends PerformanceRepository
+{
+    public array $saved = [];
+
+    public function saveTrainingTimed(int $groupId, int $seasonId, int $swimmerId, int $performanceId, array $data, int $userId): int
+    {
+        $this->saved = compact('groupId', 'seasonId', 'swimmerId', 'performanceId', 'data', 'userId');
+        return 123;
+    }
+    public function deleteTrainingPerformance(int $groupId,int $seasonId,int $swimmerId,int $performanceId):bool
+    { $this->saved=compact('groupId','seasonId','swimmerId','performanceId');return true; }
+    public function trainingSeriesGroups(string $seriesKey):array{return [4,9];}
+    public function deleteTrainingSeries(string $seriesKey):int{$this->saved=compact('seriesKey');return 2;}
 }
 
 final class FakeParentAccessRepository extends ParentAccessRepository
@@ -77,6 +94,8 @@ final class FakeCompetitionRepository extends CompetitionRepository
     { $this->saved=$data+compact('competitionId','swimmerId','performanceId','userId');return $performanceId>0?$performanceId:91; }
     public function deletePerformance(int $competitionId,int $swimmerId,int $performanceId):bool
     { $this->saved=compact('competitionId','swimmerId','performanceId');return true; }
+    public function deleteSeries(int $competitionId,string $seriesKey):int
+    { $this->saved=compact('competitionId','seriesKey');return 2; }
     public function saveResponse(int $competitionId,int $swimmerId,string $response,string $comment,string $source,?int $userId,?bool $parentsOfficial=null,?string $attendanceDays=null):bool
     { $this->saved=compact('competitionId','swimmerId','response','comment','source','userId','parentsOfficial','attendanceDays');return true; }
 }
@@ -195,20 +214,33 @@ expectSame('', $competitionRepository->saved['attendanceDays'] ?? null, 'Un refu
 $competitionRepository->engaged = true;
 expectSame('engaged', $competitionResponseService->saveParentResponse(1,42,'no','',false,'')['message'], 'Une réponse parent est verrouillée après validation Extranat');
 $competitionRepository->engaged = false;
-expectSame(18, count($competitionResponseService->events()), 'Le référentiel terrain expose les 18 épreuves attendues');
+expectSame(22, count($competitionResponseService->events()), 'Le référentiel terrain expose les 22 épreuves attendues');
 expectSame(true, $competitionResponseService->savePerformance(1,42,0,['event_code'=>'100NL','elapsed_time'=>'1:02.34','comment'=>'Bonne course','time_rating'=>4],7), 'Une performance valide est enregistrée');
 expectSame('100NL', $competitionRepository->saved['event_code'] ?? null, 'Le code épreuve est normalisé et conservé');
-expectSame(false, $competitionResponseService->savePerformance(1,42,0,['event_code'=>'25NL','time_rating'=>4],7), 'Une épreuve inconnue est refusée');
+expectSame(true, $competitionResponseService->savePerformance(1,42,0,['event_code'=>'25NL','elapsed_time'=>'0:16.42','time_rating'=>4],7), 'Une épreuve de 25 mètres est acceptée en compétition');
+expectSame(false, $competitionResponseService->savePerformance(1,42,0,['event_code'=>'25FLY','time_rating'=>4],7), 'Une épreuve inconnue est refusée');
 expectSame(false, $competitionResponseService->savePerformance(1,42,0,['event_code'=>'100NL','time_rating'=>6],7), 'Une appréciation supérieure à cinq est refusée');
-$timed=$competitionResponseService->saveTimedPerformance(1,42,0,['event_code'=>'100NL','elapsed_time'=>'1:02.34','comment'=>'Série','time_rating'=>5],7);
+$timed=$competitionResponseService->saveTimedPerformance(1,42,0,['event_code'=>'100NL','elapsed_time'=>'1:02.34','comment'=>'Série','time_rating'=>5,'series_key'=>'series-test-123'],7);
 expectSame(true, $timed['success'], 'Un arrêt chronométré valide crée immédiatement une performance');
 expectSame(91, $timed['performance_id'], 'L’identifiant de la performance chronométrée est retourné au portail');
-expectSame(false, $competitionResponseService->saveTimedPerformance(1,42,0,['event_code'=>'100NL','elapsed_time'=>'62 secondes'],7)['success'], 'Un chrono forgé au mauvais format est refusé');
+expectSame(false, $competitionResponseService->saveTimedPerformance(1,42,0,['event_code'=>'100NL','elapsed_time'=>'62 secondes','series_key'=>'series-test-123'],7)['success'], 'Un chrono forgé au mauvais format est refusé');
 $competitionRepository->participant = false;
 expectSame(false, $competitionResponseService->savePerformance(1,42,0,['event_code'=>'100NL','time_rating'=>4],7), 'Un non-participant ne peut pas recevoir de performance');
 $competitionRepository->participant = true;
 expectSame(true, $competitionResponseService->deletePerformance(1,42,9), 'Une performance appartenant au participant peut être supprimée');
 expectSame(9, $competitionRepository->saved['performanceId'] ?? null, 'La suppression cible la performance demandée');
+expectSame(true, $competitionResponseService->deleteSeries(1,'series-test-123'), 'Une série de compétition identifiée peut être supprimée');
+
+$trainingRepository = new FakePerformanceRepository();
+$trainingService = new PerformanceService($trainingRepository);
+$trainingResult = $trainingService->saveTrainingTimed(4, 2, 42, 0, ['event_code' => '25pap', 'elapsed_time' => '0:18.37', 'comment' => 'Départ à travailler', 'time_rating' => 3, 'series_key' => 'series-test-456'], 7);
+expectSame(true, $trainingResult['success'], 'Un chrono d’entraînement valide est conservé');
+expectSame('25PAP', $trainingRepository->saved['data']['event_code'] ?? null, 'Le code d’épreuve d’entraînement est normalisé');
+expectSame(4, $trainingRepository->saved['groupId'] ?? null, 'Le chrono d’entraînement conserve son groupe');
+expectSame(false, $trainingService->saveTrainingTimed(4, 2, 42, 0, ['event_code' => '25PAP', 'elapsed_time' => '18 secondes', 'series_key' => 'series-test-456'], 7)['success'], 'Un chrono d’entraînement mal formé est refusé');
+expectSame(true, $trainingService->deleteTrainingPerformance(4,2,42,123), 'Un chrono d’entraînement identifié peut être supprimé');
+expectSame([4,9], $trainingService->trainingSeriesGroups('series-test-456'), 'Les groupes d’une série mixte sont retrouvés avant suppression');
+expectSame(true, $trainingService->deleteTrainingSeries('series-test-456'), 'Toute une série d’entraînement peut être supprimée');
 
 $service = accessService(['e2n_coach_access']);
 expectSame(true, $service->canEvaluateGroup(4), 'Les anciennes données de remplacement n’influencent plus les droits');

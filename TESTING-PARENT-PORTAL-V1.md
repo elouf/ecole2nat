@@ -99,3 +99,22 @@ vérifier que la barre d'administration ne masque pas l'en-tête Ecole2Nat'.
 2. Vérifier que `Fiche Extranat` apparaît près de son identité et ouvre sa
    fiche de performances FFN dans un nouvel onglet.
 3. Vérifier qu'aucun lien n'est affiché lorsque la licence est absente.
+
+## 8. Catégorie sans compétences et chronos
+
+1. Ouvrir le portail Parents d'un nageur appartenant à une catégorie sans
+   compétence associée.
+2. Vérifier que le résumé, la légende et les blocs de progression ne sont pas
+   affichés.
+3. Avec des temps d'entraînement et de compétition existants, ouvrir « Rapport
+   des chronos » et vérifier l'ordre des épreuves, les courbes, les dates et les
+   chronos détaillés.
+4. Vérifier qu'aucun commentaire interne, aucune étoile et aucun nom de coach
+   n'apparaît dans ce rapport, y compris dans le HTML de la page.
+5. Refaire le contrôle en accès familial, en prévisualisation Coach et en
+   prévisualisation administrateur.
+6. Vérifier que le rapport et les lignes d'épreuves sont toujours visibles,
+   tandis que les graphiques sont masqués au chargement.
+7. Contrôler le meilleur temps non disqualifié et sa date sur chaque ligne,
+   puis tester l'ouverture individuelle et les commandes globales d'affichage
+   et de masquage des graphiques sur ordinateur et smartphone.

@@ -129,6 +129,7 @@ class Installer
             id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
             competition_id bigint(20) unsigned NOT NULL,
             swimmer_id bigint(20) unsigned NOT NULL,
+            series_key varchar(36) NULL,
             event_code varchar(20) NOT NULL,
             elapsed_time varchar(30) NULL,
             comment text NULL,
@@ -140,6 +141,32 @@ class Installer
             updated_at datetime NULL,
             PRIMARY KEY  (id),
             KEY competition_swimmer (competition_id,swimmer_id),
+            KEY series_key (series_key),
+            KEY event_code (event_code)
+        ) {$charsetCollate};";
+        dbDelta($sql);
+
+        $tableName = Config::table('training_performances');
+        $sql = "CREATE TABLE {$tableName} (
+            id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+            group_id bigint(20) unsigned NOT NULL,
+            season_id bigint(20) unsigned NOT NULL,
+            swimmer_id bigint(20) unsigned NOT NULL,
+            series_key varchar(36) NULL,
+            event_code varchar(20) NOT NULL,
+            elapsed_time varchar(30) NOT NULL,
+            comment text NULL,
+            is_disqualified tinyint(1) NOT NULL DEFAULT 0,
+            time_rating tinyint(1) NULL,
+            created_by bigint(20) unsigned NOT NULL,
+            updated_by bigint(20) unsigned NULL,
+            created_at datetime NOT NULL,
+            updated_at datetime NULL,
+            PRIMARY KEY  (id),
+            KEY swimmer_date (swimmer_id,created_at),
+            KEY group_date (group_id,created_at),
+            KEY series_key (series_key),
+            KEY season_id (season_id),
             KEY event_code (event_code)
         ) {$charsetCollate};";
         dbDelta($sql);

@@ -56,6 +56,9 @@ disqualification et appréciation sur cinq.
 Il propose également un chronomètre de série : le coach choisit l'épreuve et les
 participants, lance un départ commun puis arrête et enregistre chaque nageur
 individuellement, tout en continuant à saisir ses observations pendant la course.
+Un bouton permet de remplacer les cartes complètes par des lignes réduites au
+nom, au chrono et à l'action Stop ; ce choix d'affichage est mémorisé sur
+l'appareil du coach.
 Jusqu'à dix compétitions en cours sont épinglées sous l'en-tête Coach. Elles peuvent
 être clôturées puis redémarrées sans perdre ni verrouiller les performances.
 
@@ -90,6 +93,14 @@ Les changements sont enregistrés immédiatement et alimentent la chronologie de
 Le portail utilise une mise en page autonome, pensée comme une application mobile et tablette : navigation compacte et persistante, actions secondaires regroupées, résumé de progression et notes internes affichées à la demande. Il conserve les hooks WordPress nécessaires aux extensions et à la barre d'administration, mais ne reprend ni l'en-tête, ni le pied de page, ni les colonnes du thème actif.
 
 Le portail Parents présente l'état courant de façon synthétique. Un contrôle replié sous chaque compétence permet d'afficher à la demande la date, le statut atteint et le coach ayant effectué chaque changement.
+
+Lorsqu'une catégorie ne possède aucune compétence, les portails Coach et Parents
+n'affichent aucun bloc de progression vide. Le rapport Parents conserve toutefois
+les chronos d'entraînement et de compétition, regroupés par épreuve, sans les
+commentaires internes, les appréciations en étoiles ni l'identité du coach.
+Le meilleur temps validé et sa date restent visibles pour chaque épreuve ; les
+graphiques sont repliés par défaut et peuvent être ouverts séparément ou tous
+ensemble.
 
 Comme le portail Coach, le portail Parents possède un gabarit autonome et responsive fourni par le plugin. La saisie du code, la fiche enfant et les prévisualisations Coach ou administrateur utilisent la même identité visuelle sans dépendre des fichiers du thème WordPress.
 
@@ -167,6 +178,19 @@ Cette action est irréversible et exige une double confirmation explicite.
 ## Mise à jour du schéma
 
 Ecole2Nat' compare automatiquement la version de base installée à `E2N_DB_VERSION`. Les migrations `dbDelta()` nécessaires sont appliquées au chargement après une mise à jour ; il n'est plus nécessaire de désactiver/réactiver l'extension pour ajouter les nouvelles colonnes.
+
+Depuis un groupe de la semaine type, le coach peut chronométrer une série avec
+les nageurs du groupe. Chaque arrêt est enregistré immédiatement comme chrono
+d'entraînement. La fiche Coach d'un nageur rassemble ensuite, par ordre
+chronologique, ses chronos d'entraînement et de compétition.
+La même action est disponible depuis la vue Catégories : seuls les nageurs des
+catégories actuellement cochées sont proposés. Sur ces deux vues, le module est
+replié par défaut pour ne pas dupliquer une longue liste de nageurs à l'écran.
+Après un départ collectif, le coach peut supprimer un chrono erroné sans
+toucher aux autres nageurs, ou supprimer toute la série après confirmation.
+La fiche Coach du nageur regroupe son rapport chronométrique par épreuve dans
+l'ordre des distances et des nages. Chaque groupe affiche une courbe de
+progression par jour et conserve le détail des saisies à la demande.
 
 
 ## Saisons et historique pédagogique
