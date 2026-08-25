@@ -5,6 +5,7 @@
 - Masque les résumés et blocs de progression dans les portails Coach et Parents lorsqu'une catégorie ne possède aucune compétence, tout en conservant le rapport des chronos.
 - Ajoute au portail Parents le rapport chronométrique par épreuve avec courbes et détail des temps, sans exposer les commentaires internes, les étoiles ni l'identité du coach.
 - Laisse le rapport chronométrique ouvert, replie ses graphiques par défaut et ajoute des commandes globales ou par épreuve, avec le meilleur temps validé et sa date sur chaque ligne.
+- Permet au coach de supprimer un temps depuis le rapport d'un nageur ou de purger tous ses chronos d'entraînement et de compétition après confirmation.
 - Réutilise le chronomètre de série sur chaque groupe de la semaine type, conserve tous les chronos d'entraînement et les réunit avec ceux de compétition dans l'historique de la fiche nageur.
 - Ajoute le chronomètre à la vue Catégories avec une liste de nageurs synchronisée sur les catégories cochées, dédupliquée, et replie les chronomètres hors compétition derrière un bouton d'ouverture.
 - Ajoute les épreuves `25PAP`, `25DOS`, `25BRASSE` et `25NL` aux chronométrages d'entraînement et de compétition, ainsi que la table `e2n_training_performances` ; porte le schéma à `0.12.9`.

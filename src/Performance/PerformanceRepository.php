@@ -74,4 +74,26 @@ class PerformanceRepository
         $deleted=$wpdb->delete(Config::table('training_performances'),['series_key'=>$seriesKey],['%s']);
         return $deleted===false?-1:(int)$deleted;
     }
+
+    public function deleteForSwimmer(string $source, int $swimmerId, int $performanceId): bool
+    {
+        global $wpdb;
+        $table = $source === 'competition'
+            ? Config::table('competition_performances')
+            : Config::table('training_performances');
+        return $wpdb->delete($table, ['id' => $performanceId, 'swimmer_id' => $swimmerId], ['%d', '%d']) === 1;
+    }
+
+    public function purgeForSwimmer(int $swimmerId): bool
+    {
+        global $wpdb;
+        $wpdb->query('START TRANSACTION');
+        $training = $wpdb->delete(Config::table('training_performances'), ['swimmer_id' => $swimmerId], ['%d']);
+        $competition = $training !== false
+            ? $wpdb->delete(Config::table('competition_performances'), ['swimmer_id' => $swimmerId], ['%d'])
+            : false;
+        $success = $training !== false && $competition !== false;
+        $wpdb->query($success ? 'COMMIT' : 'ROLLBACK');
+        return $success;
+    }
 }

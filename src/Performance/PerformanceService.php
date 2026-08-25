@@ -38,6 +38,10 @@ class PerformanceService
     { $seriesKey=$this->seriesKey($seriesKey);return $seriesKey===''?[]:$this->repository->trainingSeriesGroups($seriesKey); }
     public function deleteTrainingSeries(string $seriesKey): bool
     { $seriesKey=$this->seriesKey($seriesKey);return $seriesKey!==''&&$this->repository->deleteTrainingSeries($seriesKey)>0; }
+    public function deleteForSwimmer(string $source,int $swimmerId,int $performanceId): bool
+    { return in_array($source,['training','competition'],true)&&$swimmerId>0&&$performanceId>0&&$this->repository->deleteForSwimmer($source,$swimmerId,$performanceId); }
+    public function purgeForSwimmer(int $swimmerId): bool
+    { return $swimmerId>0&&$this->repository->purgeForSwimmer($swimmerId); }
     private function seriesKey(string $value): string
     { $value=strtolower(trim($value));return preg_match('/^[a-z0-9-]{12,36}$/',$value)?$value:''; }
 }

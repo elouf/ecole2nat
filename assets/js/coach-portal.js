@@ -202,6 +202,33 @@
             });
     }
 
+    document.addEventListener('click', function (event) {
+        if (!(event.target instanceof Element)) return;
+        var deleteTime = event.target.closest('[data-e2n-delete-swimmer-time]');
+        var purgeTimes = event.target.closest('[data-e2n-purge-swimmer-times]');
+        var button = deleteTime || purgeTimes;
+        if (!(button instanceof HTMLButtonElement)) return;
+        var confirmation = deleteTime ? e2nCoachAjax.confirmDeleteSwimmerTime : e2nCoachAjax.confirmPurgeSwimmerTimes;
+        if (!window.confirm(confirmation)) return;
+        button.disabled = true;
+        post(deleteTime ? {
+            action: 'e2n_coach_delete_swimmer_performance',
+            source: button.dataset.source || '',
+            performance_id: button.dataset.performanceId || '0',
+            group_id: button.dataset.groupId || '0',
+            swimmer_id: button.dataset.swimmerId || '0'
+        } : {
+            action: 'e2n_coach_purge_swimmer_performances',
+            group_id: button.dataset.groupId || '0',
+            swimmer_id: button.dataset.swimmerId || '0'
+        }).then(function () {
+            window.location.reload();
+        }).catch(function (error) {
+            button.disabled = false;
+            window.alert(error.message || e2nCoachAjax.error);
+        });
+    });
+
     document.querySelectorAll('[data-e2n-race-timer]').forEach(function (timer) {
         var contextType = timer.dataset.contextType || 'competition';
         var contextId = timer.dataset.contextId;

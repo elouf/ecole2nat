@@ -38,6 +38,10 @@ final class FakePerformanceRepository extends PerformanceRepository
     { $this->saved=compact('groupId','seasonId','swimmerId','performanceId');return true; }
     public function trainingSeriesGroups(string $seriesKey):array{return [4,9];}
     public function deleteTrainingSeries(string $seriesKey):int{$this->saved=compact('seriesKey');return 2;}
+    public function deleteForSwimmer(string $source,int $swimmerId,int $performanceId):bool
+    { $this->saved=compact('source','swimmerId','performanceId');return true; }
+    public function purgeForSwimmer(int $swimmerId):bool
+    { $this->saved=compact('swimmerId');return true; }
 }
 
 final class FakeParentAccessRepository extends ParentAccessRepository
@@ -241,6 +245,11 @@ expectSame(false, $trainingService->saveTrainingTimed(4, 2, 42, 0, ['event_code'
 expectSame(true, $trainingService->deleteTrainingPerformance(4,2,42,123), 'Un chrono d’entraînement identifié peut être supprimé');
 expectSame([4,9], $trainingService->trainingSeriesGroups('series-test-456'), 'Les groupes d’une série mixte sont retrouvés avant suppression');
 expectSame(true, $trainingService->deleteTrainingSeries('series-test-456'), 'Toute une série d’entraînement peut être supprimée');
+expectSame(true, $trainingService->deleteForSwimmer('competition',42,91), 'Un chrono de compétition peut être supprimé depuis la fiche nageur');
+expectSame(['source'=>'competition','swimmerId'=>42,'performanceId'=>91], $trainingRepository->saved, 'La suppression unitaire conserve sa source et détruit la ligne ciblée');
+expectSame(false, $trainingService->deleteForSwimmer('unknown',42,91), 'Une source de chrono inconnue est refusée');
+expectSame(true, $trainingService->purgeForSwimmer(42), 'Tous les chronos du nageur peuvent être purgés');
+expectSame(['swimmerId'=>42], $trainingRepository->saved, 'La purge cible uniquement le nageur demandé');
 
 $service = accessService(['e2n_coach_access']);
 expectSame(true, $service->canEvaluateGroup(4), 'Les anciennes données de remplacement n’influencent plus les droits');

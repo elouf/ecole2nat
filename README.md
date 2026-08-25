@@ -101,6 +101,9 @@ commentaires internes, les appréciations en étoiles ni l'identité du coach.
 Le meilleur temps validé et sa date restent visibles pour chaque épreuve ; les
 graphiques sont repliés par défaut et peuvent être ouverts séparément ou tous
 ensemble.
+Depuis la fiche Coach, chaque temps peut être supprimé individuellement et
+l'action « Purger les chronos » supprime, après confirmation, tout l'historique
+chronométrique du nageur, entraînements et compétitions compris.
 
 Comme le portail Coach, le portail Parents possède un gabarit autonome et responsive fourni par le plugin. La saisie du code, la fiche enfant et les prévisualisations Coach ou administrateur utilisent la même identité visuelle sans dépendre des fichiers du thème WordPress.
 

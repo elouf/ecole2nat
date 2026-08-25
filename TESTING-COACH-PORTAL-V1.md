@@ -168,3 +168,14 @@
 25. Ouvrir puis masquer un graphique avec son bouton, puis utiliser « Afficher
     tous les graphiques » et « Masquer tous les graphiques ». Vérifier les
     libellés, les états `aria-expanded` et le comportement sur smartphone.
+26. Dans le détail d'une épreuve, supprimer un temps après confirmation : il
+    doit disparaître du rapport et de la table d'entraînement ou de compétition
+    correspondante. Une performance de compétition supprimée ne doit conserver
+    aucune relation résiduelle avec cette compétition.
+27. Annuler puis confirmer « Purger les chronos » dans le menu Actions. Après
+    confirmation, toutes les performances d'entraînement et de compétition du
+    nageur doivent être supprimées, sans modifier les participants, réponses ou
+    engagements des compétitions.
+28. Forger les deux actions avec un nonce invalide, un autre nageur, un groupe
+    non autorisé, une source inconnue ou un identifiant inexistant : aucune
+    performance ne doit être supprimée.
