@@ -32,6 +32,8 @@ class PerformanceService
     }
 
     public function historyForSwimmer(int $swimmerId): array { return $this->repository->historyForSwimmer($swimmerId); }
+    public function countsForSwimmers(array $swimmerIds): array { return $this->repository->countsForSwimmers($swimmerIds); }
+    public function competitionCountsForSwimmers(int $competitionId,array $swimmerIds): array { return $this->repository->competitionCountsForSwimmers($competitionId,$swimmerIds); }
     public function deleteTrainingPerformance(int $groupId,int $seasonId,int $swimmerId,int $performanceId): bool
     { return $performanceId>0&&$this->repository->deleteTrainingPerformance($groupId,$seasonId,$swimmerId,$performanceId); }
     public function trainingSeriesGroups(string $seriesKey): array

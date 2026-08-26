@@ -86,6 +86,11 @@
 
 ## Déroulement de la compétition
 
+- Vérifier que la pastille verte de chaque nageur indique uniquement le nombre
+  d'épreuves déjà chronométrées dans la compétition consultée, dans le suivi des
+  réponses puis dans la liste des engagés après démarrage. Les temps d'entraînement
+  et des autres compétitions ne doivent pas être comptés ; aucun badge à zéro.
+
 1. Conserver un nageur ayant répondu Oui sans engagement Extranat puis cliquer
    sur Démarrer : le démarrage doit être bloqué et son nom affiché.
 2. Utiliser le lien de forçage : seuls les nageurs engagés Extranat doivent

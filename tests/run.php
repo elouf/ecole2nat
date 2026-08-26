@@ -42,6 +42,8 @@ final class FakePerformanceRepository extends PerformanceRepository
     { $this->saved=compact('source','swimmerId','performanceId');return true; }
     public function purgeForSwimmer(int $swimmerId):bool
     { $this->saved=compact('swimmerId');return true; }
+    public function countsForSwimmers(array $swimmerIds):array{return [42=>3,57=>1];}
+    public function competitionCountsForSwimmers(int $competitionId,array $swimmerIds):array{return $competitionId===8?[42=>2]:[];}
 }
 
 final class FakeParentAccessRepository extends ParentAccessRepository
@@ -237,6 +239,8 @@ expectSame(true, $competitionResponseService->deleteSeries(1,'series-test-123'),
 
 $trainingRepository = new FakePerformanceRepository();
 $trainingService = new PerformanceService($trainingRepository);
+expectSame([42=>3,57=>1],$trainingService->countsForSwimmers([42,57]),'Les compteurs de chronos sont exposés aux listes du portail Coach');
+expectSame([42=>2],$trainingService->competitionCountsForSwimmers(8,[42,57]),'Le compteur d’une compétition est limité aux épreuves de cette compétition');
 $trainingResult = $trainingService->saveTrainingTimed(4, 2, 42, 0, ['event_code' => '25pap', 'elapsed_time' => '0:18.37', 'comment' => 'Départ à travailler', 'time_rating' => 3, 'series_key' => 'series-test-456'], 7);
 expectSame(true, $trainingResult['success'], 'Un chrono d’entraînement valide est conservé');
 expectSame('25PAP', $trainingRepository->saved['data']['event_code'] ?? null, 'Le code d’épreuve d’entraînement est normalisé');

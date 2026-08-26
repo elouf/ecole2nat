@@ -2,6 +2,8 @@
 
 ## Non publié — 0.21.0
 
+- Ajoute aux administrateurs un accès direct au portail Coach depuis le menu Ecole2Nat' et l'écran de gestion des coachs.
+- Affiche une pastille bleue du nombre total de chronos dans les vues Catégories et groupe de la Semaine type, une pastille verte limitée aux épreuves déjà réalisées dans la compétition consultée, et masque les compteurs d'évaluation lorsque la catégorie n'a aucune compétence.
 - Masque les résumés et blocs de progression dans les portails Coach et Parents lorsqu'une catégorie ne possède aucune compétence, tout en conservant le rapport des chronos.
 - Ajoute au portail Parents le rapport chronométrique par épreuve avec courbes et détail des temps, sans exposer les commentaires internes, les étoiles ni l'identité du coach.
 - Laisse le rapport chronométrique ouvert, replie ses graphiques par défaut et ajoute des commandes globales ou par épreuve, avec le meilleur temps validé et sa date sur chaque ligne.

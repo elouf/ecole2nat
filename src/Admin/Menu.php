@@ -172,7 +172,25 @@ class Menu
             [new ParentAccessPage(), 'render']
         );
 
+        $this->addCoachPortalLink();
+
         add_action('admin_head', [$this, 'hideInternalMenuItems']);
+    }
+
+    private function addCoachPortalLink(): void
+    {
+        $pageId = (int) get_option('e2n_coach_page_id', 0);
+        $url = $pageId > 0 ? get_permalink($pageId) : false;
+        if (!is_string($url) || $url === '') {
+            return;
+        }
+
+        global $submenu;
+        $submenu['ecole2nat'][] = [
+            __('Portail Coach', 'ecole2nat'),
+            'manage_options',
+            $url,
+        ];
     }
 
     public function hideInternalMenuItems(): void

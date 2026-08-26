@@ -23,7 +23,9 @@ class CoachPage
         $groups = (new GroupService())->active();
         ?>
         <div class="wrap e2n-admin">
-            <h1><?php esc_html_e('Coachs', 'ecole2nat'); ?></h1>
+            <h1 class="wp-heading-inline"><?php esc_html_e('Coachs', 'ecole2nat'); ?></h1>
+            <?php $coachPageId=(int)get_option('e2n_coach_page_id',0);$coachUrl=$coachPageId>0?get_permalink($coachPageId):false;if(is_string($coachUrl)&&$coachUrl!==''): ?><a class="page-title-action" href="<?php echo esc_url($coachUrl); ?>"><?php esc_html_e('Ouvrir le portail Coach','ecole2nat'); ?></a><?php endif; ?>
+            <hr class="wp-header-end">
             <?php if ($notice === 'saved') : ?>
                 <div class="notice notice-success"><p><?php esc_html_e('Modifications enregistrées.', 'ecole2nat'); ?></p></div>
             <?php elseif ($notice === 'error') : ?>

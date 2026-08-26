@@ -45,6 +45,11 @@ compétition proposent aussi un accès direct à ses performances Extranat.
 Dans la vue Coach « Nageurs par catégorie », chaque coach peut masquer les
 catégories dont il n'a pas besoin ; cette préférence est conservée dans son
 profil WordPress.
+Une pastille sur chaque nageur indique le nombre cumulé de chronos d'entraînement
+et de compétition enregistrés dans les vues Catégories et les groupes de la
+Semaine type. Dans une compétition, une pastille verte indique uniquement le
+nombre d'épreuves déjà chronométrées pendant cette compétition. Les pastilles
+sont masquées lorsque leur total est nul.
 Depuis la liste du back-office, un administrateur peut supprimer définitivement
 une compétition après confirmation ; ses réponses et engagements sont alors
 supprimés avec elle.
@@ -83,6 +88,9 @@ Le module Évaluations permet de suivre le niveau courant de chaque nageur sur l
 
 
 ## Portail Coach
+
+Les administrateurs peuvent ouvrir directement le portail Coach depuis le menu
+**Ecole2Nat' → Portail Coach** ou depuis l'écran **Coachs**, sans recevoir le rôle Coach.
 
 Le shortcode `[e2n_coach_portal]` propose trois accès complémentaires aux nageurs : liste alphabétique avec recherche, classement par catégorie et semaine type permanente construite depuis les créneaux des groupes. Aucun créneau n'est associé à une date et aucune préparation de séance n'est requise. Depuis une fiche d'évaluation, un coach peut ouvrir une prévisualisation sécurisée de la fiche Parents, afficher et copier le code permanent, ou le renvoyer à l'adresse responsable enregistrée.
 

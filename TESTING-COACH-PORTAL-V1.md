@@ -1,5 +1,15 @@
 # Recette — Portail Coach simplifié
 
+## Accès administrateur
+
+1. Depuis le back-office avec un administrateur, cliquer sur
+   **Ecole2Nat' → Portail Coach** et vérifier l'ouverture du portail avec toutes
+   les vues et tous les groupes actifs.
+2. Vérifier que le bouton **Ouvrir le portail Coach** de l'écran Coach mène à la
+   même page, sans ajouter le rôle Coach au compte administrateur.
+3. Vérifier que ces deux accès ne sont pas proposés à un utilisateur sans la
+   capacité `manage_options` et qu'une page Coach absente ne produit aucun lien cassé.
+
 ## Barre WordPress et menu utilisateur
 
 1. Avec un compte Coach non administrateur, vérifier que la barre WordPress
@@ -66,6 +76,11 @@
     invalide ou un utilisateur non autorisé : aucune ligne ne doit être écrite.
 11. Vérifier que le module est initialement remplacé par le bouton
     « Chronométrer une série », puis que ce bouton ouvre le module complet.
+12. Après ouverture d'un groupe, vérifier que chaque nageur possédant des temps
+    affiche la même pastille de total que dans la vue Catégories.
+13. Pour un groupe dont la catégorie ne possède aucune compétence, vérifier que
+    « 0 acquis · 0 en cours » n'est affiché pour aucun nageur, sans masquer les
+    pastilles de chronos ni les pictogrammes de santé et de droit à l'image.
 
 ## Accès aux nageurs
 
@@ -74,12 +89,16 @@
 3. Vérifier que le message vide apparaît lorsqu'aucun nageur ne correspond.
 4. Dans **Catégories**, vérifier le regroupement par catégorie puis par groupe.
 5. Dans les deux listes, vérifier les pictogrammes de droit à l'image et d'alerte santé ; dans **Nageurs**, vérifier que seul le groupe accompagne l'identité.
-6. Ouvrir un nageur depuis chacun des trois accès et vérifier que le lien retour conserve le contexte d'origine.
-7. Vérifier qu'un nageur présent dans plusieurs saisons actives n'apparaît qu'une fois, avec sa saison courante prioritaire.
-8. Sur une fiche possédant un téléphone responsable, vérifier **Appeler** et **Envoyer un message** sur mobile ; sans téléphone, vérifier leur absence.
-9. Cliquer sur **Afficher le code Parents** : vérifier le format `XXXX-XXXX`, la copie si le navigateur l'autorise et l'absence du code dans les journaux.
-10. Avec un email responsable valide, cliquer sur **Renvoyer un code Parents**, annuler la confirmation et vérifier qu'aucune donnée ne change.
-11. Confirmer ensuite : vérifier l'envoi, le retour avec adresse masquée, la conservation du même code et la mise à jour du journal de distribution.
+6. Dans **Catégories**, vérifier que la pastille placée avant l'alerte santé
+   additionne les chronos d'entraînement et de compétition du nageur, respecte
+   le singulier/pluriel dans son libellé accessible et disparaît lorsque le total
+   est nul.
+7. Ouvrir un nageur depuis chacun des trois accès et vérifier que le lien retour conserve le contexte d'origine.
+8. Vérifier qu'un nageur présent dans plusieurs saisons actives n'apparaît qu'une fois, avec sa saison courante prioritaire.
+9. Sur une fiche possédant un téléphone responsable, vérifier **Appeler** et **Envoyer un message** sur mobile ; sans téléphone, vérifier leur absence.
+10. Cliquer sur **Afficher le code Parents** : vérifier le format `XXXX-XXXX`, la copie si le navigateur l'autorise et l'absence du code dans les journaux.
+11. Avec un email responsable valide, cliquer sur **Renvoyer un code Parents**, annuler la confirmation et vérifier qu'aucune donnée ne change.
+12. Confirmer ensuite : vérifier l'envoi, le retour avec adresse masquée, la conservation du même code et la mise à jour du journal de distribution.
 12. Sans email valide, vérifier l'absence du bouton d'envoi ; l'affichage du code doit rester disponible.
 13. Forger les actions d'affichage et d'envoi avec un nageur hors du groupe, sans nonce ou avec un utilisateur non Coach : aucun code ne doit être exposé ni envoyé.
 

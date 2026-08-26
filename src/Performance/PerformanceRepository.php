@@ -55,6 +55,35 @@ class PerformanceRepository
         return is_array($rows) ? $rows : [];
     }
 
+    public function countsForSwimmers(array $swimmerIds): array
+    {
+        global $wpdb;
+        $swimmerIds=array_values(array_unique(array_filter(array_map('absint',$swimmerIds))));
+        if($swimmerIds===[])return [];
+        $training=Config::table('training_performances');$competition=Config::table('competition_performances');
+        $placeholders=implode(',',array_fill(0,count($swimmerIds),'%d'));
+        $sql="SELECT swimmer_id,COUNT(*) total FROM (
+            SELECT swimmer_id FROM {$training} WHERE elapsed_time IS NOT NULL AND elapsed_time<>'' AND swimmer_id IN ({$placeholders})
+            UNION ALL
+            SELECT swimmer_id FROM {$competition} WHERE elapsed_time IS NOT NULL AND elapsed_time<>'' AND swimmer_id IN ({$placeholders})
+        ) performance_rows GROUP BY swimmer_id";
+        $rows=$wpdb->get_results($wpdb->prepare($sql,...array_merge($swimmerIds,$swimmerIds)),ARRAY_A);
+        $counts=[];foreach(is_array($rows)?$rows:[] as $row)$counts[(int)$row['swimmer_id']]=(int)$row['total'];
+        return $counts;
+    }
+
+    public function competitionCountsForSwimmers(int $competitionId,array $swimmerIds): array
+    {
+        global $wpdb;
+        $swimmerIds=array_values(array_unique(array_filter(array_map('absint',$swimmerIds))));
+        if($competitionId<1||$swimmerIds===[])return [];
+        $table=Config::table('competition_performances');$placeholders=implode(',',array_fill(0,count($swimmerIds),'%d'));
+        $sql="SELECT swimmer_id,COUNT(*) total FROM {$table} WHERE competition_id=%d AND elapsed_time IS NOT NULL AND elapsed_time<>'' AND swimmer_id IN ({$placeholders}) GROUP BY swimmer_id";
+        $rows=$wpdb->get_results($wpdb->prepare($sql,...array_merge([$competitionId],$swimmerIds)),ARRAY_A);
+        $counts=[];foreach(is_array($rows)?$rows:[] as $row)$counts[(int)$row['swimmer_id']]=(int)$row['total'];
+        return $counts;
+    }
+
     public function deleteTrainingPerformance(int $groupId,int $seasonId,int $swimmerId,int $performanceId): bool
     {
         global $wpdb;
