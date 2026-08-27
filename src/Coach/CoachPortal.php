@@ -5,7 +5,6 @@ namespace Ecole2Nat\Coach;
 use Ecole2Nat\Competition\CompetitionService;
 use Ecole2Nat\Evaluation\EvaluationService;
 use Ecole2Nat\ParentPortal\ParentAccessService;
-use Ecole2Nat\ParentPortal\ParentDistributionService;
 use Ecole2Nat\Performance\EventCatalog;
 use Ecole2Nat\Performance\PerformanceService;
 use Ecole2Nat\Support\Config;
@@ -20,7 +19,6 @@ class CoachPortal
     private CoachPortalRepository $repo;
     private EvaluationService $eval;
     private ParentAccessService $parentAccess;
-    private ParentDistributionService $parentDistribution;
     private CompetitionService $competitions;
     private PerformanceService $performances;
     private string $competitionNotice = '';
@@ -32,7 +30,6 @@ class CoachPortal
         $this->repo = new CoachPortalRepository();
         $this->eval = new EvaluationService();
         $this->parentAccess = new ParentAccessService();
-        $this->parentDistribution = new ParentDistributionService();
         $this->competitions = new CompetitionService();
         $this->performances = new PerformanceService();
     }
@@ -46,8 +43,6 @@ class CoachPortal
         add_filter('show_admin_bar', [$this, 'showAdminBar']);
         add_action('wp_ajax_e2n_coach_save_evaluation', [$this, 'ajaxSaveEvaluation']);
         add_action('wp_ajax_e2n_coach_save_note', [$this, 'ajaxSaveNote']);
-        add_action('wp_ajax_e2n_coach_send_parent_code', [$this, 'ajaxSendParentCode']);
-        add_action('wp_ajax_e2n_coach_get_parent_code', [$this, 'ajaxGetParentCode']);
         add_action('wp_ajax_e2n_coach_save_competition_response', [$this, 'ajaxSaveCompetitionResponse']);
         add_action('wp_ajax_e2n_coach_set_competition_engaged', [$this, 'ajaxSetCompetitionEngaged']);
         add_action('wp_ajax_e2n_coach_save_timed_performance', [$this, 'ajaxSaveTimedPerformance']);
@@ -104,9 +99,6 @@ class CoachPortal
             'saving' => __('Enregistrement…', 'ecole2nat'),
             'saved' => __('Enregistré', 'ecole2nat'),
             'error' => __('Non enregistré — réessayer', 'ecole2nat'),
-            'confirmParentCode' => __('Renvoyer le code Parents permanent par email ?', 'ecole2nat'),
-            'sendingParentCode' => __('Envoi du code…', 'ecole2nat'),
-            'loadingParentCode' => __('Récupération du code…', 'ecole2nat'),
             'selectRace' => __('Choisissez une épreuve et au moins un nageur.', 'ecole2nat'),
             'confirmRaceReset' => __('Abandonner le chronométrage en cours ?', 'ecole2nat'),
             'confirmDeleteRaceTime' => __('Supprimer définitivement ce chrono ?', 'ecole2nat'),
@@ -246,7 +238,6 @@ class CoachPortal
         foreach ($data['skills'] as $skill) $domains[(string) $skill['domain_name']][] = $skill;
         $phones = ContactList::phones((string) ($data['swimmer']['responsible_phone'] ?? ''));
         $phone = $phones !== [] ? $this->phoneUri($phones[0]) : '';
-        $emails = ContactList::emails((string) ($data['swimmer']['responsible_email'] ?? ''));
         $previewUrl = $this->parentAccess->coachPreviewUrl($swimmerId);
         $performanceHistory = $this->performances->historyForSwimmer($swimmerId); ?>
         <a class="e2n-back" href="<?php echo esc_url($from === 'week' ? $this->base(['e2n_group' => $groupId]) : $this->originUrl($from)); ?>">← <?php echo esc_html($from === 'week' ? __('Groupe', 'ecole2nat') : $this->originLabel($from)); ?></a>
@@ -256,10 +247,7 @@ class CoachPortal
                 <details class="e2n-actions-menu"><summary><?php esc_html_e('Actions', 'ecole2nat'); ?> <span aria-hidden="true">•••</span></summary><div class="e2n-actions-panel">
                     <?php if ($phone !== '') : ?><a href="tel:<?php echo esc_attr($phone); ?>"><?php esc_html_e('Appeler le responsable', 'ecole2nat'); ?></a><a href="sms:<?php echo esc_attr($phone); ?>"><?php esc_html_e('Envoyer un message', 'ecole2nat'); ?></a><?php endif; ?>
                     <?php if ($previewUrl !== '') : ?><a href="<?php echo esc_url($previewUrl); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e('Voir la fiche Parents', 'ecole2nat'); ?></a><?php endif; ?>
-                    <button type="button" data-e2n-show-parent-code data-group-id="<?php echo (int) $groupId; ?>" data-swimmer-id="<?php echo (int) $swimmerId; ?>"><?php esc_html_e('Afficher le code Parents', 'ecole2nat'); ?></button>
-                    <?php if ($emails !== []) : ?><button class="e2n-action-danger" type="button" data-e2n-send-parent-code data-group-id="<?php echo (int) $groupId; ?>" data-swimmer-id="<?php echo (int) $swimmerId; ?>"><?php esc_html_e('Renvoyer un code Parents', 'ecole2nat'); ?></button><?php else : ?><span class="e2n-contact-missing"><?php esc_html_e('Email responsable non renseigné', 'ecole2nat'); ?></span><?php endif; ?>
                     <?php if ($performanceHistory !== []) : ?><button class="e2n-action-danger" type="button" data-e2n-purge-swimmer-times data-group-id="<?php echo (int) $groupId; ?>" data-swimmer-id="<?php echo (int) $swimmerId; ?>"><?php esc_html_e('Purger les chronos', 'ecole2nat'); ?></button><?php endif; ?>
-                    <span class="e2n-parent-code-status" data-e2n-parent-code-status aria-live="polite"></span>
                 </div></details>
             </header>
             <?php if ($total > 0) : ?><section class="e2n-progress-summary" aria-label="<?php esc_attr_e('Résumé de la progression', 'ecole2nat'); ?>"><div><strong><?php esc_html_e('Progression', 'ecole2nat'); ?></strong><span><?php echo esc_html(sprintf(__('%1$d acquises · %2$d en cours · %3$d au total', 'ecole2nat'), $acquired, $inProgress, $total)); ?></span></div><div class="e2n-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="<?php echo (int) $percentage; ?>"><span style="width:<?php echo (int) $percentage; ?>%"></span></div><b><?php echo (int) $percentage; ?> %</b></section><?php endif; ?>
@@ -315,17 +303,6 @@ class CoachPortal
         $url = Extranat::swimmerUrl($swimmer['licence_number'] ?? null);
         if ($url === '') return; ?>
         <a class="e2n-extranat-link" href="<?php echo esc_url($url); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e('Fiche Extranat', 'ecole2nat'); ?></a><?php
-    }
-
-    private function maskEmail(string $email): string
-    {
-        if (str_contains($email, ',')) {
-            return __('les adresses responsables', 'ecole2nat');
-        }
-        $parts = explode('@', $email, 2);
-        if (count($parts) !== 2) return __('l’adresse responsable', 'ecole2nat');
-        $visible = mb_substr($parts[0], 0, min(2, mb_strlen($parts[0])));
-        return $visible . str_repeat('•', max(3, mb_strlen($parts[0]) - mb_strlen($visible))) . '@' . $parts[1];
     }
 
     private function originLabel(string $from): string
@@ -419,7 +396,7 @@ class CoachPortal
         $data = $this->eval->collectiveEvaluation($groupId, $skillId);
         if ($data === null) { echo '<p>' . esc_html__('Compétence introuvable pour ce groupe.', 'ecole2nat') . '</p>'; return; } ?>
         <a class="e2n-back" href="<?php echo esc_url($this->base(['e2n_group' => $groupId, 'e2n_from' => $from])); ?>">← <?php esc_html_e('Groupe', 'ecole2nat'); ?></a><h1><?php echo esc_html($data['skill']['name']); ?></h1><p><?php echo esc_html($data['group']['name']); ?></p><section class="e2n-card"><h2><?php esc_html_e('Évaluation collective', 'ecole2nat'); ?></h2><div class="e2n-autosave-status" data-e2n-save-status aria-live="polite"></div><div class="e2n-collective-list">
-        <?php foreach ($data['swimmers'] as $swimmer) : ?><div class="e2n-collective-row"><strong><?php echo esc_html($swimmer['first_name'] . ' ' . $swimmer['last_name']); ?></strong><div class="e2n-choice-group" role="radiogroup"><?php foreach ($this->eval->statuses() as $value => $label) : ?><label class="e2n-choice e2n-choice--<?php echo esc_attr($value); ?>"><input type="radio" value="<?php echo esc_attr($value); ?>" data-e2n-kind="evaluation" data-group-id="<?php echo (int) $groupId; ?>" data-swimmer-id="<?php echo (int) $swimmer['id']; ?>" data-skill-id="<?php echo (int) $skillId; ?>" <?php checked($swimmer['status'], $value); ?>><span><?php echo esc_html($label); ?></span></label><?php endforeach; ?></div></div><?php endforeach; ?>
+        <?php foreach ($data['swimmers'] as $swimmer) : ?><div class="e2n-collective-row"><strong><?php echo esc_html($swimmer['first_name'] . ' ' . $swimmer['last_name']); ?></strong><div class="e2n-choice-group" role="radiogroup"><?php foreach ($this->eval->statuses() as $value => $label) : ?><label class="e2n-choice e2n-choice--<?php echo esc_attr($value); ?>"><input type="radio" value="<?php echo esc_attr($value); ?>" data-e2n-kind="evaluation" data-group-id="<?php echo (int) $groupId; ?>" data-swimmer-id="<?php echo (int) $swimmer['id']; ?>" data-skill-id="<?php echo (int) $skillId; ?>" <?php checked($swimmer['status'], $value); ?>><span><?php echo esc_html($label); ?></span></label><?php endforeach; ?></div><details class="e2n-note-editor e2n-collective-note" <?php echo $swimmer['notes'] !== '' ? 'open' : ''; ?>><summary><?php echo esc_html($swimmer['notes'] !== '' ? __('Commentaire renseigné', 'ecole2nat') : __('Ajouter un commentaire', 'ecole2nat')); ?></summary><textarea rows="2" data-e2n-kind="note" data-group-id="<?php echo (int) $groupId; ?>" data-swimmer-id="<?php echo (int) $swimmer['id']; ?>" data-skill-id="<?php echo (int) $skillId; ?>" placeholder="<?php esc_attr_e('Commentaire interne', 'ecole2nat'); ?>"><?php echo esc_textarea($swimmer['notes']); ?></textarea></details></div><?php endforeach; ?>
         </div></section><?php
     }
 
@@ -496,51 +473,6 @@ class CoachPortal
         $result = $this->eval->saveSingleNote(absint($_POST['group_id'] ?? 0), absint($_POST['swimmer_id'] ?? 0), absint($_POST['skill_id'] ?? 0), sanitize_textarea_field(wp_unslash((string) ($_POST['note'] ?? ''))), get_current_user_id());
         if (!$result['success']) wp_send_json_error(['message' => __('Impossible d’enregistrer la note.', 'ecole2nat')], 400);
         wp_send_json_success(['message' => __('Note enregistrée.', 'ecole2nat')]);
-    }
-
-    public function ajaxSendParentCode(): void
-    {
-        check_ajax_referer('e2n_coach_ajax', 'nonce');
-        $groupId = absint($_POST['group_id'] ?? 0);
-        $swimmerId = absint($_POST['swimmer_id'] ?? 0);
-        if (!$this->access->canEvaluateGroup($groupId) || $this->eval->swimmerEvaluation($groupId, $swimmerId) === null) {
-            wp_send_json_error(['message' => __('Envoi non autorisé.', 'ecole2nat')], 403);
-        }
-
-        $result = $this->parentDistribution->sendForSwimmer($swimmerId);
-        if (empty($result['success'])) {
-            $message = ($result['message'] ?? '') === 'missing_email'
-                ? __('Aucun email responsable valide n’est enregistré.', 'ecole2nat')
-                : (($result['message'] ?? '') === 'missing_portal'
-                    ? __('La page du portail Parents est introuvable.', 'ecole2nat')
-                    : __('Le code n’a pas pu être envoyé.', 'ecole2nat'));
-            wp_send_json_error(['message' => $message], 400);
-        }
-
-        wp_send_json_success([
-            'message' => sprintf(
-                __('Code envoyé à %s.', 'ecole2nat'),
-                $this->maskEmail((string) ($result['email'] ?? ''))
-            ),
-        ]);
-    }
-
-    public function ajaxGetParentCode(): void
-    {
-        check_ajax_referer('e2n_coach_ajax', 'nonce');
-        $groupId = absint($_POST['group_id'] ?? 0);
-        $swimmerId = absint($_POST['swimmer_id'] ?? 0);
-        if (!$this->access->canEvaluateGroup($groupId) || $this->eval->swimmerEvaluation($groupId, $swimmerId) === null) {
-            wp_send_json_error(['message' => __('Consultation non autorisée.', 'ecole2nat')], 403);
-        }
-        $result = $this->parentAccess->permanentCode($swimmerId, false);
-        if (empty($result['success'])) {
-            wp_send_json_error(['message' => __('Le code Parents n’a pas pu être récupéré.', 'ecole2nat')], 400);
-        }
-        wp_send_json_success([
-            'message' => sprintf(__('Code Parents : %s', 'ecole2nat'), (string) $result['code']),
-            'code' => (string) $result['code'],
-        ]);
     }
 
     public function ajaxSaveCompetitionResponse(): void

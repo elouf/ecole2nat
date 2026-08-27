@@ -34,6 +34,23 @@ class ParentAccessRepository
         return is_array($result) ? $result : null;
     }
 
+    public function activeSwimmersBornOn(string $birthDate): array
+    {
+        global $wpdb;
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                'SELECT id, first_name, last_name, birth_date, is_active
+                FROM ' . Config::table('swimmers') . '
+                WHERE birth_date = %s AND is_active = 1
+                ORDER BY id',
+                $birthDate
+            ),
+            ARRAY_A
+        );
+
+        return is_array($rows) ? $rows : [];
+    }
+
     public function codeHashExists(string $codeHash, int $excludeSwimmerId = 0): bool
     {
         global $wpdb;

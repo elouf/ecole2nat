@@ -7,7 +7,6 @@ use Ecole2Nat\Admin\Deletion\DeletionController;
 use Ecole2Nat\Support\Config;
 use Ecole2Nat\ParentPortal\ParentPortal;
 use Ecole2Nat\Coach\CoachPortal;
-use Ecole2Nat\Admin\ParentDistribution\ParentDistributionController;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -26,7 +25,6 @@ class Application
             add_action('admin_menu', [$this, 'registerAdminMenu']);
             add_action('admin_enqueue_scripts', [$this, 'enqueueAdminAssets']);
             (new DeletionController())->register();
-            (new ParentDistributionController())->register();
         }
     }
 

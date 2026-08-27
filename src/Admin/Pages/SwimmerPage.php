@@ -778,7 +778,6 @@ class SwimmerPage
                             $id = (int) $swimmer['id'];
                             $editUrl = add_query_arg(['page' => 'ecole2nat-swimmers', 'action' => 'edit', 'swimmer_id' => $id], admin_url('admin.php'));
                             $toggleUrl = wp_nonce_url(add_query_arg(['page' => 'ecole2nat-swimmers', 'e2n_action' => 'toggle_swimmer', 'swimmer_id' => $id], admin_url('admin.php')), 'e2n_toggle_swimmer_' . $id);
-                            $parentUrl = add_query_arg(['page' => 'ecole2nat-parent-access', 'swimmer_id' => $id], admin_url('admin.php'));
                             $evaluationUrl = !empty($swimmer['group_id'])
                                 ? add_query_arg(
                                     [
@@ -806,9 +805,8 @@ class SwimmerPage
                                         <a href="<?php echo esc_url($evaluationUrl); ?>"><?php esc_html_e('Évaluer', 'ecole2nat'); ?></a> |
                                     <?php endif; ?>
                                     <?php if ($previewUrl !== '') : ?>
-                                        <a href="<?php echo esc_url($previewUrl); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e('Voir le parcours', 'ecole2nat'); ?></a> |
+                                        <a href="<?php echo esc_url($previewUrl); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e('Accès parents', 'ecole2nat'); ?></a> |
                                     <?php endif; ?>
-                                    <a href="<?php echo esc_url($parentUrl); ?>"><?php esc_html_e('Accès parents', 'ecole2nat'); ?></a> |
                                     <a href="<?php echo esc_url($toggleUrl); ?>"><?php echo (int) $swimmer['is_active'] === 1 ? esc_html__('Désactiver', 'ecole2nat') : esc_html__('Activer', 'ecole2nat'); ?></a> |
                                     <a class="e2n-delete-link" href="<?php echo esc_url($deleteUrl); ?>"
                                         onclick="return confirm('<?php echo esc_js(__('Supprimer définitivement ce nageur et ses évaluations ?', 'ecole2nat')); ?>');">

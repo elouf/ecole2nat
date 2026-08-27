@@ -96,11 +96,9 @@
 7. Ouvrir un nageur depuis chacun des trois accès et vérifier que le lien retour conserve le contexte d'origine.
 8. Vérifier qu'un nageur présent dans plusieurs saisons actives n'apparaît qu'une fois, avec sa saison courante prioritaire.
 9. Sur une fiche possédant un téléphone responsable, vérifier **Appeler** et **Envoyer un message** sur mobile ; sans téléphone, vérifier leur absence.
-10. Cliquer sur **Afficher le code Parents** : vérifier le format `XXXX-XXXX`, la copie si le navigateur l'autorise et l'absence du code dans les journaux.
-11. Avec un email responsable valide, cliquer sur **Renvoyer un code Parents**, annuler la confirmation et vérifier qu'aucune donnée ne change.
-12. Confirmer ensuite : vérifier l'envoi, le retour avec adresse masquée, la conservation du même code et la mise à jour du journal de distribution.
-12. Sans email valide, vérifier l'absence du bouton d'envoi ; l'affichage du code doit rester disponible.
-13. Forger les actions d'affichage et d'envoi avec un nageur hors du groupe, sans nonce ou avec un utilisateur non Coach : aucun code ne doit être exposé ni envoyé.
+10. Vérifier que les anciennes actions **Afficher le code Parents** et
+    **Renvoyer un code Parents** ne sont plus proposées, quel que soit l'email
+    responsable renseigné.
 
 ## Prévisualisation Parents
 
@@ -117,13 +115,19 @@
 1. Avec un coach non titulaire, ouvrir n'importe quel groupe actif et modifier une compétence individuelle.
 2. Vérifier l'enregistrement immédiat, puis recharger et contrôler la persistance.
 3. Modifier une compétence collectivement et vérifier chaque nageur concerné.
-4. Vérifier qu'une transition ajoute une seule ligne dans `e2n_skill_level_history` avec ancien statut, nouveau statut, date et coach.
-5. Cliquer à nouveau sur le statut courant : aucune ligne supplémentaire ne doit être créée.
-6. Modifier uniquement une note : le niveau courant change, mais aucun événement de statut n'est ajouté.
-7. Ouvrir « Historique » sous une compétence : vérifier la chronologie et le nom des coachs.
-8. Avec un utilisateur authentifié sans rôle Coach, forger chaque requête AJAX : réponse `403`, aucune écriture.
-9. Rejouer une action avec nonce absent ou invalide : aucune écriture.
-10. Modifier `group_id`, `swimmer_id` ou `skill_id` : aucune ressource hors contexte ne doit être modifiée.
+4. Dans cette évaluation collective, ouvrir **Ajouter un commentaire** en bas
+   à droite d'une ligne, saisir une note et attendre l'enregistrement immédiat.
+   Recharger : la zone doit être ouverte, afficher **Commentaire renseigné** et
+   conserver son contenu uniquement pour le nageur concerné.
+5. Vérifier sur téléphone que le lien, la zone de texte et les choix de statut
+   restent accessibles sans débordement horizontal.
+6. Vérifier qu'une transition ajoute une seule ligne dans `e2n_skill_level_history` avec ancien statut, nouveau statut, date et coach.
+7. Cliquer à nouveau sur le statut courant : aucune ligne supplémentaire ne doit être créée.
+8. Modifier uniquement une note : le niveau courant change, mais aucun événement de statut n'est ajouté.
+9. Ouvrir « Historique » sous une compétence : vérifier la chronologie et le nom des coachs.
+10. Avec un utilisateur authentifié sans rôle Coach, forger chaque requête AJAX : réponse `403`, aucune écriture.
+11. Rejouer une action avec nonce absent ou invalide : aucune écriture.
+12. Modifier `group_id`, `swimmer_id` ou `skill_id` : aucune ressource hors contexte ne doit être modifiée.
 
 ## Mobile et non-régression
 

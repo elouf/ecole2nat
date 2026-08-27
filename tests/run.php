@@ -50,22 +50,18 @@ final class FakeParentAccessRepository extends ParentAccessRepository
 {
     public array $swimmer = [
         'id' => 42,
-        'parent_access_code_hash' => null,
-        'parent_access_code_generation' => 0,
-        'parent_access_enabled' => 0,
+        'first_name' => 'Élise-Marie',
+        'last_name' => 'Martin',
+        'birth_date' => '2012-04-03',
+        'is_active' => 1,
     ];
+    public array $birthCandidates = [];
 
     public function findSwimmer(int $swimmerId): ?array { return $swimmerId === 42 ? $this->swimmer : null; }
-    public function codeHashExists(string $codeHash, int $excludeSwimmerId = 0): bool { return false; }
-    public function saveAccessCode(int $swimmerId, string $codeHash, int $generation, bool $enabled = true): bool
-    {
-        $this->swimmer['parent_access_code_hash'] = $codeHash;
-        $this->swimmer['parent_access_code_generation'] = $generation;
-        $this->swimmer['parent_access_enabled'] = $enabled ? 1 : 0;
-        return true;
-    }
-    public function enableAccess(int $swimmerId): bool { $this->swimmer['parent_access_enabled'] = 1; return true; }
-    public function disableAccess(int $swimmerId): bool { $this->swimmer['parent_access_enabled'] = 0; return true; }
+    public function activeSwimmersBornOn(string $birthDate): array
+    { return $birthDate === '2012-04-03' ? ($this->birthCandidates ?: [$this->swimmer]) : []; }
+    public function markUsed(int $swimmerId): void {}
+    public function logAttempt(?int $swimmerId, bool $success, string $ipHash): void {}
 }
 
 final class FakeCompetitionRepository extends CompetitionRepository
@@ -168,6 +164,10 @@ expectSame(
     str_contains((string) $coachStyles, '.e2n-coach [hidden]{display:none!important}'),
     'Les cartes filtrées restent masquées malgré leurs règles de mise en page'
 );
+$coachPortalSource = file_get_contents(__DIR__ . '/../src/Coach/CoachPortal.php');
+$evaluationServiceSource = file_get_contents(__DIR__ . '/../src/Evaluation/EvaluationService.php');
+expectSame(true, str_contains((string) $coachPortalSource, 'e2n-collective-note'), 'L’évaluation collective propose un commentaire par nageur');
+expectSame(true, str_contains((string) $evaluationServiceSource, '$sw[\'notes\']'), 'Les notes existantes sont chargées dans l’évaluation collective');
 
 $service = accessService(['manage_options']);
 expectSame(true, $service->canEvaluateGroup(4), 'Un administrateur peut évaluer tout groupe');
@@ -191,15 +191,14 @@ $parentRepository = new FakeParentAccessRepository();
 $parentService = new ParentAccessService($parentRepository);
 $firstParentCode = $parentService->permanentCode(42);
 $sameParentCode = $parentService->permanentCode(42);
-expectSame(true, $firstParentCode['success'], 'Création automatique du code Parents permanent');
-expectSame($firstParentCode['code'], $sameParentCode['code'], 'Le code Parents reste identique à la récupération');
-expectSame(9, strlen((string) $firstParentCode['code']), 'Le code Parents est présenté au format XXXX-XXXX');
+expectSame(true, $firstParentCode['success'], 'Calcul du code Parents déterministe');
+expectSame('ELISEMARIE03042012', $firstParentCode['code'], 'Le code normalise le prénom et ajoute la naissance au format JJMMAAAA');
+expectSame($firstParentCode['code'], $sameParentCode['code'], 'Le code Parents reste identique à chaque calcul');
 $resetParentCode = $parentService->resetCode(42);
-expectSame(false, $firstParentCode['code'] === $resetParentCode['code'], 'Une réinitialisation explicite change le code Parents');
-expectSame(1, $parentRepository->swimmer['parent_access_code_generation'], 'La réinitialisation incrémente la génération du code');
-$parentService->disable(42);
-$parentService->permanentCode(42, false);
-expectSame(0, $parentRepository->swimmer['parent_access_enabled'], 'Afficher un code désactivé ne réactive pas son accès');
+expectSame($firstParentCode['code'], $resetParentCode['code'], 'Le code déterministe ne possède plus de réinitialisation aléatoire');
+expectSame(true, $parentService->authenticate('élise-marie 03/04/2012')['success'], 'La connexion accepte une saisie avec accents et séparateurs');
+$parentRepository->birthCandidates = [$parentRepository->swimmer, array_merge($parentRepository->swimmer, ['id' => 57])];
+expectSame('ambiguous_code', $parentService->authenticate('ELISEMARIE03042012')['message'], 'Une collision de codes est refusée explicitement');
 
 $competitionService = new CompetitionService();
 expectSame('upcoming', $competitionService->registrationState(['status'=>'published','registration_opens_at'=>'2026-08-18 00:00:00','registration_closes_at'=>'2026-08-20 23:59:59']), 'Inscriptions futures non modifiables');

@@ -8,8 +8,6 @@ if (!defined('ABSPATH')) {
 
 class ParentAccessService
 {
-    private const CODE_LENGTH = 8;
-    private const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     private const MAX_ATTEMPTS = 5;
     private const BLOCK_SECONDS = 900;
     private const COOKIE_TTL = 43200;
@@ -29,59 +27,20 @@ class ParentAccessService
     public function permanentCode(int $swimmerId, bool $activate = true): array
     {
         $swimmer = $this->repository->findSwimmer($swimmerId);
-        if ($swimmer === null) {
+        if ($swimmer === null || empty($swimmer['birth_date'])) {
             return ['success' => false, 'message' => 'invalid'];
         }
 
-        $generation = max(0, (int) ($swimmer['parent_access_code_generation'] ?? 0));
-        $code = $this->derivedCode($swimmerId, $generation);
-        $hash = $this->hashCode($code);
-        if (!empty($swimmer['parent_access_code_hash']) && hash_equals((string) $swimmer['parent_access_code_hash'], $hash)) {
-            if ($activate && (int) ($swimmer['parent_access_enabled'] ?? 0) !== 1 && !$this->repository->enableAccess($swimmerId)) {
-                return ['success' => false, 'message' => 'error'];
-            }
-            return ['success' => true, 'message' => 'access_retrieved', 'code' => $this->formatCode($code)];
-        }
+        $code = $this->codeForSwimmer($swimmer);
 
-        return $this->persistDerivedCode($swimmerId, $generation, 'access_created', $activate);
+        return $code !== ''
+            ? ['success' => true, 'message' => 'access_retrieved', 'code' => $code]
+            : ['success' => false, 'message' => 'invalid'];
     }
 
     public function resetCode(int $swimmerId): array
     {
-        $swimmer = $this->repository->findSwimmer($swimmerId);
-        if ($swimmer === null) {
-            return ['success' => false, 'message' => 'invalid'];
-        }
-        return $this->persistDerivedCode(
-            $swimmerId,
-            max(0, (int) ($swimmer['parent_access_code_generation'] ?? 0)) + 1,
-            'access_reset',
-            true
-        );
-    }
-
-    private function persistDerivedCode(int $swimmerId, int $generation, string $message, bool $enabled): array
-    {
-        for ($attempt = 0; $attempt < 25; $attempt++, $generation++) {
-            $code = $this->derivedCode($swimmerId, $generation);
-            $hash = $this->hashCode($code);
-
-            if ($this->repository->codeHashExists($hash, $swimmerId)) {
-                continue;
-            }
-
-            if ($this->repository->saveAccessCode($swimmerId, $hash, $generation, $enabled)) {
-                return [
-                    'success' => true,
-                    'message' => $message,
-                    'code' => $this->formatCode($code),
-                ];
-            }
-
-            return ['success' => false, 'message' => 'error'];
-        }
-
-        return ['success' => false, 'message' => 'error'];
+        return $this->permanentCode($swimmerId);
     }
 
     public function disable(int $swimmerId): array
@@ -118,7 +77,7 @@ class ParentAccessService
 
         $code = $this->normalizeCode($rawCode);
 
-        if (strlen($code) !== self::CODE_LENGTH) {
+        if (!preg_match('/^([A-Z]+)(\d{8})$/', $code, $parts)) {
             $blocked = $this->recordFailure($rateKey, $rate);
             $this->repository->logAttempt(null, false, $this->ipHash());
 
@@ -128,8 +87,19 @@ class ParentAccessService
             ];
         }
 
-        $codeHash = $this->hashCode($code);
-        $swimmer = $this->repository->findByCodeHash($codeHash);
+        $date = \DateTimeImmutable::createFromFormat('!dmY', $parts[2]);
+        $birthDate = $date instanceof \DateTimeImmutable && $date->format('dmY') === $parts[2]
+            ? $date->format('Y-m-d')
+            : '';
+        $matches = [];
+
+        foreach ($birthDate !== '' ? $this->repository->activeSwimmersBornOn($birthDate) : [] as $candidate) {
+            if (hash_equals($this->codeForSwimmer($candidate), $code)) {
+                $matches[] = $candidate;
+            }
+        }
+
+        $swimmer = count($matches) === 1 ? $matches[0] : null;
 
         if ($swimmer === null) {
             $blocked = $this->recordFailure($rateKey, $rate);
@@ -137,7 +107,7 @@ class ParentAccessService
 
             return [
                 'success' => false,
-                'message' => $blocked ? 'temporarily_blocked' : 'invalid_code',
+                'message' => $blocked ? 'temporarily_blocked' : (count($matches) > 1 ? 'ambiguous_code' : 'invalid_code'),
             ];
         }
 
@@ -145,7 +115,7 @@ class ParentAccessService
         $swimmerId = (int) $swimmer['id'];
         $this->repository->markUsed($swimmerId);
         $this->repository->logAttempt($swimmerId, true, $this->ipHash());
-        $this->setAccessCookie($swimmerId, $codeHash);
+        $this->setAccessCookie($swimmerId, $this->hashCode($code));
 
         return [
             'success' => true,
@@ -179,9 +149,8 @@ class ParentAccessService
 
         if (
             $swimmer === null
-            || (int) ($swimmer['parent_access_enabled'] ?? 0) !== 1
             || (int) ($swimmer['is_active'] ?? 0) !== 1
-            || empty($swimmer['parent_access_code_hash'])
+            || empty($swimmer['birth_date'])
         ) {
             return 0;
         }
@@ -189,7 +158,7 @@ class ParentAccessService
         $expected = $this->signToken(
             (int) $swimmerId,
             (int) $expires,
-            (string) $swimmer['parent_access_code_hash']
+            $this->hashCode($this->codeForSwimmer($swimmer))
         );
 
         if (!hash_equals($expected, $signature)) {
@@ -286,24 +255,24 @@ class ParentAccessService
         return 'e2n_parent_code_' . $userId . '_' . $swimmerId;
     }
 
-    private function derivedCode(int $swimmerId, int $generation): string
+    private function codeForSwimmer(array $swimmer): string
     {
-        $bytes = hash_hmac('sha256', 'parent-code|' . $swimmerId . '|' . $generation, wp_salt('auth'), true);
-        $code = '';
-        for ($index = 0; $index < self::CODE_LENGTH; $index++) {
-            $code .= self::ALPHABET[ord($bytes[$index]) % strlen(self::ALPHABET)];
-        }
-        return $code;
-    }
+        $firstName = strtoupper(remove_accents((string) ($swimmer['first_name'] ?? '')));
+        $firstName = (string) preg_replace('/[^A-Z]/', '', $firstName);
+        $birthDate = \DateTimeImmutable::createFromFormat('!Y-m-d', (string) ($swimmer['birth_date'] ?? ''));
 
-    private function formatCode(string $code): string
-    {
-        return substr($code, 0, 4) . '-' . substr($code, 4);
+        if ($firstName === '' || !$birthDate instanceof \DateTimeImmutable) {
+            return '';
+        }
+
+        return $firstName . $birthDate->format('dmY');
     }
 
     private function normalizeCode(string $code): string
     {
-        return strtoupper((string) preg_replace('/[^A-Z0-9]/i', '', $code));
+        $code = strtoupper(remove_accents($code));
+
+        return (string) preg_replace('/[^A-Z0-9]/', '', $code);
     }
 
     private function hashCode(string $code): string

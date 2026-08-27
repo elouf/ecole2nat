@@ -2,6 +2,10 @@
 
 ## Non publié — 0.21.0
 
+- Permet d'ouvrir et d'enregistrer un commentaire individuel sur chaque ligne de l'évaluation collective d'une compétence.
+- Remplace les codes Parents distribués par un accès déterministe composé du prénom normalisé et de la date de naissance, refuse les collisions entre nageurs actifs et conserve la limitation des tentatives ainsi que les cookies signés.
+- Retire les écrans et actions d'envoi des accès Parents ; le lien de la liste BO des nageurs ouvre désormais directement la prévisualisation du parcours.
+- Explique la composition du code sur l'écran de connexion Parents avec trois exemples couvrant accents, trait d'union et apostrophe.
 - Ajoute aux administrateurs un accès direct au portail Coach depuis le menu Ecole2Nat' et l'écran de gestion des coachs.
 - Affiche une pastille bleue du nombre total de chronos dans les vues Catégories et groupe de la Semaine type, une pastille verte limitée aux épreuves déjà réalisées dans la compétition consultée, et masque les compteurs d'évaluation lorsque la catégorie n'a aucune compétence.
 - Masque les résumés et blocs de progression dans les portails Coach et Parents lorsqu'une catégorie ne possède aucune compétence, tout en conservant le rapport des chronos.

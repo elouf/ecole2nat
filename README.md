@@ -76,11 +76,14 @@ Jusqu'à dix compétitions en cours sont épinglées sous l'en-tête Coach. Elle
 [e2n_parent_report]
 ```
 
-3. Utilisez **Ecole2Nat' → Accès parents** pour distribuer les accès d’un groupe par email, coupons ou CSV.
-4. Les liens **Voir le parcours** du back-office permettent une prévisualisation administrateur sans exposer le code parent.
-5. Personnalisez la signature des emails dans **Ecole2Nat' → Réglages** ; elle s'applique aussi aux renvois déclenchés depuis le portail Coach.
+3. Le lien **Accès parents** de la liste des nageurs ouvre une prévisualisation administrateur du parcours.
 
-Le code n'est jamais conservé en clair : il est recalculé à la demande à partir de l'identifiant du nageur et d'un secret propre à l'installation. Il est créé automatiquement, reste identique lors des affichages et renvois, et ne change qu'après une réinitialisation explicite.
+Le code d'accès est déterministe : prénom en majuscules sans accent, espace ni
+caractère spécial, suivi de la date de naissance au format `JJMMAAAA`. Ainsi,
+`Éléonore`, née le 3 avril 2012, utilise `ELEONORE03042012`. Il n'est ni envoyé
+par email ni stocké en clair. Si deux nageurs actifs produisent exactement le
+même code, la connexion est refusée afin de ne jamais afficher le mauvais
+parcours.
 
 ## Évaluations progressives
 

@@ -37,15 +37,21 @@
 5. Forger l'enregistrement sans capacité `manage_options` ou avec un nonce
    invalide : les deux options ne doivent pas changer.
 
-## 3. Génération d'un accès
+## 3. Code d'accès déterministe
 
 1. Ouvrir **Ecole2Nat' → Nageurs**.
-2. Cliquer sur **Accès parents** pour un nageur affecté à un groupe.
-3. Saisir un message destiné aux parents et l'enregistrer.
-4. Afficher le code créé automatiquement.
-5. Vérifier son format `XXXX-XXXX`, sans caractère ambigu (`0`, `O`, `1`, `I`), puis le réafficher : il doit rester identique.
-6. Imprimer le coupon et vérifier que le code et l'adresse de la page apparaissent.
-7. Sur MySQL 8, vérifier que le lien **Accès parents** ouvre bien le nageur sans erreur « Nageur introuvable ».
+2. Vérifier que le menu BO **Accès parents** n'existe plus.
+3. Cliquer sur **Accès parents** pour un nageur affecté à un groupe : la
+   prévisualisation de son parcours doit s'ouvrir directement dans un nouvel
+   onglet, avec une bannière administrateur.
+4. Vérifier les codes publics suivants :
+   - Éléonore, née le 03/04/2012 : `ELEONORE03042012` ;
+   - Jean-Baptiste, né le 17/09/2011 : `JEANBAPTISTE17092011` ;
+   - D’Jenna, née le 25/01/2013 : `DJENNA25012013`.
+5. Vérifier qu'une saisie en minuscules, avec accents, espaces, apostrophe,
+   trait d'union ou barres dans la date est normalisée avant vérification.
+6. Pour un nageur sans date de naissance, vérifier qu'aucun code ne permet
+   l'accès.
 
 ## 4. Consultation
 
@@ -64,7 +70,7 @@
 10. Vérifier que les compétences sans historique restent compactes et sans contrôle vide.
 11. Vérifier qu'aucun indicateur ou détail de santé ni aucune note interne Coach n'est exposé.
 12. Vérifier l'impression A4 : les historiques repliables ne doivent pas être imprimés.
-13. Vérifier le bouton **Changer de code**.
+13. Vérifier le bouton **Changer de nageur**.
 14. Vérifier que la saisie du code, la fiche enfant et la prévisualisation Coach
     partagent la même identité visuelle que le portail Coach.
 
@@ -72,14 +78,14 @@
 
 1. Tester un code erroné : aucune information sur un nageur ne doit apparaître.
 2. Faire cinq tentatives erronées : l'accès doit être bloqué temporairement.
-3. Afficher, envoyer et imprimer le code : il doit rester identique.
-4. Réinitialiser explicitement le code : l'ancien doit cesser de fonctionner.
-4. Désactiver l'accès : le code actif doit cesser de fonctionner.
-5. Vérifier que la base ne contient jamais le code en clair.
-6. Vérifier que `e2n_parent_access_logs.ip_hash` ne contient pas l'adresse IP brute.
-7. Depuis le portail Coach, ouvrir la prévisualisation d'un nageur et vérifier qu'elle porte la bannière Coach, n'utilise aucun code et ne modifie ni le compteur ni les journaux parents.
-8. Vérifier que l'URL de prévisualisation Coach exige une session Coach ou administrateur active et un nonce valide.
-9. Renvoyer un code depuis la fiche Coach : vérifier qu'il reste identique et que l'envoi est enregistré comme distribution email.
+3. Créer temporairement deux nageurs actifs ayant le même prénom normalisé et
+   la même date de naissance : leur code commun doit être refusé avec un
+   message demandant de contacter le club, sans exposer aucun parcours.
+4. Vérifier que la base ne contient jamais le code en clair et que les
+   anciennes colonnes `parent_access_*` n'influencent pas la connexion.
+5. Vérifier que `e2n_parent_access_logs.ip_hash` ne contient pas l'adresse IP brute.
+6. Depuis le portail Coach, ouvrir la prévisualisation d'un nageur et vérifier qu'elle porte la bannière Coach, n'utilise aucun code et ne modifie ni le compteur ni les journaux parents.
+7. Vérifier que l'URL de prévisualisation Coach exige une session Coach ou administrateur active et un nonce valide.
 
 ## 6. Responsive
 

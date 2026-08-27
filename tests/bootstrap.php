@@ -3,6 +3,9 @@
 declare(strict_types=1);
 
 define('ABSPATH', dirname(__DIR__) . '/');
+define('COOKIEPATH', '/');
+define('COOKIE_DOMAIN', '');
+define('HOUR_IN_SECONDS', 3600);
 
 $GLOBALS['e2n_test_caps'] = [];
 $GLOBALS['e2n_test_user_id'] = 10;
@@ -13,6 +16,8 @@ function current_user_can(string $capability): bool
 {
     return in_array($capability, $GLOBALS['e2n_test_caps'], true);
 }
+
+function is_ssl(): bool { return false; }
 
 function get_current_user_id(): int
 {
@@ -36,8 +41,13 @@ function wp_timezone(): DateTimeZone
 
 function remove_accents(string $text): string
 {
-    return strtr($text, ['é' => 'e', 'è' => 'e', 'ê' => 'e', 'à' => 'a', 'ù' => 'u', 'î' => 'i', 'ô' => 'o', 'ç' => 'c']);
+    return strtr($text, ['é' => 'e', 'è' => 'e', 'ê' => 'e', 'É' => 'E', 'È' => 'E', 'Ê' => 'E', 'à' => 'a', 'À' => 'A', 'ù' => 'u', 'Ù' => 'U', 'î' => 'i', 'Î' => 'I', 'ô' => 'o', 'Ô' => 'O', 'ç' => 'c', 'Ç' => 'C']);
 }
+
+$GLOBALS['e2n_test_transients'] = [];
+function get_transient(string $key): mixed { return $GLOBALS['e2n_test_transients'][$key] ?? false; }
+function set_transient(string $key, mixed $value, int $expiration): bool { $GLOBALS['e2n_test_transients'][$key] = $value; return true; }
+function delete_transient(string $key): bool { unset($GLOBALS['e2n_test_transients'][$key]); return true; }
 
 function sanitize_email(string $email): string
 {

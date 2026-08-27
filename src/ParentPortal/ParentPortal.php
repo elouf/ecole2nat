@@ -195,6 +195,7 @@ class ParentPortal
     {
         $messages = [
             'invalid_code' => __('Ce code d’accès n’est pas reconnu.', 'ecole2nat'),
+            'ambiguous_code' => __('Ce code correspond à plusieurs nageurs. Contactez le club pour accéder au bon parcours.', 'ecole2nat'),
             'temporarily_blocked' => __('Trop de tentatives ont été effectuées. Réessayez dans 15 minutes.', 'ecole2nat'),
             'report_unavailable' => __('Le parcours n’est pas disponible pour le moment.', 'ecole2nat'),
         ];
@@ -203,8 +204,17 @@ class ParentPortal
             <div class="e2n-parent-logo" aria-hidden="true">🏊</div>
             <h1><?php esc_html_e('Mon parcours de natation', 'ecole2nat'); ?></h1>
             <p class="e2n-parent-intro">
-                <?php esc_html_e('Saisissez le code remis par votre club pour consulter le parcours de votre enfant.', 'ecole2nat'); ?>
+                <?php esc_html_e('Le code est composé du prénom du nageur en majuscules, sans accent, espace ni caractère spécial, suivi de sa date de naissance au format JJMMAAAA.', 'ecole2nat'); ?>
             </p>
+
+            <div class="e2n-parent-code-help">
+                <strong><?php esc_html_e('Exemples', 'ecole2nat'); ?></strong>
+                <ul>
+                    <li><span>Éléonore · 03/04/2012</span><code>ELEONORE03042012</code></li>
+                    <li><span>Jean-Baptiste · 17/09/2011</span><code>JEANBAPTISTE17092011</code></li>
+                    <li><span>D’Jenna · 25/01/2013</span><code>DJENNA25012013</code></li>
+                </ul>
+            </div>
 
             <?php if (isset($messages[$message])) : ?>
                 <div class="e2n-parent-alert" role="alert">
@@ -223,13 +233,13 @@ class ParentPortal
                     id="e2n-parent-access-code"
                     type="text"
                     name="access_code"
-                    maxlength="9"
-                    minlength="8"
+                    maxlength="80"
+                    minlength="9"
                     inputmode="text"
-                    autocomplete="one-time-code"
+                    autocomplete="off"
                     autocapitalize="characters"
                     spellcheck="false"
-                    placeholder="A7F9K2QM"
+                    placeholder="ELEONORE03042012"
                     required
                 >
 

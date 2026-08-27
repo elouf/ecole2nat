@@ -100,7 +100,12 @@ Les tables de remplacements, séances planifiées et présences sont conservées
 - `ip_hash` : empreinte pseudonymisée de l’adresse IP, jamais l’adresse brute ;
 - `attempted_at` : date de la tentative.
 
-Les codes distribués en clair ne sont jamais enregistrés dans ces tables. Les lots temporaires d’email, coupons et CSV sont stockés dans des transients WordPress propres à l’administrateur.
+Le code est calculé à partir du prénom normalisé et de la date de naissance ; il
+n'est jamais enregistré dans ces tables. Les anciennes colonnes
+`parent_access_*` de `e2n_swimmers` sont conservées pour assurer une mise à jour
+non destructive, mais leurs valeurs ne participent plus à l'authentification.
+La recherche porte uniquement sur les nageurs actifs nés à la date extraite du
+code. Si plusieurs nageurs correspondent exactement, l'accès est refusé.
 
 ## Compétitions
 

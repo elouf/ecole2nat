@@ -10,8 +10,6 @@ use Ecole2Nat\Admin\Pages\ExercisePage;
 use Ecole2Nat\Admin\Pages\EvaluationPage;
 use Ecole2Nat\Admin\Pages\GroupPage;
 use Ecole2Nat\Admin\Pages\MaintenancePage;
-use Ecole2Nat\Admin\Pages\ParentAccessPage;
-use Ecole2Nat\Admin\Pages\ParentDistributionPage;
 use Ecole2Nat\Admin\Pages\ReferencePage;
 use Ecole2Nat\Admin\Pages\SeasonPage;
 use Ecole2Nat\Admin\Pages\SettingsPage;
@@ -119,15 +117,6 @@ class Menu
 
         add_submenu_page(
             'ecole2nat',
-            __('Accès parents', 'ecole2nat'),
-            __('Accès parents', 'ecole2nat'),
-            'manage_options',
-            'ecole2nat-parent-distribution',
-            [new ParentDistributionPage(), 'render']
-        );
-
-        add_submenu_page(
-            'ecole2nat',
             __('Synchronisation', 'ecole2nat'),
             __('Synchronisation', 'ecole2nat'),
             'manage_options',
@@ -163,15 +152,6 @@ class Menu
         );
 
 
-        add_submenu_page(
-            'ecole2nat',
-            __('Accès parents', 'ecole2nat'),
-            __('Accès parents', 'ecole2nat'),
-            'manage_options',
-            'ecole2nat-parent-access',
-            [new ParentAccessPage(), 'render']
-        );
-
         $this->addCoachPortalLink();
 
         add_action('admin_head', [$this, 'hideInternalMenuItems']);
@@ -197,8 +177,7 @@ class Menu
     {
         ?>
         <style>
-            #toplevel_page_ecole2nat a[href="admin.php?page=ecole2nat-exercise"],
-            #toplevel_page_ecole2nat a[href="admin.php?page=ecole2nat-parent-access"] {
+            #toplevel_page_ecole2nat a[href="admin.php?page=ecole2nat-exercise"] {
                 display: none !important;
             }
         </style>

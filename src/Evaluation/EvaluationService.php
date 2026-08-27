@@ -38,7 +38,7 @@ class EvaluationService
         if($skill===null)return null;
         $ids=array_map(static fn(array $sw):int=>(int)$sw['id'],$ctx['swimmers']);
         $levels=$this->repository->levelsBySkillForSwimmers($skillId,(int)$ctx['group']['season_id'],$ids);
-        foreach($ctx['swimmers'] as &$sw){$saved=$levels[(int)$sw['id']]??null;$sw['status']=is_array($saved)?(string)$saved['status']:self::STATUS_NOT_OBSERVED;}unset($sw);
+        foreach($ctx['swimmers'] as &$sw){$saved=$levels[(int)$sw['id']]??null;$sw['status']=is_array($saved)?(string)$saved['status']:self::STATUS_NOT_OBSERVED;$sw['notes']=is_array($saved)?(string)($saved['notes']??''):'';}unset($sw);
         return ['group'=>$ctx['group'],'skill'=>$skill,'swimmers'=>$ctx['swimmers']];
     }
 

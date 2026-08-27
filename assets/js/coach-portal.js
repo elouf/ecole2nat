@@ -468,63 +468,6 @@
         updatePlayAvailability();
     });
 
-    document.addEventListener('click', function (event) {
-        if (!(event.target instanceof Element)) return;
-        var showButton = event.target.closest('[data-e2n-show-parent-code]');
-        if (showButton instanceof HTMLButtonElement) {
-            var showStatus = document.querySelector('[data-e2n-parent-code-status]');
-            showButton.disabled = true;
-            if (showStatus) {
-                showStatus.className = 'e2n-parent-code-status is-saving';
-                showStatus.textContent = e2nCoachAjax.loadingParentCode;
-            }
-            post({
-                action: 'e2n_coach_get_parent_code',
-                group_id: showButton.dataset.groupId,
-                swimmer_id: showButton.dataset.swimmerId
-            }).then(function (json) {
-                if (showStatus) {
-                    showStatus.className = 'e2n-parent-code-status is-saved';
-                    showStatus.textContent = json.data.message;
-                }
-                if (navigator.clipboard && json.data.code) navigator.clipboard.writeText(json.data.code).catch(function () {});
-            }).catch(function (error) {
-                if (showStatus) {
-                    showStatus.className = 'e2n-parent-code-status is-error';
-                    showStatus.textContent = error.message || e2nCoachAjax.error;
-                }
-            }).finally(function () { showButton.disabled = false; });
-            return;
-        }
-        var button = event.target.closest('[data-e2n-send-parent-code]');
-        if (!(button instanceof HTMLButtonElement)) return;
-        if (!window.confirm(e2nCoachAjax.confirmParentCode)) return;
-
-        var status = document.querySelector('[data-e2n-parent-code-status]');
-        button.disabled = true;
-        if (status) {
-            status.className = 'e2n-parent-code-status is-saving';
-            status.textContent = e2nCoachAjax.sendingParentCode;
-        }
-        post({
-            action: 'e2n_coach_send_parent_code',
-            group_id: button.dataset.groupId,
-            swimmer_id: button.dataset.swimmerId
-        }).then(function (json) {
-            if (status) {
-                status.className = 'e2n-parent-code-status is-saved';
-                status.textContent = json.data.message;
-            }
-        }).catch(function (error) {
-            if (status) {
-                status.className = 'e2n-parent-code-status is-error';
-                status.textContent = error.message || e2nCoachAjax.error;
-            }
-        }).finally(function () {
-            button.disabled = false;
-        });
-    });
-
     function queueSave(key, payload, element) {
         var state = queues.get(key) || { busy: false, pending: null };
         queues.set(key, state);
