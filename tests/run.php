@@ -172,6 +172,9 @@ expectSame(true, str_contains((string) $evaluationServiceSource, '$sw[\'notes\']
 $service = accessService(['manage_options']);
 expectSame(true, $service->canEvaluateGroup(4), 'Un administrateur peut évaluer tout groupe');
 expectSame('Les coachs', Config::parentEmailSignature(), 'Signature email par défaut');
+expectSame('6.00', Config::invoiceMealPrice(), 'Prix par défaut d’un repas');
+expectSame('20.00', Config::invoiceNightPrice(), 'Prix par défaut d’une nuitée');
+expectSame('Dauphins de Mayenne', Config::invoiceIssuerName(), 'Nom par défaut de l’émetteur des factures');
 update_option('e2n_parent_email_signature', "Les Dauphins\nÉquipe pédagogique");
 expectSame("Les Dauphins\nÉquipe pédagogique", Config::parentEmailSignature(), 'Signature email personnalisée');
 expectSame('a@example.test / b@example.test', ContactList::normalizeEmails('a@example.test;b@example.test'), 'Emails séparés par point-virgule normalisés');

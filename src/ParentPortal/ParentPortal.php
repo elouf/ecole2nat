@@ -3,6 +3,7 @@
 namespace Ecole2Nat\ParentPortal;
 
 use Ecole2Nat\Competition\CompetitionService;
+use Ecole2Nat\Competition\CompetitionBillingService;
 use Ecole2Nat\Performance\EventCatalog;
 use Ecole2Nat\Performance\PerformanceService;
 use Ecole2Nat\Support\Config;
@@ -16,12 +17,14 @@ class ParentPortal
 {
     private ParentAccessService $service;
     private CompetitionService $competitions;
+    private CompetitionBillingService $billing;
     private PerformanceService $performances;
 
     public function __construct()
     {
         $this->service = new ParentAccessService();
         $this->competitions = new CompetitionService();
+        $this->billing = new CompetitionBillingService();
         $this->performances = new PerformanceService();
     }
 
@@ -31,6 +34,8 @@ class ParentPortal
         add_action('wp', [$this, 'registerNoIndex']);
         add_action('wp_enqueue_scripts', [$this, 'assets']);
         add_filter('template_include', [$this, 'template'], 99);
+        add_action('admin_post_e2n_parent_invoice_rib', [$this, 'downloadInvoiceRib']);
+        add_action('admin_post_nopriv_e2n_parent_invoice_rib', [$this, 'downloadInvoiceRib']);
     }
 
     public function assets(): void
@@ -43,13 +48,13 @@ class ParentPortal
             'e2n-parent-portal',
             Config::pluginUrl() . 'assets/css/parent-portal.css',
             [],
-            Config::version()
+            Config::version() . '.' . (string) filemtime(Config::pluginPath() . 'assets/css/parent-portal.css')
         );
         wp_enqueue_script(
             'e2n-parent-portal',
             Config::pluginUrl() . 'assets/js/parent-portal.js',
             [],
-            Config::version(),
+            Config::version() . '.' . (string) filemtime(Config::pluginPath() . 'assets/js/parent-portal.js'),
             true
         );
     }
@@ -164,6 +169,19 @@ class ParentPortal
             $message = $result['message'];
         }
 
+        if ($previewMode === '' && $swimmerId > 0 && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['e2n_parent_action'] ?? '') === 'invoice_payment') {
+            $competitionId = absint($_POST['competition_id'] ?? 0);
+            $invoiceId = absint($_POST['invoice_id'] ?? 0);
+            check_admin_referer('e2n_parent_invoice_payment_' . $invoiceId . '_' . $swimmerId);
+            $result = $this->billing->declarePayment(
+                $competitionId,
+                $invoiceId,
+                $swimmerId,
+                (string) ($_POST['payment_comment'] ?? '')
+            );
+            $message = $result['message'];
+        }
+
         ob_start();
         ?>
         <section class="e2n-parent-portal">
@@ -189,6 +207,31 @@ class ParentPortal
         <?php
 
         return (string) ob_get_clean();
+    }
+
+    public function downloadInvoiceRib(): void
+    {
+        $swimmerId = $this->service->authenticatedSwimmerId();
+        $competitionId = absint($_GET['competition_id'] ?? 0);
+        $invoiceId = absint($_GET['invoice_id'] ?? 0);
+        $nonce = sanitize_text_field(wp_unslash((string) ($_GET['_wpnonce'] ?? '')));
+        if ($swimmerId <= 0 || !wp_verify_nonce($nonce, 'e2n_parent_invoice_rib_' . $invoiceId . '_' . $swimmerId)) {
+            wp_die(esc_html__('Accès au RIB refusé.', 'ecole2nat'), '', ['response' => 403]);
+        }
+        if ($this->billing->parentInvoice($competitionId, $invoiceId, $swimmerId) === null) {
+            wp_die(esc_html__('Cette facture n’est pas disponible.', 'ecole2nat'), '', ['response' => 404]);
+        }
+        $attachmentId = Config::invoiceRibId();
+        $path = $attachmentId > 0 ? get_attached_file($attachmentId) : false;
+        if (!is_string($path) || !is_readable($path)) {
+            wp_die(esc_html__('Le RIB du club n’est pas disponible.', 'ecole2nat'), '', ['response' => 404]);
+        }
+        nocache_headers();
+        header('Content-Type: application/pdf');
+        header('Content-Disposition: attachment; filename="RIB-' . sanitize_file_name(Config::invoiceIssuerName()) . '.pdf"');
+        header('Content-Length: ' . (string) filesize($path));
+        readfile($path);
+        exit;
     }
 
     private function renderLogin(string $message): void
@@ -324,15 +367,6 @@ class ParentPortal
                 <button type="button" class="e2n-parent-print" onclick="window.print()">
                     <?php esc_html_e('Imprimer', 'ecole2nat'); ?>
                 </button>
-                <?php if ($previewMode === '') : ?>
-                    <form method="post">
-                        <?php wp_nonce_field('e2n_parent_logout'); ?>
-                        <input type="hidden" name="e2n_parent_action" value="logout">
-                        <button type="submit" class="e2n-parent-change-code">
-                            <?php esc_html_e('Changer de code', 'ecole2nat'); ?>
-                        </button>
-                    </form>
-                <?php endif; ?>
             </div>
         </header>
 
@@ -489,27 +523,29 @@ class ParentPortal
     {
         $swimmer=$report['swimmer']; $rows=$this->competitions->forSwimmer((int)$swimmer['id']); ?>
         <header class="e2n-parent-report-header"><div><p class="e2n-parent-eyebrow"><?php esc_html_e('Planning sportif', 'ecole2nat'); ?></p><h1><?php esc_html_e('Compétitions', 'ecole2nat'); ?></h1><div class="e2n-parent-swimmer-name"><p class="e2n-parent-group"><?php echo esc_html($swimmer['first_name'].' '.strtoupper((string)$swimmer['last_name'])); ?></p><?php $this->extranatLink($swimmer); ?></div></div></header>
-        <?php if ($message==='saved') : ?><div class="e2n-parent-alert is-success"><?php esc_html_e('Votre réponse a bien été enregistrée.', 'ecole2nat'); ?></div><?php elseif ($message==='closed') : ?><div class="e2n-parent-alert"><?php esc_html_e('La période d’inscription est fermée.', 'ecole2nat'); ?></div><?php elseif ($message==='engaged') : ?><div class="e2n-parent-alert"><?php esc_html_e('Votre engagement Extranat est déjà validé et votre réponse ne peut plus être modifiée.', 'ecole2nat'); ?></div><?php elseif ($message==='invalid') : ?><div class="e2n-parent-alert"><?php esc_html_e('Merci de renseigner toutes les informations demandées.', 'ecole2nat'); ?></div><?php endif; ?>
+        <?php if ($message==='saved') : ?><div class="e2n-parent-alert is-success"><?php esc_html_e('Votre réponse a bien été enregistrée.', 'ecole2nat'); ?></div><?php elseif ($message==='payment_declared'||$message==='payment_already_declared') : ?><div class="e2n-parent-alert is-success"><?php esc_html_e('Votre paiement a bien été déclaré à la trésorière.', 'ecole2nat'); ?></div><?php elseif ($message==='payment_email_failed') : ?><div class="e2n-parent-alert"><?php esc_html_e('Le message n’a pas pu être envoyé à la trésorière. Votre déclaration n’a pas été enregistrée ; vous pouvez réessayer.', 'ecole2nat'); ?></div><?php elseif ($message==='payment_save_failed') : ?><div class="e2n-parent-alert"><?php esc_html_e('Le message a été envoyé, mais la déclaration n’a pas pu être enregistrée. Contactez le club avant de réessayer.', 'ecole2nat'); ?></div><?php elseif ($message==='closed') : ?><div class="e2n-parent-alert"><?php esc_html_e('La période d’inscription est fermée.', 'ecole2nat'); ?></div><?php elseif ($message==='engaged') : ?><div class="e2n-parent-alert"><?php esc_html_e('Votre engagement Extranat est déjà validé et votre réponse ne peut plus être modifiée.', 'ecole2nat'); ?></div><?php elseif ($message==='invalid') : ?><div class="e2n-parent-alert"><?php esc_html_e('Merci de renseigner toutes les informations demandées.', 'ecole2nat'); ?></div><?php endif; ?>
         <div class="e2n-competition-list"><?php if($rows===[]):?><section class="e2n-parent-domain-card"><p><?php esc_html_e('Aucune compétition ne concerne actuellement cette catégorie.', 'ecole2nat'); ?></p></section><?php endif; ?>
-        <?php foreach($rows as $row): $state=$row['registration_state']; $response=$row['response']??'';$isEngaged=$response==='yes'&&(int)($row['is_engaged']??0)===1;$twoDays=!empty($row['end_date'])&&$row['end_date']!==$row['start_date']; ?><article class="e2n-parent-domain-card e2n-competition-card">
+        <?php foreach($rows as $row): $state=$row['registration_state']; $response=$row['response']??'';$isEngaged=$response==='yes'&&(int)($row['is_engaged']??0)===1;$twoDays=!empty($row['end_date'])&&$row['end_date']!==$row['start_date'];$invoice=!empty($row['invoice_id'])?$this->billing->parentInvoice((int)$row['id'],(int)$row['invoice_id'],(int)$swimmer['id']):null; ?><article class="e2n-parent-domain-card e2n-competition-card">
             <header><div><h2><?php echo esc_html($row['name']); ?></h2><p><?php echo esc_html(implode(' · ',array_filter([$this->competitionDateLabel($row),$row['location']??'',$row['pool_length']??'']))); ?></p></div><strong><?php echo esc_html($state==='open'?__('Inscriptions ouvertes','ecole2nat'):($state==='upcoming'?__('À venir','ecole2nat'):($state==='cancelled'?__('Annulée','ecole2nat'):__('Inscriptions closes','ecole2nat')))); ?></strong></header>
             <p><?php echo esc_html(sprintf(__('Réponses du %1$s au %2$s','ecole2nat'),wp_date('d/m/Y',strtotime($row['registration_opens_at'])),wp_date('d/m/Y',strtotime($row['registration_closes_at'])))); ?></p>
             <?php if(!empty($row['information'])):?><details class="e2n-competition-briefing"><summary><?php esc_html_e('Briefing','ecole2nat'); ?></summary><div><?php echo nl2br(esc_html($row['information'])); ?></div></details><?php endif; ?>
-            <?php if(!empty($row['technical_document_url'])||!empty($row['program_url'])||!empty($row['carpool_url'])||!empty($row['liveffn_url'])||!empty($row['photo_album_url'])):?><div class="e2n-competition-links">
+            <?php if(!empty($row['technical_document_url'])||!empty($row['program_url'])||!empty($row['carpool_url'])||!empty($row['liveffn_url'])||!empty($row['photo_album_url'])||$invoice!==null):?><div class="e2n-competition-links">
                 <?php if(!empty($row['technical_document_url'])):?><a class="e2n-btn e2n-document-btn" href="<?php echo esc_url($row['technical_document_url']); ?>" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">↗</span> <?php esc_html_e('Fiche technique','ecole2nat'); ?></a><?php endif; ?>
                 <?php if(!empty($row['program_url'])):?><a class="e2n-btn e2n-secondary-btn" href="<?php echo esc_url($row['program_url']); ?>" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">↗</span> <?php esc_html_e('Programme','ecole2nat'); ?></a><?php endif; ?>
                 <?php if(!empty($row['carpool_url'])):?><a class="e2n-btn e2n-secondary-btn" href="<?php echo esc_url($row['carpool_url']); ?>" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">🚗</span> <?php esc_html_e('Covoiturage','ecole2nat'); ?></a><?php endif; ?>
                 <?php if(!empty($row['liveffn_url'])):?><a class="e2n-btn e2n-secondary-btn" href="<?php echo esc_url($row['liveffn_url']); ?>" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">◉</span> <?php esc_html_e('liveFFN','ecole2nat'); ?></a><?php endif; ?>
                 <?php if(!empty($row['photo_album_url'])):?><a class="e2n-btn e2n-secondary-btn" href="<?php echo esc_url($row['photo_album_url']); ?>" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">📷</span> <?php esc_html_e('Album photo','ecole2nat'); ?></a><?php endif; ?>
+                <?php if($invoice!==null):?><button type="button" class="e2n-btn e2n-invoice-button <?php echo ($invoice['invoice_status']??'')==='payment_declared'?'is-paid':''; ?>" data-e2n-toggle-invoice aria-expanded="false"><span aria-hidden="true">€</span> <?php esc_html_e('Facture','ecole2nat'); ?></button><?php endif; ?>
             </div><?php endif; ?>
+            <?php if($invoice!==null):$this->renderParentInvoice($row,$invoice,(int)$swimmer['id'],$previewMode);endif; ?>
             <?php if($isEngaged):?><div class="e2n-competition-engaged-message"><?php esc_html_e('Vous êtes engagé sur cette compétition. En cas de forfait, vous devez nous prévenir le plus tôt possible (Whatsapp ou email). Hors raison médicale, les frais d’engagement vous seront facturés. Merci pour votre compréhension.','ecole2nat'); ?></div>
             <?php elseif($previewMode==='' && $state==='open'):?><form method="post" class="e2n-competition-response" data-e2n-competition-response><?php wp_nonce_field('e2n_parent_competition_response_'.(int)$row['id']); ?><input type="hidden" name="e2n_parent_action" value="competition_response"><input type="hidden" name="competition_id" value="<?php echo (int)$row['id']; ?>">
                 <fieldset><legend><?php esc_html_e('Je participe à cette compétition','ecole2nat'); ?></legend><label><input type="radio" name="response" value="yes" <?php checked($response,'yes'); ?> required> <?php esc_html_e('Oui','ecole2nat'); ?></label><label><input type="radio" name="response" value="no" <?php checked($response,'no'); ?> required> <?php esc_html_e('Non','ecole2nat'); ?></label></fieldset>
                 <fieldset><legend><?php esc_html_e('Je participe comme officiel (ou un parent)','ecole2nat'); ?></legend><label><input type="radio" name="parents_official" value="yes" <?php checked((string)($row['parents_official']??''),'1'); ?> required> <?php esc_html_e('Oui','ecole2nat'); ?></label><label><input type="radio" name="parents_official" value="no" <?php checked(isset($row['parents_official'])?(string)$row['parents_official']:'','0'); ?> required> <?php esc_html_e('Non','ecole2nat'); ?></label></fieldset>
                 <?php if($twoDays):?><fieldset data-e2n-attendance-days><legend><?php esc_html_e('Je participe les jours suivants','ecole2nat'); ?></legend><label><input type="radio" name="attendance_days" value="both" <?php checked($row['attendance_days']??'','both'); ?>> <?php esc_html_e('Les 2 jours','ecole2nat'); ?></label><label><input type="radio" name="attendance_days" value="first_day" <?php checked($row['attendance_days']??'','first_day'); ?>> <?php echo esc_html(sprintf(__('Seulement le %s','ecole2nat'),wp_date('d/m/Y',strtotime($row['start_date'])))); ?></label><label><input type="radio" name="attendance_days" value="second_day" <?php checked($row['attendance_days']??'','second_day'); ?>> <?php echo esc_html(sprintf(__('Seulement le %s','ecole2nat'),wp_date('d/m/Y',strtotime($row['end_date'])))); ?></label></fieldset><?php endif; ?>
-                <textarea name="comment" rows="2" placeholder="<?php esc_attr_e('Commentaire facultatif','ecole2nat'); ?>"><?php echo esc_textarea((string)($row['comment']??'')); ?></textarea><button type="submit" class="e2n-btn e2n-competition-submit"><span aria-hidden="true">✓</span> <?php esc_html_e('Enregistrer ma réponse','ecole2nat'); ?></button></form>
+                <textarea name="comment" rows="2" placeholder="<?php esc_attr_e('Commentaire facultatif','ecole2nat'); ?>"><?php echo esc_textarea((string)($row['comment']??'')); ?></textarea><button type="submit" class="e2n-btn e2n-competition-submit"><span aria-hidden="true">✓</span> <?php echo esc_html($response === '' ? __('Enregistrer ma réponse','ecole2nat') : __('Modifier ma réponse','ecole2nat')); ?></button></form>
             <?php else:?><div class="e2n-competition-answer"><p><strong><?php esc_html_e('Réponse :','ecole2nat'); ?></strong> <?php echo esc_html($response==='yes'?__('Oui','ecole2nat'):($response==='no'?__('Non','ecole2nat'):__('Non renseigné','ecole2nat'))); ?></p><p><strong><?php esc_html_e('Parents officiels :','ecole2nat'); ?></strong> <?php echo esc_html($row['parents_official']===null?__('Non renseigné','ecole2nat'):((int)$row['parents_official']===1?__('Oui','ecole2nat'):__('Non','ecole2nat'))); ?></p><?php if($twoDays&&$response==='yes'):?><p><strong><?php esc_html_e('Jours :','ecole2nat'); ?></strong> <?php echo esc_html($this->attendanceDaysLabel((string)($row['attendance_days']??''),$row)); ?></p><?php endif; ?></div><?php endif; ?>
-            <?php $isExpired=$response===''&&$state==='closed';$responseStatusClass=$response==='no'?'is-declined':($isEngaged?'is-confirmed':($response==='yes'?'is-pending':($isExpired?'is-expired':'is-unanswered')));$responseStatusLabel=$response==='no'?__('Ne participe pas','ecole2nat'):($isEngaged?__('Inscription Extranat validée','ecole2nat'):($response==='yes'?__('En attente de l’inscription Extranat par le coach','ecole2nat'):($isExpired?__('Délai de réponse dépassé','ecole2nat'):__('En attente de réponse','ecole2nat')))); ?><div class="e2n-parent-competition-status <?php echo esc_attr($responseStatusClass); ?>"><?php echo esc_html($responseStatusLabel); ?></div>
+            <?php $isUpcoming=$response===''&&$state==='upcoming';$isExpired=$response===''&&$state==='closed';$responseStatusClass=$response==='no'?'is-declined':($isEngaged?'is-confirmed':($response==='yes'?'is-pending':($isExpired?'is-expired':'is-unanswered')));$responseStatusLabel=$response==='no'?__('Ne participe pas','ecole2nat'):($isEngaged?__('Inscription Extranat validée','ecole2nat'):($response==='yes'?__('En attente de l’inscription Extranat par le coach','ecole2nat'):($isExpired?__('Délai de réponse dépassé','ecole2nat'):($isUpcoming?__('En attente de l’ouverture des inscriptions','ecole2nat'):__('En attente de réponse','ecole2nat'))))); ?><div class="e2n-parent-competition-status <?php echo esc_attr($responseStatusClass); ?>"><?php echo esc_html($responseStatusLabel); ?></div>
         </article><?php endforeach; ?></div><?php
     }
 
@@ -518,6 +554,43 @@ class ParentPortal
         $start=wp_date('d/m/Y',strtotime($competition['start_date']));
         if(empty($competition['end_date'])||$competition['end_date']===$competition['start_date'])return $start;
         return sprintf(__('Du %1$s au %2$s','ecole2nat'),$start,wp_date('d/m/Y',strtotime($competition['end_date'])));
+    }
+
+    private function renderParentInvoice(array $competition, array $invoice, int $swimmerId, string $previewMode): void
+    {
+        $invoiceId = (int) ($competition['invoice_id'] ?? 0);
+        $logoId = (int) ($invoice['issuer_logo_id'] ?? 0);
+        $logoUrl = $logoId > 0 ? wp_get_attachment_image_url($logoId, 'medium') : false;
+        $ribUrl = '';
+        if ($previewMode === '' && Config::invoiceRibId() > 0) {
+            $ribUrl = wp_nonce_url(add_query_arg([
+                'action' => 'e2n_parent_invoice_rib',
+                'competition_id' => (int) $competition['id'],
+                'invoice_id' => $invoiceId,
+            ], admin_url('admin-post.php')), 'e2n_parent_invoice_rib_' . $invoiceId . '_' . $swimmerId);
+        }
+        ?>
+        <section class="e2n-parent-invoice-panel" data-e2n-invoice-panel hidden>
+            <article class="e2n-parent-invoice">
+                <header>
+                    <div><?php if($logoUrl):?><img src="<?php echo esc_url($logoUrl); ?>" alt=""><?php endif; ?><div><strong><?php echo esc_html($invoice['issuer_name']); ?></strong><span><?php echo nl2br(esc_html($invoice['issuer_address'])); ?></span><?php if(!empty($invoice['issuer_siret'])):?><small><?php echo esc_html(sprintf(__('SIRET : %s','ecole2nat'),$invoice['issuer_siret'])); ?></small><?php endif; ?></div></div>
+                    <div><h3><?php esc_html_e('Facture','ecole2nat'); ?></h3><strong><?php echo esc_html($invoice['invoice_number']); ?></strong><span><?php echo esc_html(wp_date('d/m/Y',strtotime($invoice['issued_on']))); ?></span></div>
+                </header>
+                <dl><div><dt><?php esc_html_e('Nageur','ecole2nat'); ?></dt><dd><?php echo esc_html($invoice['swimmer_name']); ?></dd></div><div><dt><?php esc_html_e('Compétition','ecole2nat'); ?></dt><dd><?php echo esc_html($invoice['competition_name']); ?></dd></div></dl>
+                <div class="e2n-parent-invoice-lines">
+                    <?php if((int)$invoice['meal_quantity']>0):?><div><span><?php echo esc_html(sprintf(_n('%d repas','%d repas',(int)$invoice['meal_quantity'],'ecole2nat'),(int)$invoice['meal_quantity'])); ?> × <?php echo esc_html(number_format((float)$invoice['meal_unit_price'],2,',',' ')); ?> €</span><strong><?php echo esc_html(number_format((int)$invoice['meal_quantity']*(float)$invoice['meal_unit_price'],2,',',' ')); ?> €</strong></div><?php endif; ?>
+                    <?php if((int)$invoice['night_quantity']>0):?><div><span><?php echo esc_html(sprintf(_n('%d nuitée','%d nuitées',(int)$invoice['night_quantity'],'ecole2nat'),(int)$invoice['night_quantity'])); ?> × <?php echo esc_html(number_format((float)$invoice['night_unit_price'],2,',',' ')); ?> €</span><strong><?php echo esc_html(number_format((int)$invoice['night_quantity']*(float)$invoice['night_unit_price'],2,',',' ')); ?> €</strong></div><?php endif; ?>
+                    <div class="is-total"><span><?php esc_html_e('Total à régler','ecole2nat'); ?></span><strong><?php echo esc_html(number_format((float)$invoice['total_amount'],2,',',' ')); ?> €</strong></div>
+                </div>
+                <?php if(!empty($invoice['global_comment'])||!empty($invoice['individual_comment'])):?><div class="e2n-parent-invoice-comments"><?php if(!empty($invoice['global_comment'])):?><p><?php echo nl2br(esc_html($invoice['global_comment'])); ?></p><?php endif; ?><?php if(!empty($invoice['individual_comment'])):?><p><?php echo nl2br(esc_html($invoice['individual_comment'])); ?></p><?php endif; ?></div><?php endif; ?>
+            </article>
+            <div class="e2n-parent-invoice-payment">
+                <div class="e2n-parent-invoice-actions"><button type="button" class="e2n-btn e2n-secondary-btn" data-e2n-print-invoice><span aria-hidden="true">🖨</span> <?php esc_html_e('Imprimer ou enregistrer en PDF','ecole2nat'); ?></button><?php if($ribUrl!==''):?><a class="e2n-btn e2n-secondary-btn" href="<?php echo esc_url($ribUrl); ?>"><span aria-hidden="true">↓</span> <?php esc_html_e('Télécharger le RIB du club','ecole2nat'); ?></a><?php endif; ?></div>
+                <p><?php esc_html_e('Nous préférons recevoir les règlements par virement. Après votre paiement, utilisez le bouton ci-dessous : un email sera envoyé à la trésorière avec votre commentaire. Cette déclaration ne constitue pas une confirmation bancaire.','ecole2nat'); ?></p>
+                <?php if(($invoice['invoice_status']??'')==='payment_declared'):?><div class="e2n-parent-alert is-success"><?php esc_html_e('Paiement déclaré à la trésorière.','ecole2nat'); ?></div>
+                <?php elseif($previewMode===''):?><form method="post"><?php wp_nonce_field('e2n_parent_invoice_payment_'.$invoiceId.'_'.$swimmerId); ?><input type="hidden" name="e2n_parent_action" value="invoice_payment"><input type="hidden" name="competition_id" value="<?php echo (int)$competition['id']; ?>"><input type="hidden" name="invoice_id" value="<?php echo $invoiceId; ?>"><label for="e2n-payment-comment-<?php echo $invoiceId; ?>"><?php esc_html_e('Commentaire facultatif','ecole2nat'); ?></label><textarea id="e2n-payment-comment-<?php echo $invoiceId; ?>" name="payment_comment" rows="3"></textarea><button type="submit" class="e2n-btn"><?php esc_html_e('J’ai payé cette facture','ecole2nat'); ?></button></form><?php endif; ?>
+            </div>
+        </section><?php
     }
 
     private function extranatLink(array $swimmer): void

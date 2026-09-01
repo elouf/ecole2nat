@@ -112,6 +112,83 @@ class Installer
         ) {$charsetCollate};";
         dbDelta($sql);
 
+        $tableName = Config::table('competition_billing');
+        $sql = "CREATE TABLE {$tableName} (
+            competition_id bigint(20) unsigned NOT NULL,
+            global_comment text NULL,
+            updated_by bigint(20) unsigned NULL,
+            created_at datetime NOT NULL,
+            updated_at datetime NULL,
+            PRIMARY KEY  (competition_id)
+        ) {$charsetCollate};";
+        dbDelta($sql);
+
+        $tableName = Config::table('competition_invoices');
+        $sql = "CREATE TABLE {$tableName} (
+            id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+            competition_id bigint(20) unsigned NOT NULL,
+            swimmer_id bigint(20) unsigned NOT NULL,
+            meal_quantity int unsigned NOT NULL DEFAULT 0,
+            night_quantity int unsigned NOT NULL DEFAULT 0,
+            meal_unit_price decimal(10,2) NOT NULL DEFAULT 6.00,
+            night_unit_price decimal(10,2) NOT NULL DEFAULT 20.00,
+            individual_comment text NULL,
+            status varchar(30) NOT NULL DEFAULT 'draft',
+            invoice_number varchar(30) NULL,
+            issued_on date NULL,
+            current_version int unsigned NOT NULL DEFAULT 0,
+            generated_at datetime NULL,
+            generated_by bigint(20) unsigned NULL,
+            payment_declared_at datetime NULL,
+            payment_declared_comment text NULL,
+            created_at datetime NOT NULL,
+            updated_at datetime NULL,
+            PRIMARY KEY  (id),
+            UNIQUE KEY competition_swimmer (competition_id,swimmer_id),
+            UNIQUE KEY invoice_number (invoice_number),
+            KEY swimmer_id (swimmer_id),
+            KEY status (status)
+        ) {$charsetCollate};";
+        dbDelta($sql);
+
+        $tableName = Config::table('competition_invoice_versions');
+        $sql = "CREATE TABLE {$tableName} (
+            id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+            invoice_id bigint(20) unsigned NOT NULL,
+            version_number int unsigned NOT NULL,
+            invoice_number varchar(30) NOT NULL,
+            issued_on date NOT NULL,
+            swimmer_name varchar(220) NOT NULL,
+            competition_name varchar(180) NOT NULL,
+            competition_start_date date NOT NULL,
+            meal_quantity int unsigned NOT NULL DEFAULT 0,
+            night_quantity int unsigned NOT NULL DEFAULT 0,
+            meal_unit_price decimal(10,2) NOT NULL,
+            night_unit_price decimal(10,2) NOT NULL,
+            total_amount decimal(10,2) NOT NULL,
+            global_comment text NULL,
+            individual_comment text NULL,
+            issuer_name varchar(180) NOT NULL,
+            issuer_address text NOT NULL,
+            issuer_siret varchar(30) NULL,
+            issuer_logo_id bigint(20) unsigned NULL,
+            created_at datetime NOT NULL,
+            created_by bigint(20) unsigned NOT NULL,
+            PRIMARY KEY  (id),
+            UNIQUE KEY invoice_version (invoice_id,version_number),
+            KEY invoice_number (invoice_number)
+        ) {$charsetCollate};";
+        dbDelta($sql);
+
+        $tableName = Config::table('invoice_sequences');
+        $sql = "CREATE TABLE {$tableName} (
+            calendar_year smallint unsigned NOT NULL,
+            last_number int unsigned NOT NULL DEFAULT 999,
+            updated_at datetime NOT NULL,
+            PRIMARY KEY  (calendar_year)
+        ) {$charsetCollate};";
+        dbDelta($sql);
+
         $tableName = Config::table('competition_participants');
         $sql = "CREATE TABLE {$tableName} (
             competition_id bigint(20) unsigned NOT NULL,

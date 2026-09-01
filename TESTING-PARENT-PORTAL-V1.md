@@ -86,6 +86,11 @@
 5. Vérifier que `e2n_parent_access_logs.ip_hash` ne contient pas l'adresse IP brute.
 6. Depuis le portail Coach, ouvrir la prévisualisation d'un nageur et vérifier qu'elle porte la bannière Coach, n'utilise aucun code et ne modifie ni le compteur ni les journaux parents.
 7. Vérifier que l'URL de prévisualisation Coach exige une session Coach ou administrateur active et un nonce valide.
+8. Depuis Progression puis Compétitions, ouvrir le menu portant l'initiale du
+   nageur et cliquer sur Déconnexion. Vérifier le retour immédiat au formulaire
+   de code, la disparition du menu et le refus d'une ancienne copie de l'URL
+   après suppression du cookie signé. Le menu ne doit pas apparaître dans les
+   prévisualisations Coach ou administrateur.
 
 ## 6. Responsive
 

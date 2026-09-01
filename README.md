@@ -67,6 +67,20 @@ l'appareil du coach.
 Jusqu'à dix compétitions en cours sont épinglées sous l'en-tête Coach. Elles peuvent
 être clôturées puis redémarrées sans perdre ni verrouiller les performances.
 
+Chaque compétition propose aussi un écran **Facturation**, limité aux nageurs
+engagés sur Extranat. Le coach y renseigne le nombre de repas et de nuitées,
+un commentaire commun ou individuel, puis génère des factures web imprimables.
+Les tarifs, l'identité du club, le logo, le RIB et l'adresse de la trésorière se
+configurent dans **Ecole2Nat' → Réglages**. La première génération attribue un
+numéro annuel continu commençant à `1000` ; une régénération conserve ce numéro
+et ajoute une version traçable.
+
+Une facture générée apparaît aussi dans la compétition correspondante du
+portail Nageurs. La famille peut consulter son détail web, télécharger le RIB
+par un lien protégé et déclarer son paiement avec un commentaire. Cette
+déclaration verrouille la facture et envoie un récapitulatif à la trésorière ;
+elle ne vaut pas confirmation bancaire du règlement.
+
 ## Portail parents
 
 1. Créez et publiez une page WordPress, par exemple **Mon parcours de natation**.

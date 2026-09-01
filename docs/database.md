@@ -142,6 +142,21 @@ code. Si plusieurs nageurs correspondent exactement, l'accès est refusé.
   `series_key` commun permet de supprimer atomiquement toutes les performances
   enregistrées lors d'un même départ, y compris lorsque plusieurs groupes
   étaient mélangés depuis la vue Catégories.
+- `e2n_competition_billing` conserve le commentaire global de facturation
+  propre à une compétition.
+- `e2n_competition_invoices` contient une facture courante au maximum par
+  compétition et nageur, ses quantités de repas et nuitées, les tarifs figés,
+  son état (`draft`, `generated` ou `payment_declared`), son numéro et sa
+  version courante. Seuls les nageurs engagés sur Extranat peuvent recevoir
+  une ligne depuis le portail Coach.
+- `e2n_competition_invoice_versions` conserve un instantané immuable à chaque
+  génération ou régénération : destinataire, compétition, lignes, total,
+  commentaires et identité de l'émetteur. Une régénération incrémente la
+  version sans changer le numéro de facture.
+- `e2n_invoice_sequences` porte le dernier numéro utilisé par année civile.
+  La première allocation d'une année est `1000`, puis la séquence augmente
+  transactionnellement. Le format public est `F` + année sur deux chiffres +
+  numéro, par exemple `F26.1000`.
 
 La suppression d'un chrono collectif cible son identifiant et son contexte.
 La suppression d'une série cible son `series_key` et ne supprime aucune autre
@@ -176,9 +191,15 @@ la saison de la compétition.
 
 La suppression d'une compétition constitue une cascade applicative
 transactionnelle : ses catégories ciblées, participants, performances,
-réponses et engagements sont supprimés avec elle. L'historique des catégories de
+réponses, engagements, paramètres de facturation, factures et versions sont
+supprimés avec elle. L'historique des catégories de
 compétiteur des nageurs est conservé, car son cycle de vie appartient au
 nageur et non à la compétition.
+
+Les contraintes uniques `(competition_id, swimmer_id)` et `invoice_number` de
+`e2n_competition_invoices` empêchent respectivement deux factures courantes
+pour le même nageur et la réutilisation d'un numéro. La contrainte
+`(invoice_id, version_number)` garantit une seule occurrence de chaque version.
 
 ## Synchronisation
 

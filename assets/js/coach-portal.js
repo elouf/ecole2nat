@@ -5,8 +5,24 @@
         return value.toLocaleLowerCase('fr').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     }
 
+    function updateBillingRow(row) {
+        if (!row) return;
+        var meals = row.querySelector('[data-e2n-meal-quantity]');
+        var nights = row.querySelector('[data-e2n-night-quantity]');
+        var output = row.querySelector('[data-e2n-billing-total]');
+        if (!meals || !nights || !output) return;
+        var total = Math.max(0, parseInt(meals.value || '0', 10) || 0) * parseFloat(row.dataset.mealPrice || '0')
+            + Math.max(0, parseInt(nights.value || '0', 10) || 0) * parseFloat(row.dataset.nightPrice || '0');
+        output.textContent = total.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+    }
+
     document.addEventListener('input', function (event) {
         var field = event.target;
+        if (field instanceof HTMLInputElement && field.matches('[data-e2n-meal-quantity], [data-e2n-night-quantity]')) {
+            field.value = String(Math.min(99, Math.max(0, parseInt(field.value || '0', 10) || 0)));
+            updateBillingRow(field.closest('[data-e2n-billing-row]'));
+            return;
+        }
         if (!(field instanceof HTMLInputElement) || !field.matches('[data-e2n-swimmer-search]')) return;
         var query = normalize(field.value.trim());
         var visible = 0;
@@ -51,6 +67,16 @@
 
     document.addEventListener('click', function (event) {
         if (!(event.target instanceof Element)) return;
+        var quantityButton = event.target.closest('[data-e2n-quantity-change]');
+        if (quantityButton instanceof HTMLButtonElement) {
+            var quantity = quantityButton.parentElement ? quantityButton.parentElement.querySelector('input[type="number"]') : null;
+            if (quantity instanceof HTMLInputElement) {
+                var value = parseInt(quantity.value || '0', 10) || 0;
+                quantity.value = String(Math.min(99, Math.max(0, value + parseInt(quantityButton.dataset.e2nQuantityChange || '0', 10))));
+                updateBillingRow(quantityButton.closest('[data-e2n-billing-row]'));
+            }
+            return;
+        }
         var eventButton = event.target.closest('[data-e2n-event]');
         if (eventButton instanceof HTMLButtonElement) {
             var performanceForm = eventButton.closest('[data-e2n-performance-form]');

@@ -2,12 +2,15 @@
 
 ## Migration et synchronisation
 
-1. Mettre à jour le plugin sans le désactiver et vérifier la version DB `0.12.8`.
+1. Mettre à jour le plugin sans le désactiver et vérifier la version DB `0.14.0`.
 2. Vérifier les tables `e2n_competitions`,
    `e2n_competition_target_categories`,
    `e2n_swimmer_competition_category_states`,
    `e2n_swimmer_competition_state_categories` et
-   `e2n_competition_registrations`, ainsi que leurs index uniques documentés.
+   `e2n_competition_registrations`, ainsi que les tables de facturation
+   `e2n_competition_billing`, `e2n_competition_invoices`,
+   `e2n_competition_invoice_versions` et `e2n_invoice_sequences` avec leurs
+   index uniques documentés.
 3. Importer un onglet `Compétitions` comportant Code compétition, Nom, Date
    début, Date fin, Lieu, Bassin, Début inscriptions, Fin inscriptions, Catégories de
    compétiteurs, Fiche technique, Programme, Covoiturage, liveFFN, Album photo,
@@ -35,9 +38,12 @@
 
 1. Bien avant l'ouverture, vérifier que toutes les compétitions publiées et
    applicables au nageur sont visibles avec leurs informations, mais sans
-   formulaire de réponse.
+   formulaire de réponse. Le cartouche gris doit afficher
+   `En attente de l’ouverture des inscriptions`.
 2. Pendant la période, répondre Oui puis Non et vérifier l'enregistrement de
-   la participation éventuelle des parents comme officiels.
+   la participation éventuelle des parents comme officiels. Le bouton doit
+   afficher `Enregistrer ma réponse` avant la première saisie, puis
+   `Modifier ma réponse` tant que la réponse reste modifiable.
 3. Pour une compétition sur deux jours, tester Les 2 jours, le premier jour et
    le second jour. Le choix est obligatoire uniquement lorsque le nageur répond
    Oui. Vérifier l'affichage des deux dates sur toutes les vues.
@@ -83,6 +89,43 @@
     et Album photo apparaissent uniquement lorsque leur URL est renseignée,
     s'ouvrent dans un nouvel onglet, utilisent tous le même style blanc bordé
     que dans le portail Parents et restent utilisables sur mobile.
+11. Ouvrir Facturation et vérifier que seuls les nageurs engagés sur Extranat
+    sont proposés. Un nageur ayant répondu Oui sans engagement ne doit jamais
+    apparaître, même avec une URL ou un formulaire forgé.
+12. Ajouter et retirer repas et nuitées avec les boutons tactiles, saisir un
+    commentaire global et un commentaire individuel, enregistrer puis
+    recharger. Les quantités, commentaires et totaux doivent être conservés.
+13. Générer plusieurs factures positives : la première de l'année doit porter
+    `Fxx.1000`, les suivantes doivent respecter une séquence unique et continue.
+    Les lignes à zéro ne doivent pas recevoir de numéro.
+14. Modifier une quantité puis régénérer : le numéro doit rester identique, la
+    version augmenter et l'ancienne version rester présente en base. Relancer
+    sans aucune modification ne doit créer aucune version supplémentaire.
+15. Ouvrir l'aperçu web, vérifier les coordonnées du club, le nageur, les
+    lignes, le total et les commentaires, puis imprimer ou enregistrer en PDF.
+    Contrôler le rendu A4 et mobile.
+16. Forger une sauvegarde avec nonce invalide, nageur non engagé ou liste de
+    nageurs incomplète : aucune ligne ni aucun numéro ne doit être modifié.
+17. Dans le portail Nageurs, vérifier qu'une facture générée ajoute un bouton
+    Facture visible à côté des autres actions et ouvre son détail web, y compris
+    après la date de la compétition. Contrôler le total, les commentaires et le
+    rendu mobile.
+18. Télécharger le RIB depuis une session Parents valide. Rejouer l'URL sans
+    nonce, depuis un autre nageur puis sans cookie signé : le fichier ne doit
+    jamais être servi.
+19. Déclarer le paiement avec un commentaire et vérifier l'email reçu par la
+    trésorière, le passage de la facture à `payment_declared`, la disparition du
+    formulaire Parents et le verrouillage des quantités côté Coach. Simuler un
+    échec de `wp_mail()` : la facture doit rester déclarable afin de réessayer.
+20. Ouvrir la prévisualisation Parents comme Coach : la facture est lisible,
+    mais le téléchargement du RIB et la déclaration du paiement sont absents.
+21. Dans les réglages, ouvrir successivement les sélecteurs Logo des portails,
+    Logo des factures et RIB. Vérifier que la médiathèque s'ouvre à chaque fois,
+    que le type de fichier est filtré, que la prévisualisation ou le nom change
+    immédiatement et que la valeur reste enregistrée après rechargement.
+22. Depuis une facture du portail Nageurs, cliquer sur `Imprimer ou enregistrer
+    en PDF` et vérifier que l'aperçu ne contient que la facture ouverte, sans
+    en-tête du portail, autre compétition, RIB ni formulaire de paiement.
 
 ## Déroulement de la compétition
 
@@ -181,7 +224,9 @@
 4. Confirmer ensuite la suppression d'une compétition comportant des réponses
    et engagements. Vérifier la disparition de la compétition, de ses lignes
    dans `e2n_competition_target_categories`, `e2n_competition_registrations`,
-   `e2n_competition_participants` et `e2n_competition_performances`.
+   `e2n_competition_participants`, `e2n_competition_performances`,
+   `e2n_competition_billing`, `e2n_competition_invoices` et
+   `e2n_competition_invoice_versions`.
 5. Vérifier que les états de catégories de compétiteur des nageurs restent
    présents et qu'une URL sans nonce ou un compte sans `manage_options` ne
    peut rien supprimer.

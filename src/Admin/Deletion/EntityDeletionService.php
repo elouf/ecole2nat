@@ -119,6 +119,11 @@ final class EntityDeletionService
             $wpdb->delete(Config::table('competition_performances'), ['swimmer_id' => $id], ['%d']);
             $wpdb->delete(Config::table('training_performances'), ['swimmer_id' => $id], ['%d']);
             $wpdb->delete(Config::table('competition_participants'), ['swimmer_id' => $id], ['%d']);
+            $invoiceIds = $wpdb->get_col($wpdb->prepare('SELECT id FROM ' . Config::table('competition_invoices') . ' WHERE swimmer_id=%d', $id)) ?: [];
+            foreach ($invoiceIds as $invoiceId) {
+                $wpdb->delete(Config::table('competition_invoice_versions'), ['invoice_id' => (int) $invoiceId], ['%d']);
+            }
+            $wpdb->delete(Config::table('competition_invoices'), ['swimmer_id' => $id], ['%d']);
             $stateIds = $wpdb->get_col($wpdb->prepare('SELECT id FROM ' . Config::table('swimmer_competition_category_states') . ' WHERE swimmer_id = %d', $id)) ?: [];
             foreach ($stateIds as $stateId) {
                 $wpdb->delete(Config::table('swimmer_competition_state_categories'), ['state_id' => (int) $stateId], ['%d']);
@@ -168,6 +173,18 @@ final class EntityDeletionService
 
         $wpdb->query('START TRANSACTION');
         try {
+            $invoiceIds = $wpdb->get_col($wpdb->prepare('SELECT id FROM ' . Config::table('competition_invoices') . ' WHERE competition_id=%d', $id)) ?: [];
+            foreach ($invoiceIds as $invoiceId) {
+                if ($wpdb->delete(Config::table('competition_invoice_versions'), ['invoice_id' => (int) $invoiceId], ['%d']) === false) {
+                    throw new \RuntimeException('invoice_versions');
+                }
+            }
+            if ($wpdb->delete(Config::table('competition_invoices'), ['competition_id' => $id], ['%d']) === false) {
+                throw new \RuntimeException('invoices');
+            }
+            if ($wpdb->delete(Config::table('competition_billing'), ['competition_id' => $id], ['%d']) === false) {
+                throw new \RuntimeException('billing');
+            }
             if ($wpdb->delete(Config::table('competition_performances'), ['competition_id' => $id], ['%d']) === false) {
                 throw new \RuntimeException('performances');
             }

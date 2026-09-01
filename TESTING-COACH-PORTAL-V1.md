@@ -54,6 +54,10 @@
    la création de `e2n_training_performances`, de ses index métier et la valeur
    `0.13.0` de `e2n_db_version`, ainsi que la colonne et l'index `series_key`
    des deux tables de performances. Recharger une seconde fois sans erreur.
+8. Depuis une base en `0.13.0`, charger le plugin sans le réactiver et vérifier
+   la création des quatre tables de facturation, leurs index, la conservation
+   des données existantes et la valeur `0.14.0` de `e2n_db_version`. Recharger
+   une seconde fois sans erreur ni nouvelle ligne.
 
 ## Semaine type
 

@@ -217,5 +217,50 @@
                 removeLogo.hidden = true;
             });
         }
+
+        function initImagePicker(selectSelector, removeSelector, idSelector, previewSelector, title) {
+            var select = document.querySelector(selectSelector);
+            var remove = document.querySelector(removeSelector);
+            var id = document.querySelector(idSelector);
+            var imagePreview = document.querySelector(previewSelector);
+            if (!select || !remove || !id || !imagePreview || !window.wp || !wp.media) return;
+            var frame;
+            select.addEventListener('click', function () {
+                if (!frame) {
+                    frame = wp.media({ title: title, button: { text: 'Utiliser ce logo' }, library: { type: 'image' }, multiple: false });
+                    frame.on('select', function () {
+                        var attachment = frame.state().get('selection').first().toJSON();
+                        id.value = attachment.id;
+                        imagePreview.innerHTML = '<img src="' + (attachment.sizes && attachment.sizes.thumbnail ? attachment.sizes.thumbnail.url : attachment.url) + '" alt="">';
+                        remove.hidden = false;
+                    });
+                }
+                frame.open();
+            });
+            remove.addEventListener('click', function () { id.value = '0'; imagePreview.innerHTML = '<span>E2N</span>'; remove.hidden = true; });
+        }
+
+        initImagePicker('[data-e2n-invoice-logo-select]', '[data-e2n-invoice-logo-remove]', '[data-e2n-invoice-logo-id]', '[data-e2n-invoice-logo-preview]', 'Choisir le logo des factures');
+
+        var selectRib = document.querySelector('[data-e2n-invoice-rib-select]');
+        var removeRib = document.querySelector('[data-e2n-invoice-rib-remove]');
+        var ribId = document.querySelector('[data-e2n-invoice-rib-id]');
+        var ribName = document.querySelector('[data-e2n-invoice-rib-name]');
+        if (selectRib && removeRib && ribId && ribName && window.wp && wp.media) {
+            var ribFrame;
+            selectRib.addEventListener('click', function () {
+                if (!ribFrame) {
+                    ribFrame = wp.media({ title: 'Choisir le RIB du club', button: { text: 'Utiliser ce PDF' }, library: { type: 'application/pdf' }, multiple: false });
+                    ribFrame.on('select', function () {
+                        var attachment = ribFrame.state().get('selection').first().toJSON();
+                        ribId.value = attachment.id;
+                        ribName.textContent = attachment.filename || attachment.title;
+                        removeRib.hidden = false;
+                    });
+                }
+                ribFrame.open();
+            });
+            removeRib.addEventListener('click', function () { ribId.value = '0'; ribName.textContent = 'Aucun RIB sélectionné.'; removeRib.hidden = true; });
+        }
     });
 }());

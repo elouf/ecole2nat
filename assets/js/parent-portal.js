@@ -20,6 +20,32 @@
         });
     });
 
+    document.querySelectorAll('[data-e2n-toggle-invoice]').forEach(function (button) {
+        var card = button.closest('.e2n-competition-card');
+        var panel = card ? card.querySelector('[data-e2n-invoice-panel]') : null;
+        if (!panel) return;
+        button.addEventListener('click', function () {
+            panel.hidden = !panel.hidden;
+            button.setAttribute('aria-expanded', panel.hidden ? 'false' : 'true');
+            if (!panel.hidden) panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        });
+    });
+
+    document.querySelectorAll('[data-e2n-print-invoice]').forEach(function (button) {
+        button.addEventListener('click', function () {
+            var panel = button.closest('[data-e2n-invoice-panel]');
+            if (!panel) return;
+            function cleanupPrint() {
+                panel.classList.remove('is-printing');
+                document.body.classList.remove('e2n-printing-parent-invoice');
+            }
+            document.body.classList.add('e2n-printing-parent-invoice');
+            panel.classList.add('is-printing');
+            window.addEventListener('afterprint', cleanupPrint, { once: true });
+            window.requestAnimationFrame(function () { window.print(); });
+        });
+    });
+
     document.querySelectorAll('[data-e2n-performance-report]').forEach(function (report) {
         var allButton = report.querySelector('[data-e2n-toggle-all-charts]');
         var chartPanels = Array.from(report.querySelectorAll('[data-e2n-event-chart]'));

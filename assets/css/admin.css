@@ -41,6 +41,7 @@
 .e2n-delete-link { color: #b32d2e; }
 .e2n-table-actions { white-space: normal; }
 .e2n-parent-brand-preview{display:grid;place-items:center;width:96px;height:72px;padding:8px;border:1px solid #c3c4c7;border-radius:8px;background:#fff}.e2n-parent-brand-preview img{display:block;max-width:100%;max-height:100%;width:auto;height:auto}.e2n-parent-brand-preview>span{display:grid;place-items:center;width:42px;height:42px;border-radius:11px;background:#176b87;color:#fff;font-weight:700;font-size:12px}
+.e2n-parent-brand-preview{box-sizing:border-box;overflow:hidden}.e2n-parent-brand-preview img{width:100%;height:100%;max-width:none;max-height:none;object-fit:contain;object-position:center}
 
 /* Parent access distribution */
 .e2n-parent-coupons {

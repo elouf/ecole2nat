@@ -35,24 +35,29 @@ class Application
             return;
         }
 
+        $adminCssPath = Config::pluginPath() . 'assets/css/admin.css';
+        $adminJsPath = Config::pluginPath() . 'assets/js/admin.js';
+        $scriptDependencies = [];
+
+        if ($page === 'ecole2nat-settings') {
+            wp_enqueue_media();
+            $scriptDependencies[] = 'media-editor';
+        }
+
         wp_enqueue_style(
             'ecole2nat-admin',
             Config::pluginUrl() . 'assets/css/admin.css',
             [],
-            Config::version()
+            Config::version() . '.' . (string) filemtime($adminCssPath)
         );
 
         wp_enqueue_script(
             'ecole2nat-admin',
             Config::pluginUrl() . 'assets/js/admin.js',
-            [],
-            Config::version(),
+            $scriptDependencies,
+            Config::version() . '.' . (string) filemtime($adminJsPath),
             true
         );
-
-        if ($page === 'ecole2nat-settings') {
-            wp_enqueue_media();
-        }
     }
 
     public function registerAdminMenu(): void

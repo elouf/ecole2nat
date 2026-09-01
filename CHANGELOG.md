@@ -2,6 +2,19 @@
 
 ## Non publié — 0.21.0
 
+- Distingue dans le portail Nageurs l'attente d'ouverture des inscriptions d'une compétition de l'attente d'une réponse pendant la période ouverte.
+- Renomme l'action du formulaire de compétition en « Modifier ma réponse » après une première réponse enregistrée.
+- Ajoute les réglages de facturation des compétitions : tarifs des repas et nuitées, identité et logo du club, RIB et email de la trésorière.
+- Ajoute au portail Coach un module Facturation limité aux engagés Extranat, avec quantités tactiles, commentaires globaux ou individuels et génération de factures web imprimables.
+- Numérote les factures par année à partir de `1000`, conserve leur numéro lors d'une régénération et historise chaque version ; porte le schéma à `0.14.0`.
+- Centre verticalement les commandes d'ajout et de retrait des repas et nuitées dans le module de facturation Coach.
+- Contraint la prévisualisation du logo des factures à rester entièrement dans son cadre dans les réglages du plugin.
+- Fiabilise les sélecteurs de logo des factures et de RIB en chargeant explicitement la médiathèque WordPress et en invalidant le cache des ressources administratives modifiées.
+- Affiche les factures générées dans le portail Nageurs avec détail web, commentaires et téléchargement protégé du RIB, y compris après la date de la compétition.
+- Permet à la famille de déclarer un paiement avec un commentaire ; la facture est alors verrouillée et un email récapitulatif est envoyé à la trésorière.
+- Permet au nageur d'imprimer sa facture ou de l'enregistrer en PDF sans imprimer le reste du portail Compétitions.
+- Affiche en vert le bouton Facture du portail Nageurs après la déclaration du paiement.
+- Ajoute au portail Nageurs un menu utilisateur commun à toutes les vues permettant de détruire immédiatement le cookie de session et de se déconnecter.
 - Permet d'ouvrir et d'enregistrer un commentaire individuel sur chaque ligne de l'évaluation collective d'une compétence.
 - Remplace les codes Parents distribués par un accès déterministe composé du prénom normalisé et de la date de naissance, refuse les collisions entre nageurs actifs et conserve la limitation des tentatives ainsi que les cookies signés.
 - Retire les écrans et actions d'envoi des accès Parents ; le lien de la liste BO des nageurs ouvre désormais directement la prévisualisation du parcours.

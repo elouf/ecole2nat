@@ -23,7 +23,8 @@ class CompetitionRepository
     {
         global $wpdb;
         $sql = $wpdb->prepare(
-            'SELECT DISTINCT c.*, r.response, r.comment, r.response_source, r.responded_at, r.parents_official, r.attendance_days, r.is_engaged
+            'SELECT DISTINCT c.*, r.response, r.comment, r.response_source, r.responded_at, r.parents_official, r.attendance_days, r.is_engaged,
+                    i.id invoice_id,i.status invoice_status,i.invoice_number,i.current_version
              FROM ' . Config::table('competitions') . ' c
              INNER JOIN ' . Config::table('swimmer_group_memberships') . ' m ON m.season_id=c.season_id
              INNER JOIN ' . Config::table('swimmers') . ' s ON s.id=m.swimmer_id
@@ -32,7 +33,8 @@ class CompetitionRepository
              LEFT JOIN ' . Config::table('swimmer_competition_state_categories') . ' sc ON sc.state_id=cs.id
              LEFT JOIN ' . Config::table('competition_target_categories') . ' tc ON tc.competition_id=c.id AND tc.category_key=sc.category_key
              LEFT JOIN ' . Config::table('competition_registrations') . ' r ON r.competition_id=c.id AND r.swimmer_id=s.id
-             WHERE s.id=%d AND s.is_active=1 AND c.status IN (\'published\',\'cancelled\') AND c.start_date >= %s
+             LEFT JOIN ' . Config::table('competition_invoices') . ' i ON i.competition_id=c.id AND i.swimmer_id=s.id AND i.status IN (\'generated\',\'payment_declared\')
+             WHERE s.id=%d AND s.is_active=1 AND c.status IN (\'published\',\'cancelled\') AND (c.start_date >= %s OR i.id IS NOT NULL)
              AND (c.target_all=1 OR tc.category_key IS NOT NULL)
              ORDER BY c.start_date ASC, c.name ASC',
             $swimmerId,
