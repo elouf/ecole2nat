@@ -69,7 +69,8 @@ Jusqu'à dix compétitions en cours sont épinglées sous l'en-tête Coach. Elle
 
 Chaque compétition propose aussi un écran **Facturation**, limité aux nageurs
 engagés sur Extranat. Le coach y renseigne le nombre de repas et de nuitées,
-un commentaire commun ou individuel, puis génère des factures web imprimables.
+peut ajouter un montant libre affiché comme **Autre** et le justifier aux
+parents dans le commentaire individuel, puis génère des factures web imprimables.
 Les tarifs, l'identité du club, le logo, le RIB et l'adresse de la trésorière se
 configurent dans **Ecole2Nat' → Réglages**. La première génération attribue un
 numéro annuel continu commençant à `1000` ; une régénération conserve ce numéro

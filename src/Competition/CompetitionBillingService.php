@@ -50,6 +50,7 @@ final class CompetitionBillingService
                 'night_quantity' => min(99, absint($row['night_quantity'] ?? 0)),
                 'meal_unit_price' => Config::invoiceMealPrice(),
                 'night_unit_price' => Config::invoiceNightPrice(),
+                'other_amount' => $this->money($row['other_amount'] ?? 0),
                 'individual_comment' => sanitize_textarea_field(wp_unslash((string) ($row['individual_comment'] ?? ''))),
             ];
         }
@@ -102,5 +103,13 @@ final class CompetitionBillingService
             return ['success' => false, 'message' => 'payment_save_failed'];
         }
         return ['success' => true, 'message' => 'payment_declared'];
+    }
+
+    private function money(mixed $value): string
+    {
+        $value = str_replace(',', '.', trim((string) $value));
+        $amount = is_numeric($value) ? (float) $value : 0.0;
+
+        return number_format(min(99999999.99, max(0.0, $amount)), 2, '.', '');
     }
 }

@@ -2,7 +2,7 @@
 
 ## Migration et synchronisation
 
-1. Mettre à jour le plugin sans le désactiver et vérifier la version DB `0.14.0`.
+1. Mettre à jour le plugin sans le désactiver et vérifier la version DB `0.14.1`.
 2. Vérifier les tables `e2n_competitions`,
    `e2n_competition_target_categories`,
    `e2n_swimmer_competition_category_states`,
@@ -93,8 +93,10 @@
     sont proposés. Un nageur ayant répondu Oui sans engagement ne doit jamais
     apparaître, même avec une URL ou un formulaire forgé.
 12. Ajouter et retirer repas et nuitées avec les boutons tactiles, saisir un
-    commentaire global et un commentaire individuel, enregistrer puis
-    recharger. Les quantités, commentaires et totaux doivent être conservés.
+    montant libre positif et un commentaire individuel qui le justifie aux
+    parents, puis enregistrer et recharger. Les quantités, le montant, les
+    commentaires et les totaux doivent être conservés. Une valeur négative ou
+    non numérique doit être normalisée à zéro côté serveur.
 13. Générer plusieurs factures positives : la première de l'année doit porter
     `Fxx.1000`, les suivantes doivent respecter une séquence unique et continue.
     Les lignes à zéro ne doivent pas recevoir de numéro.
@@ -102,14 +104,15 @@
     version augmenter et l'ancienne version rester présente en base. Relancer
     sans aucune modification ne doit créer aucune version supplémentaire.
 15. Ouvrir l'aperçu web, vérifier les coordonnées du club, le nageur, les
-    lignes, le total et les commentaires, puis imprimer ou enregistrer en PDF.
+    lignes, dont le montant libre sous la désignation **Autre**, le total et les
+    commentaires, puis imprimer ou enregistrer en PDF.
     Contrôler le rendu A4 et mobile.
 16. Forger une sauvegarde avec nonce invalide, nageur non engagé ou liste de
     nageurs incomplète : aucune ligne ni aucun numéro ne doit être modifié.
 17. Dans le portail Nageurs, vérifier qu'une facture générée ajoute un bouton
     Facture visible à côté des autres actions et ouvre son détail web, y compris
-    après la date de la compétition. Contrôler le total, les commentaires et le
-    rendu mobile.
+    après la date de la compétition. Contrôler la ligne **Autre**, le total, le
+    commentaire justificatif et le rendu mobile.
 18. Télécharger le RIB depuis une session Parents valide. Rejouer l'URL sans
     nonce, depuis un autre nageur puis sans cookie signé : le fichier ne doit
     jamais être servi.

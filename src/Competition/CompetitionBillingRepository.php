@@ -14,7 +14,7 @@ final class CompetitionBillingRepository
         $sql = $wpdb->prepare(
             'SELECT s.id swimmer_id,s.first_name,s.last_name,g.name group_name,
                     i.id invoice_id,i.meal_quantity,i.night_quantity,i.meal_unit_price,
-                    i.night_unit_price,i.individual_comment,i.status invoice_status,
+                    i.night_unit_price,i.other_amount,i.individual_comment,i.status invoice_status,
                     i.invoice_number,i.issued_on,i.current_version
              FROM ' . Config::table('competition_registrations') . ' r
              INNER JOIN ' . Config::table('swimmers') . ' s ON s.id=r.swimmer_id
@@ -117,16 +117,17 @@ final class CompetitionBillingRepository
             foreach ($rows as $swimmerId => $row) {
                 $invoiceSql = $wpdb->prepare(
                     'INSERT INTO ' . Config::table('competition_invoices') . '
-                     (competition_id,swimmer_id,meal_quantity,night_quantity,meal_unit_price,night_unit_price,individual_comment,status,created_at,updated_at)
-                     VALUES (%d,%d,%d,%d,%s,%s,%s,\'draft\',%s,%s)
+                     (competition_id,swimmer_id,meal_quantity,night_quantity,meal_unit_price,night_unit_price,other_amount,individual_comment,status,created_at,updated_at)
+                     VALUES (%d,%d,%d,%d,%s,%s,%s,%s,\'draft\',%s,%s)
                      ON DUPLICATE KEY UPDATE
                      meal_quantity=IF(status=\'payment_declared\',meal_quantity,VALUES(meal_quantity)),
                      night_quantity=IF(status=\'payment_declared\',night_quantity,VALUES(night_quantity)),
                      meal_unit_price=IF(status=\'payment_declared\',meal_unit_price,VALUES(meal_unit_price)),
                      night_unit_price=IF(status=\'payment_declared\',night_unit_price,VALUES(night_unit_price)),
+                     other_amount=IF(status=\'payment_declared\',other_amount,VALUES(other_amount)),
                      individual_comment=IF(status=\'payment_declared\',individual_comment,VALUES(individual_comment)),
                      updated_at=IF(status=\'payment_declared\',updated_at,VALUES(updated_at))',
-                    $competitionId, $swimmerId, $row['meal_quantity'], $row['night_quantity'], $row['meal_unit_price'], $row['night_unit_price'], $row['individual_comment'], $now, $now
+                    $competitionId, $swimmerId, $row['meal_quantity'], $row['night_quantity'], $row['meal_unit_price'], $row['night_unit_price'], $row['other_amount'], $row['individual_comment'], $now, $now
                 );
                 if ($wpdb->query($invoiceSql) === false) throw new \RuntimeException('invoice');
             }
@@ -146,7 +147,8 @@ final class CompetitionBillingRepository
                     if (($invoice['status'] ?? '') === 'payment_declared') continue;
 
                     $totalCents = $this->moneyToCents((string) $invoice['meal_unit_price']) * (int) $invoice['meal_quantity']
-                        + $this->moneyToCents((string) $invoice['night_unit_price']) * (int) $invoice['night_quantity'];
+                        + $this->moneyToCents((string) $invoice['night_unit_price']) * (int) $invoice['night_quantity']
+                        + $this->moneyToCents((string) $invoice['other_amount']);
                     if ($totalCents <= 0) {
                         if (!empty($invoice['invoice_number'])) throw new \RuntimeException('empty_generated_invoice');
                         continue;
@@ -179,6 +181,7 @@ final class CompetitionBillingRepository
                         'competition_start_date' => (string) $invoice['competition_start_date'],
                         'meal_quantity' => (int) $invoice['meal_quantity'], 'night_quantity' => (int) $invoice['night_quantity'],
                         'meal_unit_price' => (string) $invoice['meal_unit_price'], 'night_unit_price' => (string) $invoice['night_unit_price'],
+                        'other_amount' => (string) $invoice['other_amount'],
                         'total_amount' => $this->centsToMoney($totalCents), 'global_comment' => $globalComment,
                         'individual_comment' => (string) ($invoice['individual_comment'] ?? ''),
                         'issuer_name' => $snapshot['issuer_name'], 'issuer_address' => $snapshot['issuer_address'],
@@ -233,6 +236,7 @@ final class CompetitionBillingRepository
             && (int) $version['night_quantity'] === (int) $invoice['night_quantity']
             && $this->moneyToCents((string) $version['meal_unit_price']) === $this->moneyToCents((string) $invoice['meal_unit_price'])
             && $this->moneyToCents((string) $version['night_unit_price']) === $this->moneyToCents((string) $invoice['night_unit_price'])
+            && $this->moneyToCents((string) ($version['other_amount'] ?? 0)) === $this->moneyToCents((string) ($invoice['other_amount'] ?? 0))
             && $this->moneyToCents((string) $version['total_amount']) === $totalCents
             && (string) $version['global_comment'] === $globalComment
             && (string) $version['individual_comment'] === (string) ($invoice['individual_comment'] ?? '')

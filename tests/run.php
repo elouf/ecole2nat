@@ -168,6 +168,11 @@ $coachPortalSource = file_get_contents(__DIR__ . '/../src/Coach/CoachPortal.php'
 $evaluationServiceSource = file_get_contents(__DIR__ . '/../src/Evaluation/EvaluationService.php');
 expectSame(true, str_contains((string) $coachPortalSource, 'e2n-collective-note'), 'L’évaluation collective propose un commentaire par nageur');
 expectSame(true, str_contains((string) $evaluationServiceSource, '$sw[\'notes\']'), 'Les notes existantes sont chargées dans l’évaluation collective');
+$billingRepositorySource = file_get_contents(__DIR__ . '/../src/Competition/CompetitionBillingRepository.php');
+$installerSource = file_get_contents(__DIR__ . '/../src/Database/Installer.php');
+expectSame(true, str_contains((string) $coachPortalSource, 'data-e2n-other-amount'), 'La facturation Coach propose un montant libre');
+expectSame(true, substr_count((string) $installerSource, 'other_amount decimal(10,2) NOT NULL DEFAULT 0.00') === 2, 'Le montant libre est ajouté à la facture courante et à ses versions');
+expectSame(true, str_contains((string) $billingRepositorySource, '+ $this->moneyToCents((string) $invoice[\'other_amount\'])'), 'Le montant libre participe au total facturé');
 
 $service = accessService(['manage_options']);
 expectSame(true, $service->canEvaluateGroup(4), 'Un administrateur peut évaluer tout groupe');

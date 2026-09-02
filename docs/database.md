@@ -146,11 +146,12 @@ code. Si plusieurs nageurs correspondent exactement, l'accès est refusé.
   propre à une compétition.
 - `e2n_competition_invoices` contient une facture courante au maximum par
   compétition et nageur, ses quantités de repas et nuitées, les tarifs figés,
-  son état (`draft`, `generated` ou `payment_declared`), son numéro et sa
+  un montant libre positif `other_amount`, son état (`draft`, `generated` ou `payment_declared`), son numéro et sa
   version courante. Seuls les nageurs engagés sur Extranat peuvent recevoir
   une ligne depuis le portail Coach.
 - `e2n_competition_invoice_versions` conserve un instantané immuable à chaque
-  génération ou régénération : destinataire, compétition, lignes, total,
+  génération ou régénération : destinataire, compétition, lignes dont le
+  montant libre libellé « Autre », total,
   commentaires et identité de l'émetteur. Une régénération incrémente la
   version sans changer le numéro de facture.
 - `e2n_invoice_sequences` porte le dernier numéro utilisé par année civile.

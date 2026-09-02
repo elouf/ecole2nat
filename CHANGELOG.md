@@ -2,6 +2,7 @@
 
 ## Non publié — 0.21.0
 
+- Ajoute un montant libre positif par nageur à la facturation des compétitions, affiché sous le libellé « Autre » sur la facture et explicable avec le commentaire individuel ; porte le schéma à `0.14.1`.
 - Distingue dans le portail Nageurs l'attente d'ouverture des inscriptions d'une compétition de l'attente d'une réponse pendant la période ouverte.
 - Renomme l'action du formulaire de compétition en « Modifier ma réponse » après une première réponse enregistrée.
 - Ajoute les réglages de facturation des compétitions : tarifs des repas et nuitées, identité et logo du club, RIB et email de la trésorière.

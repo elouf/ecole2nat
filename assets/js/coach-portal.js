@@ -9,17 +9,21 @@
         if (!row) return;
         var meals = row.querySelector('[data-e2n-meal-quantity]');
         var nights = row.querySelector('[data-e2n-night-quantity]');
+        var other = row.querySelector('[data-e2n-other-amount]');
         var output = row.querySelector('[data-e2n-billing-total]');
-        if (!meals || !nights || !output) return;
+        if (!meals || !nights || !other || !output) return;
         var total = Math.max(0, parseInt(meals.value || '0', 10) || 0) * parseFloat(row.dataset.mealPrice || '0')
-            + Math.max(0, parseInt(nights.value || '0', 10) || 0) * parseFloat(row.dataset.nightPrice || '0');
+            + Math.max(0, parseInt(nights.value || '0', 10) || 0) * parseFloat(row.dataset.nightPrice || '0')
+            + Math.max(0, parseFloat((other.value || '0').replace(',', '.')) || 0);
         output.textContent = total.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
     }
 
     document.addEventListener('input', function (event) {
         var field = event.target;
-        if (field instanceof HTMLInputElement && field.matches('[data-e2n-meal-quantity], [data-e2n-night-quantity]')) {
-            field.value = String(Math.min(99, Math.max(0, parseInt(field.value || '0', 10) || 0)));
+        if (field instanceof HTMLInputElement && field.matches('[data-e2n-meal-quantity], [data-e2n-night-quantity], [data-e2n-other-amount]')) {
+            if (!field.matches('[data-e2n-other-amount]')) {
+                field.value = String(Math.min(99, Math.max(0, parseInt(field.value || '0', 10) || 0)));
+            }
             updateBillingRow(field.closest('[data-e2n-billing-row]'));
             return;
         }
