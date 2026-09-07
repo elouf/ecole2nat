@@ -22,10 +22,12 @@
 1. Ouvrir Distributions, sélectionner « Bonnet » et toucher un nageur.
 2. Vérifier que les nageurs sont regroupés par catégorie et triés par nom puis
    prénom dans chaque groupe.
-3. Vérifier immédiatement l'état distribué, la date et le nom du coach.
-4. Toucher à nouveau : l'état redevient « Non distribué ».
-5. Vérifier l'affichage et la manipulation sur smartphone et tablette.
-6. Forger une requête avec nonce invalide ou nageur hors cible : elle doit être
+3. Décocher une pastille, vérifier que la catégorie disparaît, puis revenir sur
+   cette distribution et vérifier que ce choix est conservé.
+4. Vérifier immédiatement l'état distribué, la date et le nom du coach.
+5. Toucher à nouveau : l'état redevient « Non distribué ».
+6. Vérifier l'affichage et la manipulation sur smartphone et tablette.
+7. Forger une requête avec nonce invalide ou nageur hors cible : elle doit être
    refusée et aucune donnée ne doit changer.
 
 ## Portail Nageurs et suppression

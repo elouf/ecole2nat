@@ -8,6 +8,8 @@
   schéma à `0.15.0`.
 - Regroupe les nageurs par catégorie dans le suivi Coach d'une distribution,
   puis les trie alphabétiquement au sein de chaque catégorie.
+- Ajoute des filtres en pastilles mémorisés par coach et par distribution afin
+  de masquer les catégories inutiles pendant la remise du matériel.
 - Étend les noms d'exercices de 150 à 500 caractères, contrôle cette limite dès
   l'analyse du classeur et précise l'erreur SQL en cas d'échec de création ;
   porte le schéma à `0.14.2`.

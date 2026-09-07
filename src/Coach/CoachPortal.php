@@ -59,6 +59,7 @@ class CoachPortal
         add_action('wp_ajax_e2n_coach_purge_swimmer_performances', [$this, 'ajaxPurgeSwimmerPerformances']);
         add_action('wp_ajax_e2n_coach_save_category_visibility', [$this, 'ajaxSaveCategoryVisibility']);
         add_action('wp_ajax_e2n_coach_toggle_distribution', [$this, 'ajaxToggleDistribution']);
+        add_action('wp_ajax_e2n_coach_save_distribution_category_visibility', [$this, 'ajaxSaveDistributionCategoryVisibility']);
     }
 
     public function template(string $template): string
@@ -640,19 +641,28 @@ class CoachPortal
             $row = $this->distributions->coachDetail($id);
             if ($row === null) { echo '<p>'.esc_html__('Distribution introuvable.','ecole2nat').'</p></main>'; return; }
             echo '<a class="e2n-back" href="'.esc_url($this->base(['e2n_view'=>'distributions'])).'">← '.esc_html__('Distributions','ecole2nat').'</a><div class="e2n-distribution-title"><div><h1>'.esc_html($row['name']).'</h1><p>'.esc_html(wp_date('d/m/Y',strtotime($row['start_date'])).' — '.wp_date('d/m/Y',strtotime($row['end_date']))).'</p></div><strong data-e2n-distribution-progress>'.esc_html(sprintf(__('%1$d sur %2$d distribués','ecole2nat'),count(array_filter($row['swimmers'],static fn($s)=>!empty($s['delivered_at']))),count($row['swimmers']))).'</strong></div>';
+            $categories = [];
+            foreach ($row['swimmers'] as $swimmer) $categories[(int) ($swimmer['category_id'] ?? 0)] = (string) ($swimmer['category_name'] ?: __('Sans catégorie','ecole2nat'));
+            $hiddenCategories = array_map('absint', (array) get_user_meta(get_current_user_id(), 'e2n_hidden_distribution_categories_' . $id, true));
+            if ($categories !== []) {
+                echo '<fieldset class="e2n-category-filters"><legend>'.esc_html__('Catégories affichées','ecole2nat').'</legend>';
+                foreach ($categories as $categoryId => $categoryName) echo '<label><input type="checkbox" value="'.(int)$categoryId.'" data-e2n-kind="distribution-category-visibility" data-distribution-id="'.(int)$id.'" '.checked(!in_array((int)$categoryId,$hiddenCategories,true),true,false).'> <span>'.esc_html($categoryName).'</span></label>';
+                echo '<span class="e2n-category-filter-status" data-e2n-distribution-category-filter-status aria-live="polite"></span></fieldset>';
+            }
             $currentCategory = null;
             foreach ($row['swimmers'] as $swimmer) {
                 $category = (string) ($swimmer['category_name'] ?: __('Sans catégorie','ecole2nat'));
                 if ($category !== $currentCategory) {
-                    if ($currentCategory !== null) echo '</section>';
+                    if ($currentCategory !== null) echo '</section></div>';
                     $currentCategory = $category;
-                    echo '<h2 class="e2n-distribution-category">'.esc_html($category).'</h2><section class="e2n-distribution-swimmers">';
+                    $categoryId = (int) ($swimmer['category_id'] ?? 0);
+                    echo '<div data-e2n-distribution-category-section="'.(int)$categoryId.'" '.(in_array($categoryId,$hiddenCategories,true)?'hidden':'').'><h2 class="e2n-distribution-category">'.esc_html($category).'</h2><section class="e2n-distribution-swimmers">';
                 }
                 $done=!empty($swimmer['delivered_at']);
                 $label=$done?sprintf(__('Distribué le %1$s par %2$s','ecole2nat'),wp_date('d/m/Y',strtotime($swimmer['delivered_at'])),$swimmer['delivered_by_name']?:__('un coach','ecole2nat')):__('Non distribué','ecole2nat');
                 echo '<button type="button" class="e2n-distribution-swimmer '.($done?'is-delivered':'').'" data-e2n-distribution-toggle data-distribution-id="'.(int)$id.'" data-swimmer-id="'.(int)$swimmer['id'].'" data-delivered="'.($done?'1':'0').'"><span><strong>'.esc_html($swimmer['first_name'].' '.$swimmer['last_name']).'</strong><small>'.esc_html($swimmer['group_name']).'</small></span><em>'.esc_html($label).'</em></button>';
             }
-            if ($currentCategory !== null) echo '</section>';
+            if ($currentCategory !== null) echo '</section></div>';
         } else {
             echo '<h1>'.esc_html__('Distributions','ecole2nat').'</h1><p class="e2n-info">'.esc_html__('Touchez une distribution, puis un nageur pour enregistrer ou annuler la remise.','ecole2nat').'</p><div class="e2n-distribution-list">';
             foreach($this->distributions->coachList() as $row) echo '<a class="e2n-card" href="'.esc_url($this->base(['e2n_view'=>'distributions','e2n_distribution'=>(int)$row['id']])).'"><strong>'.esc_html($row['name']).'</strong><span>'.esc_html(wp_date('d/m/Y',strtotime($row['start_date'])).' — '.wp_date('d/m/Y',strtotime($row['end_date']))).'</span><em>'.esc_html(sprintf(__('%1$d / %2$d distribués','ecole2nat'),$row['delivered_count'],$row['target_count'])).'</em></a>';
@@ -665,6 +675,17 @@ class CoachPortal
     {
         check_ajax_referer('e2n_coach_ajax','nonce');if(!$this->access->canView())wp_send_json_error(['message'=>__('Modification non autorisée.','ecole2nat')],403);
         $result=$this->distributions->toggle(absint($_POST['distribution_id']??0),absint($_POST['swimmer_id']??0),!empty($_POST['delivered']),get_current_user_id());if(!$result['success'])wp_send_json_error(['message'=>$result['message']],400);wp_send_json_success($result);
+    }
+
+    public function ajaxSaveDistributionCategoryVisibility(): void
+    {
+        check_ajax_referer('e2n_coach_ajax','nonce');
+        if(!$this->access->canView())wp_send_json_error(['message'=>__('Modification non autorisée.','ecole2nat')],403);
+        $distributionId=absint($_POST['distribution_id']??0);
+        if($this->distributions->coachDetail($distributionId)===null)wp_send_json_error(['message'=>__('Distribution introuvable.','ecole2nat')],404);
+        $hidden=array_values(array_unique(array_filter(array_map('absint',wp_unslash((array)($_POST['hidden_categories']??[]))))));
+        update_user_meta(get_current_user_id(),'e2n_hidden_distribution_categories_'.$distributionId,$hidden);
+        wp_send_json_success(['message'=>__('Préférences enregistrées.','ecole2nat')]);
     }
 
     private function timeRange(array $group): string

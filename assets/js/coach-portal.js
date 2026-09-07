@@ -530,6 +530,15 @@
 
     document.addEventListener('change', function (event) {
         var input = event.target;
+        if (input instanceof HTMLInputElement && input.dataset.e2nKind === 'distribution-category-visibility') {
+            var distributionSection = document.querySelector('[data-e2n-distribution-category-section="' + input.value + '"]');
+            if (distributionSection) distributionSection.hidden = !input.checked;
+            var distributionHidden = Array.from(document.querySelectorAll('[data-e2n-kind="distribution-category-visibility"]:not(:checked)')).map(function (checkbox) { return checkbox.value; });
+            var distributionStatus = document.querySelector('[data-e2n-distribution-category-filter-status]');
+            if (distributionStatus) distributionStatus.textContent = e2nCoachAjax.saving;
+            post({action:'e2n_coach_save_distribution_category_visibility',distribution_id:input.dataset.distributionId,'hidden_categories[]':distributionHidden}).then(function(){if(distributionStatus)distributionStatus.textContent=e2nCoachAjax.saved;}).catch(function(error){input.checked=!input.checked;if(distributionSection)distributionSection.hidden=!input.checked;if(distributionStatus)distributionStatus.textContent=error.message||e2nCoachAjax.error;});
+            return;
+        }
         if (input instanceof HTMLInputElement && input.dataset.e2nKind === 'category-visibility') {
             var section = document.querySelector('[data-e2n-category-section="' + input.value + '"]');
             if (section) section.hidden = !input.checked;
