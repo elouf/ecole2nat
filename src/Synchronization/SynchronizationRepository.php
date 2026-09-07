@@ -268,7 +268,7 @@ final class SynchronizationRepository
                 $key=$skillId.'|'.$this->normalize($name); if(isset($seen[$key])) continue; $seen[$key]=true;
                 $id=(int)$wpdb->get_var($wpdb->prepare("SELECT id FROM {$table} WHERE skill_id=%d AND LOWER(name)=LOWER(%s) LIMIT 1",$skillId,$name));
                 if($id<=0){
-                    if($wpdb->insert($table,['skill_id'=>$skillId,'name'=>$name,'description'=>'','objectives'=>'','coach_notes'=>'','equipment'=>'','difficulty'=>1,'created_at'=>current_time('mysql')],['%d','%s','%s','%s','%s','%s','%d','%s'])===false) throw new \RuntimeException('Impossible de créer l’exercice '.$name.'.');
+                    if($wpdb->insert($table,['skill_id'=>$skillId,'name'=>$name,'description'=>'','objectives'=>'','coach_notes'=>'','equipment'=>'','difficulty'=>1,'created_at'=>current_time('mysql')],['%d','%s','%s','%s','%s','%s','%d','%s'])===false) throw new \RuntimeException('Impossible de créer l’exercice '.$name.' : '.$wpdb->last_error);
                     $stats['exercises']['created']++;
                 } else $stats['exercises']['unchanged']++;
             }

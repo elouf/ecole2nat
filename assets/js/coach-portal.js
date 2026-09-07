@@ -234,6 +234,13 @@
 
     document.addEventListener('click', function (event) {
         if (!(event.target instanceof Element)) return;
+        var distribution = event.target.closest('[data-e2n-distribution-toggle]');
+        if (distribution instanceof HTMLButtonElement) {
+            var delivered = distribution.dataset.delivered !== '1';
+            distribution.disabled = true;
+            post({action:'e2n_coach_toggle_distribution',distribution_id:distribution.dataset.distributionId,swimmer_id:distribution.dataset.swimmerId,delivered:delivered?'1':''}).then(function(response){distribution.dataset.delivered=delivered?'1':'0';distribution.classList.toggle('is-delivered',delivered);distribution.querySelector('em').textContent=response.data.label;distribution.disabled=false;var progress=document.querySelector('[data-e2n-distribution-progress]');if(progress){var values=progress.textContent.match(/(\d+)\D+(\d+)/);if(values)progress.textContent=(parseInt(values[1],10)+(delivered?1:-1))+' sur '+values[2]+' distribués';}}).catch(function(error){distribution.disabled=false;window.alert(error.message||e2nCoachAjax.error);});
+            return;
+        }
         var deleteTime = event.target.closest('[data-e2n-delete-swimmer-time]');
         var purgeTimes = event.target.closest('[data-e2n-purge-swimmer-times]');
         var button = deleteTime || purgeTimes;

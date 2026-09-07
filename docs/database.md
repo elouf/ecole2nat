@@ -9,7 +9,8 @@ Le schéma est créé et mis à niveau par `Ecole2Nat\Database\Installer` avec `
 - `e2n_categories` : catégories pédagogiques, avec ordre et statut actif.
 - `e2n_skill_domains` : domaines rattachés à une catégorie.
 - `e2n_skills` : compétences rattachées à un domaine.
-- `e2n_exercises` : exercices rattachés à une compétence.
+- `e2n_exercises` : exercices rattachés à une compétence ; leur nom accepte
+  jusqu'à 500 caractères afin de conserver les consignes pédagogiques longues.
 - `e2n_season_skills` : activation d’une compétence pour une saison donnée.
 
 ```text
@@ -201,6 +202,24 @@ Les contraintes uniques `(competition_id, swimmer_id)` et `invoice_number` de
 `e2n_competition_invoices` empêchent respectivement deux factures courantes
 pour le même nageur et la réutilisation d'un numéro. La contrainte
 `(invoice_id, version_number)` garantit une seule occurrence de chaque version.
+
+## Distributions de matériel
+
+`e2n_distributions` décrit une campagne par son nom et sa période. Le champ
+`created_by` identifie l'administrateur qui l'a créée.
+
+`e2n_distribution_targets` fige la liste des nageurs concernés au moment de
+l'enregistrement. Sa clé primaire `(distribution_id, swimmer_id)` interdit les
+doublons. Une synchronisation ultérieure ne modifie pas cette cible.
+
+`e2n_distribution_deliveries` contient uniquement les remises effectives. Sa
+clé primaire `(distribution_id, swimmer_id)` garantit un seul état courant par
+nageur. `delivered_at` et `delivered_by` conservent la date et le coach. Une
+annulation supprime cette ligne, sans retirer le nageur de la cible.
+
+La suppression d'une distribution supprime transactionnellement ses remises et
+ses cibles. La suppression d'un nageur retire également ses cibles et remises.
+Aucune relation n'est matérialisée par une clé étrangère SQL.
 
 ## Synchronisation
 

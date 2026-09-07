@@ -304,7 +304,7 @@ class ExercisePage
                                 type="text"
                                 name="name"
                                 class="regular-text"
-                                maxlength="150"
+                                maxlength="500"
                                 value="<?php echo esc_attr(
                                     $this->fieldValue('name')
                                 ); ?>"

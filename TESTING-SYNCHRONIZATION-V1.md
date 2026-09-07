@@ -43,6 +43,10 @@
 11. Modifier la durée à 60 : l'analyse doit annoncer un groupe mis à jour et la synchronisation doit porter la fin à 18h15.
 12. Vider ensuite la cellule, modifier manuellement l'heure de fin dans WordPress et resynchroniser : l'heure manuelle doit être conservée et le groupe annoncé inchangé.
 13. Relancer le même classeur avec la durée renseignée : aucun changement supplémentaire ne doit être annoncé.
+14. Ajouter un exercice dont le nom dépasse 150 caractères sans dépasser 500,
+    puis synchroniser : son libellé doit être intégralement conservé en base et
+    affiché sans troncature dans la bibliothèque. Ouvrir ensuite l'exercice dans
+    le back-office et vérifier que l'éditeur accepte également les 500 caractères.
 
 ## Erreurs
 
@@ -52,3 +56,5 @@
 - Mettre une extension autre que `.xlsx` : le fichier doit être refusé.
 - Saisir une durée nulle, négative, non entière ou supérieure à 1440 : l'analyse doit être bloquée avec la ligne concernée.
 - Renseigner une durée pour un nom de groupe sans heure reconnaissable : l'analyse doit expliquer que l'heure de début est nécessaire.
+- Saisir un nom d'exercice de plus de 500 caractères : l'analyse doit être
+  bloquée en indiquant l'onglet, la ligne et la limite autorisée.

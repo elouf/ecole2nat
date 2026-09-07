@@ -78,6 +78,45 @@ class Installer
 
         dbDelta($sql);
 
+        $tableName = Config::table('distributions');
+        $sql = "CREATE TABLE {$tableName} (
+            id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+            name varchar(180) NOT NULL,
+            start_date date NOT NULL,
+            end_date date NOT NULL,
+            created_by bigint(20) unsigned NULL,
+            created_at datetime NOT NULL,
+            updated_at datetime NULL,
+            PRIMARY KEY  (id),
+            KEY start_date (start_date),
+            KEY end_date (end_date)
+        ) {$charsetCollate};";
+        dbDelta($sql);
+
+        $tableName = Config::table('distribution_targets');
+        $sql = "CREATE TABLE {$tableName} (
+            distribution_id bigint(20) unsigned NOT NULL,
+            swimmer_id bigint(20) unsigned NOT NULL,
+            created_at datetime NOT NULL,
+            PRIMARY KEY  (distribution_id,swimmer_id),
+            KEY swimmer_id (swimmer_id)
+        ) {$charsetCollate};";
+        dbDelta($sql);
+
+        $tableName = Config::table('distribution_deliveries');
+        $sql = "CREATE TABLE {$tableName} (
+            distribution_id bigint(20) unsigned NOT NULL,
+            swimmer_id bigint(20) unsigned NOT NULL,
+            delivered_at datetime NOT NULL,
+            delivered_by bigint(20) unsigned NOT NULL,
+            created_at datetime NOT NULL,
+            PRIMARY KEY  (distribution_id,swimmer_id),
+            KEY swimmer_id (swimmer_id),
+            KEY delivered_by (delivered_by),
+            KEY delivered_at (delivered_at)
+        ) {$charsetCollate};";
+        dbDelta($sql);
+
         $tableName = Config::table('competitions');
         $sql = "CREATE TABLE {$tableName} (
             id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -370,7 +409,7 @@ class Installer
         $sql = "CREATE TABLE {$tableName} (
             id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
             skill_id BIGINT UNSIGNED NOT NULL,
-            name VARCHAR(150) NOT NULL,
+            name VARCHAR(500) NOT NULL,
             description TEXT NULL,
             objectives TEXT NULL,
             coach_notes TEXT NULL,

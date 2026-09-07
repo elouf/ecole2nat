@@ -14,6 +14,8 @@ if (!defined('ABSPATH')) {
 
 final class WorkbookReader
 {
+    private const EXERCISE_NAME_MAX_LENGTH = 500;
+
     public function read(string $path): array
     {
         $spreadsheet = IOFactory::load($path);
@@ -222,6 +224,16 @@ final class WorkbookReader
                 continue;
             }
             $exercises = array_values(array_unique(array_filter(array_map('trim', preg_split('/[;\n]+/u', $exerciseText) ?: []))));
+            foreach ($exercises as $exercise) {
+                if (mb_strlen($exercise) > self::EXERCISE_NAME_MAX_LENGTH) {
+                    $errors[] = sprintf(
+                        'Onglet %s, ligne %d : le nom d’exercice dépasse %d caractères.',
+                        $sheet->getTitle(),
+                        $row['_row'],
+                        self::EXERCISE_NAME_MAX_LENGTH
+                    );
+                }
+            }
             $rows[] = compact('category', 'domain', 'skill', 'exercises');
         }
         return $rows;

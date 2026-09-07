@@ -5,6 +5,7 @@ namespace Ecole2Nat\Admin;
 use Ecole2Nat\Admin\Pages\CategoryPage;
 use Ecole2Nat\Admin\Pages\CoachPage;
 use Ecole2Nat\Admin\Pages\CompetitionPage;
+use Ecole2Nat\Admin\Pages\DistributionPage;
 use Ecole2Nat\Admin\Pages\ExerciseListPage;
 use Ecole2Nat\Admin\Pages\ExercisePage;
 use Ecole2Nat\Admin\Pages\EvaluationPage;
@@ -42,6 +43,8 @@ class Menu
             'ecole2nat-competitions',
             [new CompetitionPage(), 'render']
         );
+
+        add_submenu_page('ecole2nat', __('Distributions','ecole2nat'), __('Distributions','ecole2nat'), 'manage_options', 'ecole2nat-distributions', [new DistributionPage(), 'render']);
 
         add_submenu_page(
             'ecole2nat',

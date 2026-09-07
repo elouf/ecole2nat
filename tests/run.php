@@ -170,8 +170,15 @@ expectSame(true, str_contains((string) $coachPortalSource, 'e2n-collective-note'
 expectSame(true, str_contains((string) $evaluationServiceSource, '$sw[\'notes\']'), 'Les notes existantes sont chargées dans l’évaluation collective');
 $billingRepositorySource = file_get_contents(__DIR__ . '/../src/Competition/CompetitionBillingRepository.php');
 $installerSource = file_get_contents(__DIR__ . '/../src/Database/Installer.php');
+$exercisePageSource = file_get_contents(__DIR__ . '/../src/Admin/Pages/ExercisePage.php');
 expectSame(true, str_contains((string) $coachPortalSource, 'data-e2n-other-amount'), 'La facturation Coach propose un montant libre');
 expectSame(true, substr_count((string) $installerSource, 'other_amount decimal(10,2) NOT NULL DEFAULT 0.00') === 2, 'Le montant libre est ajouté à la facture courante et à ses versions');
+expectSame(true, str_contains((string) $installerSource, 'name VARCHAR(500) NOT NULL'), 'Les noms d’exercices longs sont acceptés par le schéma');
+expectSame(true, str_contains((string) $exercisePageSource, 'maxlength="500"'), 'L’éditeur BO accepte les noms d’exercices longs');
+expectSame(true, str_contains((string) $bootstrapSource, "E2N_DB_VERSION', '0.15.0'"), 'La version DB inclut la migration des noms d’exercices et des distributions');
+expectSame(true, str_contains((string) $installerSource, "Config::table('distributions')"), 'Le schéma crée les distributions');
+expectSame(true, str_contains((string) $installerSource, "Config::table('distribution_targets')"), 'Le schéma crée les cibles de distribution');
+expectSame(true, str_contains((string) $installerSource, "Config::table('distribution_deliveries')"), 'Le schéma crée les remises de distribution');
 expectSame(true, str_contains((string) $billingRepositorySource, '+ $this->moneyToCents((string) $invoice[\'other_amount\'])'), 'Le montant libre participe au total facturé');
 
 $service = accessService(['manage_options']);
@@ -298,7 +305,7 @@ $spreadsheet->createSheet()->setTitle('Référentiel Némo')->fromArray([
 $spreadsheet->getSheetByName('Référentiel Némo')->mergeCells('A2:A3');
 $spreadsheet->createSheet()->setTitle('Référentiel Dauphin')->fromArray([
     ['Domaine', 'Compétence', 'Exercices'],
-    ['Propulsion', 'Se déplacer sur le ventre', 'Battements avec planche'],
+    ['Propulsion', 'Se déplacer sur le ventre', "Effectuer une inspiration d'une seconde maximum entre deux expirations, sans expirer en dehors de l'eau en tenant le mur, en déplacement avec aide, en déplacement sans aide"],
 ]);
 $spreadsheet->createSheet()->setTitle('Compétitions')->fromArray([
     ['Code compétition','Nom','Date début','Date fin','Lieu','Bassin','Début inscriptions','Fin inscriptions','Catégories de compétiteurs','Fiche technique','Programme','Covoiturage','liveFFN','Album photo','Informations','Statut'],
@@ -325,6 +332,7 @@ expectSame('Némo', $workbook['data']['reference'][0]['category'] ?? null, 'Cat�
 expectSame('Immersion', $workbook['data']['reference'][1]['domain'] ?? null, 'Domaine repris depuis une cellule fusionnée');
 expectSame(false, array_key_exists('domainCode', $workbook['data']['reference'][0] ?? []), 'Code domaine absent des données analysées');
 expectSame(false, array_key_exists('skillCode', $workbook['data']['reference'][0] ?? []), 'Code compétence absent des données analysées');
+expectSame(172, mb_strlen($workbook['data']['reference'][2]['exercises'][0] ?? ''), 'Un nom d’exercice de plus de 150 caractères est conservé intégralement');
 expectSame('MEETING-2026', $workbook['data']['competitions'][0]['code'] ?? null, 'Lecture du code stable de compétition');
 expectSame('25m', $workbook['data']['competitions'][0]['pool_length'] ?? null, 'Lecture de la longueur du bassin de compétition');
 expectSame('https://example.test/programme.pdf', $workbook['data']['competitions'][0]['program_url'] ?? null, 'Lecture du lien vers le programme');
@@ -339,6 +347,10 @@ $spreadsheet->getSheetByName('Compétitions')->setCellValue('F2','33m');
 (new Xlsx($spreadsheet))->save($workbookPath);
 $invalidPoolWorkbook=(new WorkbookReader())->read($workbookPath);
 expectSame(true, count(array_filter($invalidPoolWorkbook['errors'], static fn(string $error):bool=>str_contains($error,'bassin doit être 25m ou 50m')))>0, 'Une longueur de bassin inconnue est refusée');
+$spreadsheet->getSheetByName('Référentiel Dauphin')->setCellValue('C2', str_repeat('x', 501));
+(new Xlsx($spreadsheet))->save($workbookPath);
+$oversizedExerciseWorkbook=(new WorkbookReader())->read($workbookPath);
+expectSame(true, count(array_filter($oversizedExerciseWorkbook['errors'], static fn(string $error):bool=>str_contains($error,'nom d’exercice dépasse 500 caractères')))>0, 'Un nom d’exercice de plus de 500 caractères est refusé pendant l’analyse');
 unlink($workbookPath);
 
 if ($failures !== []) {

@@ -4,6 +4,7 @@ namespace Ecole2Nat\ParentPortal;
 
 use Ecole2Nat\Competition\CompetitionService;
 use Ecole2Nat\Competition\CompetitionBillingService;
+use Ecole2Nat\Distribution\DistributionService;
 use Ecole2Nat\Performance\EventCatalog;
 use Ecole2Nat\Performance\PerformanceService;
 use Ecole2Nat\Support\Config;
@@ -19,6 +20,7 @@ class ParentPortal
     private CompetitionService $competitions;
     private CompetitionBillingService $billing;
     private PerformanceService $performances;
+    private DistributionService $distributions;
 
     public function __construct()
     {
@@ -26,6 +28,7 @@ class ParentPortal
         $this->competitions = new CompetitionService();
         $this->billing = new CompetitionBillingService();
         $this->performances = new PerformanceService();
+        $this->distributions = new DistributionService();
     }
 
     public function register(): void
@@ -369,6 +372,13 @@ class ParentPortal
                 </button>
             </div>
         </header>
+
+        <?php $deliveries=$this->distributions->deliveredForSwimmer((int)$swimmer['id']);if($deliveries!==[]): ?>
+            <section class="e2n-parent-distributions e2n-parent-summary-card">
+                <h2><?php esc_html_e('Objets reçus','ecole2nat'); ?></h2>
+                <ul><?php foreach($deliveries as $delivery): ?><li><strong><?php echo esc_html($delivery['name']); ?></strong><span><?php echo esc_html(sprintf(__('Remis le %1$s par %2$s','ecole2nat'),wp_date('d/m/Y',strtotime($delivery['delivered_at'])),$delivery['coach_name'])); ?></span></li><?php endforeach; ?></ul>
+            </section>
+        <?php endif; ?>
 
         <?php if ($total > 0) : ?>
         <div class="e2n-parent-summary-card">

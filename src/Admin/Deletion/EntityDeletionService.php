@@ -47,6 +47,7 @@ final class EntityDeletionService
             'swimmer' => $this->deleteSwimmer($id),
             'session' => $this->deleteSession($id),
             'competition' => $this->deleteCompetition($id),
+            'distribution' => $this->deleteDistribution($id),
             default => ['success' => false, 'message' => 'delete_invalid'],
         };
     }
@@ -119,6 +120,8 @@ final class EntityDeletionService
             $wpdb->delete(Config::table('competition_performances'), ['swimmer_id' => $id], ['%d']);
             $wpdb->delete(Config::table('training_performances'), ['swimmer_id' => $id], ['%d']);
             $wpdb->delete(Config::table('competition_participants'), ['swimmer_id' => $id], ['%d']);
+            $wpdb->delete(Config::table('distribution_deliveries'), ['swimmer_id' => $id], ['%d']);
+            $wpdb->delete(Config::table('distribution_targets'), ['swimmer_id' => $id], ['%d']);
             $invoiceIds = $wpdb->get_col($wpdb->prepare('SELECT id FROM ' . Config::table('competition_invoices') . ' WHERE swimmer_id=%d', $id)) ?: [];
             foreach ($invoiceIds as $invoiceId) {
                 $wpdb->delete(Config::table('competition_invoice_versions'), ['invoice_id' => (int) $invoiceId], ['%d']);
@@ -207,5 +210,16 @@ final class EntityDeletionService
             $wpdb->query('ROLLBACK');
             return ['success' => false, 'message' => 'delete_blocked', 'reason' => __('La compétition n’a pas pu être supprimée. Aucune donnée associée n’a été effacée.', 'ecole2nat')];
         }
+    }
+
+    private function deleteDistribution(int $id): array
+    {
+        global $wpdb; $wpdb->query('START TRANSACTION');
+        try {
+            if($wpdb->delete(Config::table('distribution_deliveries'),['distribution_id'=>$id],['%d'])===false)throw new \RuntimeException('deliveries');
+            if($wpdb->delete(Config::table('distribution_targets'),['distribution_id'=>$id],['%d'])===false)throw new \RuntimeException('targets');
+            $deleted=$wpdb->delete(Config::table('distributions'),['id'=>$id],['%d']);if($deleted===false||$deleted===0)throw new \RuntimeException('distribution');
+            $wpdb->query('COMMIT');return ['success'=>true,'message'=>'deleted'];
+        } catch(\Throwable $e){$wpdb->query('ROLLBACK');return ['success'=>false,'message'=>'error'];}
     }
 }

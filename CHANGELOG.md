@@ -2,6 +2,15 @@
 
 ## Non publié — 0.21.0
 
+- Ajoute les distributions de matériel : campagnes et ciblage figé de nageurs
+  dans le back-office, remise ou annulation en un clic dans le portail Coach,
+  avec date et identité du coach visibles dans le portail Nageurs ; porte le
+  schéma à `0.15.0`.
+- Regroupe les nageurs par catégorie dans le suivi Coach d'une distribution,
+  puis les trie alphabétiquement au sein de chaque catégorie.
+- Étend les noms d'exercices de 150 à 500 caractères, contrôle cette limite dès
+  l'analyse du classeur et précise l'erreur SQL en cas d'échec de création ;
+  porte le schéma à `0.14.2`.
 - Ajoute un montant libre positif par nageur à la facturation des compétitions, affiché sous le libellé « Autre » sur la facture et explicable avec le commentaire individuel ; porte le schéma à `0.14.1`.
 - Distingue dans le portail Nageurs l'attente d'ouverture des inscriptions d'une compétition de l'attente d'une réponse pendant la période ouverte.
 - Renomme l'action du formulaire de compétition en « Modifier ma réponse » après une première réponse enregistrée.

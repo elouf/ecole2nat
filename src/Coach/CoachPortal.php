@@ -5,6 +5,7 @@ namespace Ecole2Nat\Coach;
 use Ecole2Nat\Competition\CompetitionService;
 use Ecole2Nat\Competition\CompetitionBillingService;
 use Ecole2Nat\Evaluation\EvaluationService;
+use Ecole2Nat\Distribution\DistributionService;
 use Ecole2Nat\ParentPortal\ParentAccessService;
 use Ecole2Nat\Performance\EventCatalog;
 use Ecole2Nat\Performance\PerformanceService;
@@ -23,6 +24,7 @@ class CoachPortal
     private CompetitionService $competitions;
     private CompetitionBillingService $billing;
     private PerformanceService $performances;
+    private DistributionService $distributions;
     private string $competitionNotice = '';
     private array $competitionMissing = [];
 
@@ -35,6 +37,7 @@ class CoachPortal
         $this->competitions = new CompetitionService();
         $this->billing = new CompetitionBillingService();
         $this->performances = new PerformanceService();
+        $this->distributions = new DistributionService();
     }
 
     public function register(): void
@@ -55,6 +58,7 @@ class CoachPortal
         add_action('wp_ajax_e2n_coach_delete_swimmer_performance', [$this, 'ajaxDeleteSwimmerPerformance']);
         add_action('wp_ajax_e2n_coach_purge_swimmer_performances', [$this, 'ajaxPurgeSwimmerPerformances']);
         add_action('wp_ajax_e2n_coach_save_category_visibility', [$this, 'ajaxSaveCategoryVisibility']);
+        add_action('wp_ajax_e2n_coach_toggle_distribution', [$this, 'ajaxToggleDistribution']);
     }
 
     public function template(string $template): string
@@ -118,15 +122,16 @@ class CoachPortal
         $swimmerId = absint($_GET['e2n_swimmer'] ?? 0);
         $collectiveSkillId = absint($_GET['e2n_collective_skill'] ?? 0);
         $view = sanitize_key(wp_unslash((string) ($_GET['e2n_view'] ?? 'week')));
-        if (!in_array($view, ['swimmers', 'categories', 'week', 'competitions'], true)) $view = 'week';
+        if (!in_array($view, ['swimmers', 'categories', 'week', 'competitions', 'distributions'], true)) $view = 'week';
         $from = sanitize_key(wp_unslash((string) ($_GET['e2n_from'] ?? $view)));
-        if (!in_array($from, ['swimmers', 'categories', 'week', 'competitions'], true)) $from = 'week';
+        if (!in_array($from, ['swimmers', 'categories', 'week', 'competitions', 'distributions'], true)) $from = 'week';
         $competitionId = absint($_GET['e2n_competition'] ?? 0);
         if ($view === 'competitions' && $competitionId > 0) $this->handleCompetitionAction($competitionId);
         ob_start();
         echo '<div class="e2n-coach">';
         $this->header($groupId > 0 ? $from : $view);
-        if ($view === 'competitions' && $competitionId > 0) $this->competition($competitionId);
+        if ($view === 'distributions') $this->distributions();
+        elseif ($view === 'competitions' && $competitionId > 0) $this->competition($competitionId);
         elseif ($view === 'competitions') $this->competitions();
         elseif ($groupId && $swimmerId) $this->swimmer($groupId, $swimmerId, $from);
         elseif ($groupId && $collectiveSkillId) $this->collective($groupId, $collectiveSkillId, $from);
@@ -148,7 +153,7 @@ class CoachPortal
         $user = wp_get_current_user();
         $portalTitle = Config::portalTitle();
         $portalLogoId = Config::portalLogoId(); ?>
-        <header class="e2n-coach-head"><a class="e2n-brand" href="<?php echo esc_url($this->base()); ?>"><?php if ($portalLogoId > 0) : ?><?php echo wp_get_attachment_image($portalLogoId, 'thumbnail', false, ['class' => 'e2n-brand-image']); ?><?php else : ?><span class="e2n-brand-mark" aria-hidden="true">E2N</span><?php endif; ?><span><?php echo esc_html($portalTitle); ?></span></a><nav aria-label="<?php esc_attr_e('Navigation Coach', 'ecole2nat'); ?>"><a class="<?php echo $view === 'swimmers' ? 'is-active' : ''; ?>" href="<?php echo esc_url($this->base(['e2n_view' => 'swimmers'])); ?>"><?php esc_html_e('Nageurs', 'ecole2nat'); ?></a><a class="<?php echo $view === 'categories' ? 'is-active' : ''; ?>" href="<?php echo esc_url($this->base(['e2n_view' => 'categories'])); ?>"><?php esc_html_e('Catégories', 'ecole2nat'); ?></a><a class="<?php echo $view === 'week' ? 'is-active' : ''; ?>" href="<?php echo esc_url($this->base()); ?>"><?php esc_html_e('Semaine type', 'ecole2nat'); ?></a><a class="<?php echo $view === 'competitions' ? 'is-active' : ''; ?>" href="<?php echo esc_url($this->base(['e2n_view'=>'competitions'])); ?>"><?php esc_html_e('Compétitions','ecole2nat'); ?></a></nav><details class="e2n-user-menu"><summary aria-label="<?php esc_attr_e('Menu utilisateur', 'ecole2nat'); ?>"><span aria-hidden="true"><?php echo esc_html(mb_strtoupper(mb_substr((string) $user->display_name, 0, 1))); ?></span></summary><div><strong><?php echo esc_html($user->display_name); ?></strong><a href="<?php echo esc_url(admin_url()); ?>"><?php esc_html_e('Tableau de bord', 'ecole2nat'); ?></a><a href="<?php echo esc_url(wp_logout_url($this->base())); ?>"><?php esc_html_e('Déconnexion', 'ecole2nat'); ?></a></div></details></header>
+        <header class="e2n-coach-head"><a class="e2n-brand" href="<?php echo esc_url($this->base()); ?>"><?php if ($portalLogoId > 0) : ?><?php echo wp_get_attachment_image($portalLogoId, 'thumbnail', false, ['class' => 'e2n-brand-image']); ?><?php else : ?><span class="e2n-brand-mark" aria-hidden="true">E2N</span><?php endif; ?><span><?php echo esc_html($portalTitle); ?></span></a><nav aria-label="<?php esc_attr_e('Navigation Coach', 'ecole2nat'); ?>"><a class="<?php echo $view === 'swimmers' ? 'is-active' : ''; ?>" href="<?php echo esc_url($this->base(['e2n_view' => 'swimmers'])); ?>"><?php esc_html_e('Nageurs', 'ecole2nat'); ?></a><a class="<?php echo $view === 'categories' ? 'is-active' : ''; ?>" href="<?php echo esc_url($this->base(['e2n_view' => 'categories'])); ?>"><?php esc_html_e('Catégories', 'ecole2nat'); ?></a><a class="<?php echo $view === 'week' ? 'is-active' : ''; ?>" href="<?php echo esc_url($this->base()); ?>"><?php esc_html_e('Semaine type', 'ecole2nat'); ?></a><a class="<?php echo $view === 'competitions' ? 'is-active' : ''; ?>" href="<?php echo esc_url($this->base(['e2n_view'=>'competitions'])); ?>"><?php esc_html_e('Compétitions','ecole2nat'); ?></a><a class="<?php echo $view === 'distributions' ? 'is-active' : ''; ?>" href="<?php echo esc_url($this->base(['e2n_view'=>'distributions'])); ?>"><?php esc_html_e('Distributions','ecole2nat'); ?></a></nav><details class="e2n-user-menu"><summary aria-label="<?php esc_attr_e('Menu utilisateur', 'ecole2nat'); ?>"><span aria-hidden="true"><?php echo esc_html(mb_strtoupper(mb_substr((string) $user->display_name, 0, 1))); ?></span></summary><div><strong><?php echo esc_html($user->display_name); ?></strong><a href="<?php echo esc_url(admin_url()); ?>"><?php esc_html_e('Tableau de bord', 'ecole2nat'); ?></a><a href="<?php echo esc_url(wp_logout_url($this->base())); ?>"><?php esc_html_e('Déconnexion', 'ecole2nat'); ?></a></div></details></header>
         <?php $activeCompetitions=$this->competitions->activeCompetitions();if($activeCompetitions!==[]):?><nav class="e2n-live-competitions" aria-label="<?php esc_attr_e('Compétitions en cours','ecole2nat'); ?>"><strong><span aria-hidden="true">▶</span> <?php esc_html_e('En cours','ecole2nat'); ?></strong><?php foreach($activeCompetitions as $activeCompetition):?><a href="<?php echo esc_url($this->base(['e2n_view'=>'competitions','e2n_competition'=>(int)$activeCompetition['id']])); ?>"><?php echo esc_html($activeCompetition['name']); ?></a><?php endforeach; ?></nav><?php endif; ?>
         <?php
     }
@@ -625,6 +630,41 @@ class CoachPortal
         $hidden = array_values(array_unique(array_filter(array_map('absint', wp_unslash((array) ($_POST['hidden_categories'] ?? []))))));
         update_user_meta(get_current_user_id(), 'e2n_hidden_coach_categories', $hidden);
         wp_send_json_success(['message' => __('Préférences enregistrées.', 'ecole2nat')]);
+    }
+
+    private function distributions(): void
+    {
+        $id = absint($_GET['e2n_distribution'] ?? 0);
+        echo '<main class="e2n-coach-main e2n-distributions">';
+        if ($id > 0) {
+            $row = $this->distributions->coachDetail($id);
+            if ($row === null) { echo '<p>'.esc_html__('Distribution introuvable.','ecole2nat').'</p></main>'; return; }
+            echo '<a class="e2n-back" href="'.esc_url($this->base(['e2n_view'=>'distributions'])).'">← '.esc_html__('Distributions','ecole2nat').'</a><div class="e2n-distribution-title"><div><h1>'.esc_html($row['name']).'</h1><p>'.esc_html(wp_date('d/m/Y',strtotime($row['start_date'])).' — '.wp_date('d/m/Y',strtotime($row['end_date']))).'</p></div><strong data-e2n-distribution-progress>'.esc_html(sprintf(__('%1$d sur %2$d distribués','ecole2nat'),count(array_filter($row['swimmers'],static fn($s)=>!empty($s['delivered_at']))),count($row['swimmers']))).'</strong></div>';
+            $currentCategory = null;
+            foreach ($row['swimmers'] as $swimmer) {
+                $category = (string) ($swimmer['category_name'] ?: __('Sans catégorie','ecole2nat'));
+                if ($category !== $currentCategory) {
+                    if ($currentCategory !== null) echo '</section>';
+                    $currentCategory = $category;
+                    echo '<h2 class="e2n-distribution-category">'.esc_html($category).'</h2><section class="e2n-distribution-swimmers">';
+                }
+                $done=!empty($swimmer['delivered_at']);
+                $label=$done?sprintf(__('Distribué le %1$s par %2$s','ecole2nat'),wp_date('d/m/Y',strtotime($swimmer['delivered_at'])),$swimmer['delivered_by_name']?:__('un coach','ecole2nat')):__('Non distribué','ecole2nat');
+                echo '<button type="button" class="e2n-distribution-swimmer '.($done?'is-delivered':'').'" data-e2n-distribution-toggle data-distribution-id="'.(int)$id.'" data-swimmer-id="'.(int)$swimmer['id'].'" data-delivered="'.($done?'1':'0').'"><span><strong>'.esc_html($swimmer['first_name'].' '.$swimmer['last_name']).'</strong><small>'.esc_html($swimmer['group_name']).'</small></span><em>'.esc_html($label).'</em></button>';
+            }
+            if ($currentCategory !== null) echo '</section>';
+        } else {
+            echo '<h1>'.esc_html__('Distributions','ecole2nat').'</h1><p class="e2n-info">'.esc_html__('Touchez une distribution, puis un nageur pour enregistrer ou annuler la remise.','ecole2nat').'</p><div class="e2n-distribution-list">';
+            foreach($this->distributions->coachList() as $row) echo '<a class="e2n-card" href="'.esc_url($this->base(['e2n_view'=>'distributions','e2n_distribution'=>(int)$row['id']])).'"><strong>'.esc_html($row['name']).'</strong><span>'.esc_html(wp_date('d/m/Y',strtotime($row['start_date'])).' — '.wp_date('d/m/Y',strtotime($row['end_date']))).'</span><em>'.esc_html(sprintf(__('%1$d / %2$d distribués','ecole2nat'),$row['delivered_count'],$row['target_count'])).'</em></a>';
+            echo '</div>';
+        }
+        echo '</main>';
+    }
+
+    public function ajaxToggleDistribution(): void
+    {
+        check_ajax_referer('e2n_coach_ajax','nonce');if(!$this->access->canView())wp_send_json_error(['message'=>__('Modification non autorisée.','ecole2nat')],403);
+        $result=$this->distributions->toggle(absint($_POST['distribution_id']??0),absint($_POST['swimmer_id']??0),!empty($_POST['delivered']),get_current_user_id());if(!$result['success'])wp_send_json_error(['message'=>$result['message']],400);wp_send_json_success($result);
     }
 
     private function timeRange(array $group): string
