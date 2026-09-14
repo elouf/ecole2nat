@@ -171,6 +171,8 @@ expectSame(true, str_contains((string) $evaluationServiceSource, '$sw[\'notes\']
 $billingRepositorySource = file_get_contents(__DIR__ . '/../src/Competition/CompetitionBillingRepository.php');
 $installerSource = file_get_contents(__DIR__ . '/../src/Database/Installer.php');
 $exercisePageSource = file_get_contents(__DIR__ . '/../src/Admin/Pages/ExercisePage.php');
+$settingsPageSource = file_get_contents(__DIR__ . '/../src/Admin/Pages/SettingsPage.php');
+expectSame(false, str_contains((string) $settingsPageSource, 'parent_email_signature'), 'Les réglages ne proposent ni ne modifient plus la signature des anciens emails Parents');
 expectSame(true, str_contains((string) $coachPortalSource, 'data-e2n-other-amount'), 'La facturation Coach propose un montant libre');
 expectSame(true, substr_count((string) $installerSource, 'other_amount decimal(10,2) NOT NULL DEFAULT 0.00') === 2, 'Le montant libre est ajouté à la facture courante et à ses versions');
 expectSame(true, str_contains((string) $installerSource, 'name VARCHAR(500) NOT NULL'), 'Les noms d’exercices longs sont acceptés par le schéma');

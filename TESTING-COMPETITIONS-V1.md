@@ -89,6 +89,10 @@
     et Album photo apparaissent uniquement lorsque leur URL est renseignée,
     s'ouvrent dans un nouvel onglet, utilisent tous le même style blanc bordé
     que dans le portail Parents et restent utilisables sur mobile.
+    Sur la liste des compétitions Coach, vérifier aussi que ces liens et le
+    briefing replié sont présents sur chaque carte sans empêcher l'accès à la
+    fiche de la compétition. Un briefing ou une URL absents ne doivent pas
+    produire de bloc vide.
 11. Ouvrir Facturation et vérifier que seuls les nageurs engagés sur Extranat
     sont proposés. Un nageur ayant répondu Oui sans engagement ne doit jamais
     apparaître, même avec une URL ou un formulaire forgé.

@@ -2,6 +2,11 @@
 
 ## Non publié — 0.21.0
 
+- Retire des réglages la signature des anciens emails de codes Parents, qui ne
+  sont plus envoyés par le parcours actif. L'option existante n'est pas effacée.
+- Affiche directement sur chaque carte de la liste des compétitions Coach le
+  briefing repliable et les liens disponibles (fiche technique, programme,
+  covoiturage, liveFFN et album photo).
 - Ajoute les distributions de matériel : campagnes et ciblage figé de nageurs
   dans le back-office, remise ou annulation en un clic dans le portail Coach,
   avec date et identité du coach visibles dans le portail Nageurs ; porte le

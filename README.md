@@ -17,6 +17,8 @@ Plugin WordPress de suivi pédagogique pour école de natation.
 - maintenance et purge contrôlée des données ;
 - portail Coach avec semaine type et évaluations rapides.
 - planning des compétitions, réponses familiales et suivi des engagements Extranat.
+- accès direct au briefing et aux liens utiles depuis la liste des compétitions
+  du portail Coach ;
 - distributions de matériel ciblées, suivies par les coachs et consultables
   dans le parcours des nageurs.
 

@@ -44,7 +44,8 @@
 
 ## Non-régression
 
-- Modifier la signature dans **Réglages**, recharger la page et vérifier sa persistance.
+- Vérifier que **Réglages** ne propose plus de signature des emails Parents et
+  que l'enregistrement des autres paramètres ne modifie pas l'ancienne option.
 - Créer et modifier un nageur.
 - Ouvrir un accès parents existant.
 - Créer et modifier une séance.

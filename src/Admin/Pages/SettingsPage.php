@@ -17,7 +17,6 @@ final class SettingsPage
         }
 
         $saved = $this->handlePost();
-        $signature = Config::parentEmailSignature();
         $parentPortalTitle = Config::portalTitle();
         $parentPortalLogoId = Config::portalLogoId();
         $parentPortalLogo = $parentPortalLogoId > 0
@@ -37,13 +36,6 @@ final class SettingsPage
                 <?php wp_nonce_field('e2n_save_settings'); ?>
                 <input type="hidden" name="e2n_action" value="save_settings">
                 <table class="form-table" role="presentation">
-                    <tr>
-                        <th scope="row"><label for="e2n-parent-email-signature"><?php esc_html_e('Signature des emails Parents', 'ecole2nat'); ?></label></th>
-                        <td>
-                            <textarea id="e2n-parent-email-signature" name="parent_email_signature" rows="4" class="large-text" required><?php echo esc_textarea($signature); ?></textarea>
-                            <p class="description"><?php esc_html_e('Cette signature termine tous les emails contenant un code d’accès Parents, y compris ceux envoyés depuis le portail Coach.', 'ecole2nat'); ?></p>
-                        </td>
-                    </tr>
                     <tr>
                         <th scope="row"><label for="e2n-portal-title"><?php esc_html_e('Nom des portails', 'ecole2nat'); ?></label></th>
                         <td>
@@ -118,12 +110,6 @@ final class SettingsPage
         }
 
         check_admin_referer('e2n_save_settings');
-        $signature = sanitize_textarea_field(wp_unslash((string) ($_POST['parent_email_signature'] ?? '')));
-        if (trim($signature) === '') {
-            $signature = Config::DEFAULT_PARENT_EMAIL_SIGNATURE;
-        }
-        update_option(Config::option('parent_email_signature'), $signature);
-
         $parentPortalTitle = sanitize_text_field(wp_unslash((string) ($_POST['portal_title'] ?? '')));
         if (trim($parentPortalTitle) === '') {
             $parentPortalTitle = Config::DEFAULT_PORTAL_TITLE;
