@@ -17,6 +17,8 @@
 2. Ouvrir l'avatar, vérifier l'ordre Nom, Tableau de bord, Déconnexion, puis
    vérifier que Tableau de bord ouvre bien le BO autorisé au coach.
 3. Avec un administrateur, vérifier que la barre WordPress reste visible.
+4. Après la connexion d'un coach, vérifier que son avatar apparaît dès le
+   premier affichage, sans devoir changer d'onglet ni recharger la page.
 
 ## Présentation et navigation
 

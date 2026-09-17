@@ -45,6 +45,7 @@ class CoachPortal
         add_shortcode('e2n_coach_portal', [$this, 'shortcode']);
         add_action('wp_enqueue_scripts', [$this, 'assets']);
         add_filter('template_include', [$this, 'template'], 99);
+        add_action('wp', [$this, 'disablePortalCache']);
         add_filter('login_redirect', [$this, 'loginRedirect'], 10, 3);
         add_filter('show_admin_bar', [$this, 'showAdminBar']);
         add_action('wp_ajax_e2n_coach_save_evaluation', [$this, 'ajaxSaveEvaluation']);
@@ -66,10 +67,21 @@ class CoachPortal
     {
         $pageId = (int) get_option('e2n_coach_page_id', 0);
         if ($pageId > 0 && is_page($pageId)) {
+            if (!defined('DONOTCACHEPAGE')) define('DONOTCACHEPAGE', true);
+            nocache_headers();
             $coachTemplate = E2N_PLUGIN_PATH . 'templates/coach-portal.php';
             if (is_readable($coachTemplate)) return $coachTemplate;
         }
         return $template;
+    }
+
+    public function disablePortalCache(): void
+    {
+        $pageId = (int) get_option('e2n_coach_page_id', 0);
+        if ($pageId > 0 && is_page($pageId)) {
+            if (!defined('DONOTCACHEPAGE')) define('DONOTCACHEPAGE', true);
+            nocache_headers();
+        }
     }
 
     public function assets(): void

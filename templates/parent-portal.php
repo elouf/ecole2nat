@@ -26,14 +26,14 @@ if (!$isParentPreview && !$isLogoutRequest) {
 <body <?php body_class('e2n-parent-app-page'); ?>>
 <?php wp_body_open(); ?>
 <header class="e2n-parent-app-head">
-    <span class="e2n-parent-brand">
+    <a class="e2n-parent-brand" href="<?php echo esc_url(home_url('/')); ?>" aria-label="<?php esc_attr_e('Retour à l’accueil du site', 'ecole2nat'); ?>">
         <?php if ($parentPortalLogoId > 0) : ?>
             <?php echo wp_get_attachment_image($parentPortalLogoId, 'thumbnail', false, ['class' => 'e2n-parent-brand-image']); ?>
         <?php else : ?>
             <span aria-hidden="true">E2N</span>
         <?php endif; ?>
         <?php echo esc_html($parentPortalTitle); ?>
-    </span>
+    </a>
     <?php if (is_array($parentSwimmer)) :
         $parentSwimmerName = trim((string) $parentSwimmer['first_name'] . ' ' . (string) $parentSwimmer['last_name']);
         $parentInitial = mb_strtoupper(mb_substr((string) $parentSwimmer['first_name'], 0, 1));

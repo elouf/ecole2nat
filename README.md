@@ -139,6 +139,10 @@ Comme le portail Coach, le portail Parents possède un gabarit autonome et respo
 
 Le nom et le logo communs aux en-têtes Coach et Parents se configurent dans **Ecole2Nat' → Réglages**. Le logo est choisi dans la médiathèque WordPress ; en son absence, le monogramme E2N reste affiché.
 
+Les pages des portails Coach et Parents sont exclues du cache, car leur en-tête
+et leur menu utilisateur dépendent de la session courante. L'écran de connexion
+Parents et son en-tête proposent un retour vers l'accueil du site.
+
 La bibliothèque d'exercices reste disponible dans le back-office comme ressource pédagogique indépendante.
 
 ## Prérequis

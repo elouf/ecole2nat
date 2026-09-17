@@ -165,7 +165,12 @@ expectSame(
     'Les cartes filtrées restent masquées malgré leurs règles de mise en page'
 );
 $coachPortalSource = file_get_contents(__DIR__ . '/../src/Coach/CoachPortal.php');
+$parentPortalSource = file_get_contents(__DIR__ . '/../src/ParentPortal/ParentPortal.php');
+$parentTemplateSource = file_get_contents(__DIR__ . '/../templates/parent-portal.php');
 $evaluationServiceSource = file_get_contents(__DIR__ . '/../src/Evaluation/EvaluationService.php');
+expectSame(true, str_contains((string) $coachPortalSource, 'DONOTCACHEPAGE'), 'Le portail Coach exclut son rendu authentifié du cache');
+expectSame(true, str_contains((string) $parentPortalSource, 'handleAccessAction') && str_contains((string) $parentPortalSource, 'DONOTCACHEPAGE'), 'Le portail Parents traite la connexion avant rendu et exclut la session du cache');
+expectSame(true, str_contains((string) $parentTemplateSource, "home_url('/')"), 'L’en-tête Parents permet de revenir à l’accueil');
 expectSame(true, str_contains((string) $coachPortalSource, 'e2n-collective-note'), 'L’évaluation collective propose un commentaire par nageur');
 expectSame(true, str_contains((string) $evaluationServiceSource, '$sw[\'notes\']'), 'Les notes existantes sont chargées dans l’évaluation collective');
 $billingRepositorySource = file_get_contents(__DIR__ . '/../src/Competition/CompetitionBillingRepository.php');

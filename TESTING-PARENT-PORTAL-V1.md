@@ -22,6 +22,10 @@
 5. Vérifier dans le code source de la page la présence de la directive robots `noindex`.
 6. Vérifier que la page utilise le gabarit autonome Ecole2Nat' : aucun en-tête,
    pied de page, titre ou colonne du thème WordPress ne doit apparaître.
+7. Se connecter avec un code valide : le chargement suivant doit afficher
+   immédiatement l'avatar du nageur, sans changement d'onglet préalable.
+8. Se déconnecter puis vérifier que le logo/titre du portail et le lien sous le
+   formulaire permettent tous deux de revenir à l'accueil du site.
 
 ## 2 bis. Identité visuelle
 

@@ -2,6 +2,9 @@
 
 ## Non publié — 0.21.0
 
+- Affiche immédiatement le menu utilisateur après l'authentification Coach ou
+  Nageur en excluant les portails du cache et en appliquant une redirection
+  après connexion ; ajoute un retour vers l'accueil depuis le portail Nageurs.
 - Retire des réglages la signature des anciens emails de codes Parents, qui ne
   sont plus envoyés par le parcours actif. L'option existante n'est pas effacée.
 - Affiche directement sur chaque carte de la liste des compétitions Coach le

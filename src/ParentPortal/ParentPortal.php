@@ -21,6 +21,8 @@ class ParentPortal
     private CompetitionBillingService $billing;
     private PerformanceService $performances;
     private DistributionService $distributions;
+    private bool $accessActionHandled = false;
+    private string $accessMessage = '';
 
     public function __construct()
     {
@@ -35,6 +37,7 @@ class ParentPortal
     {
         add_shortcode('e2n_parent_report', [$this, 'renderShortcode']);
         add_action('wp', [$this, 'registerNoIndex']);
+        add_action('template_redirect', [$this, 'handleAccessAction']);
         add_action('wp_enqueue_scripts', [$this, 'assets']);
         add_filter('template_include', [$this, 'template'], 99);
         add_action('admin_post_e2n_parent_invoice_rib', [$this, 'downloadInvoiceRib']);
@@ -68,14 +71,42 @@ class ParentPortal
             return $template;
         }
 
+        if (!defined('DONOTCACHEPAGE')) define('DONOTCACHEPAGE', true);
+        nocache_headers();
+
         $parentTemplate = E2N_PLUGIN_PATH . 'templates/parent-portal.php';
 
         return is_readable($parentTemplate) ? $parentTemplate : $template;
     }
 
+    public function handleAccessAction(): void
+    {
+        if (!$this->isParentPortalPage() || ($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') return;
+        $action = sanitize_key(wp_unslash((string) ($_POST['e2n_parent_action'] ?? '')));
+        if (!in_array($action, ['login', 'logout'], true)) return;
+        $this->accessActionHandled = true;
+
+        if ($action === 'logout') {
+            check_admin_referer('e2n_parent_logout');
+            $this->service->clearAccessCookie();
+            wp_safe_redirect((string) get_permalink());
+            exit;
+        }
+
+        check_admin_referer('e2n_parent_login');
+        $result = $this->service->authenticate(sanitize_text_field(wp_unslash((string) ($_POST['access_code'] ?? ''))));
+        if (!empty($result['success'])) {
+            wp_safe_redirect((string) get_permalink());
+            exit;
+        }
+        $this->accessMessage = (string) ($result['message'] ?? 'invalid_code');
+    }
+
     public function registerNoIndex(): void
     {
         if ($this->isParentPortalPage()) {
+            if (!defined('DONOTCACHEPAGE')) define('DONOTCACHEPAGE', true);
+            nocache_headers();
             add_filter('wp_robots', static function (array $robots): array {
                 $robots['noindex'] = true;
                 $robots['nofollow'] = true;
@@ -96,9 +127,9 @@ class ParentPortal
 
     public function renderShortcode(): string
     {
-        $message = '';
+        $message = $this->accessMessage;
 
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (!$this->accessActionHandled && $_SERVER['REQUEST_METHOD'] === 'POST') {
             $action = isset($_POST['e2n_parent_action'])
                 ? sanitize_key(wp_unslash($_POST['e2n_parent_action']))
                 : '';
@@ -293,6 +324,7 @@ class ParentPortal
                     <?php esc_html_e('Consulter le parcours', 'ecole2nat'); ?>
                 </button>
             </form>
+            <a class="e2n-parent-home-link" href="<?php echo esc_url(home_url('/')); ?>">← <?php esc_html_e('Retour à l’accueil du site', 'ecole2nat'); ?></a>
         </div>
         <?php
     }
