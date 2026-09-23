@@ -221,6 +221,53 @@ class Installer
         ) {$charsetCollate};";
         dbDelta($sql);
 
+        $tableName = Config::table('membership_payments');
+        $sql = "CREATE TABLE {$tableName} (
+            season_id bigint(20) unsigned NOT NULL,
+            swimmer_id bigint(20) unsigned NOT NULL,
+            total_paid decimal(10,2) NOT NULL DEFAULT 0.00,
+            paid_flag tinyint(1) NOT NULL DEFAULT 0,
+            invoice_marked_sent tinyint(1) NOT NULL DEFAULT 0,
+            synced_at datetime NOT NULL,
+            created_at datetime NOT NULL,
+            updated_at datetime NULL,
+            PRIMARY KEY  (season_id,swimmer_id),
+            KEY swimmer_id (swimmer_id),
+            KEY paid_flag (paid_flag),
+            KEY invoice_marked_sent (invoice_marked_sent)
+        ) {$charsetCollate};";
+        dbDelta($sql);
+
+        $tableName = Config::table('membership_invoices');
+        $sql = "CREATE TABLE {$tableName} (
+            id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+            season_id bigint(20) unsigned NOT NULL,
+            swimmer_id bigint(20) unsigned NOT NULL,
+            invoice_number varchar(30) NOT NULL,
+            issued_on date NOT NULL,
+            total_amount decimal(10,2) NOT NULL,
+            swimmer_name varchar(220) NOT NULL,
+            season_name varchar(100) NOT NULL,
+            issuer_name varchar(180) NOT NULL,
+            issuer_address text NOT NULL,
+            issuer_siret varchar(30) NULL,
+            issuer_logo_id bigint(20) unsigned NULL,
+            responsible_emails text NULL,
+            generated_at datetime NOT NULL,
+            generated_by bigint(20) unsigned NOT NULL,
+            sent_at datetime NULL,
+            sent_by bigint(20) unsigned NULL,
+            sent_to text NULL,
+            created_at datetime NOT NULL,
+            updated_at datetime NULL,
+            PRIMARY KEY  (id),
+            UNIQUE KEY season_swimmer (season_id,swimmer_id),
+            UNIQUE KEY invoice_number (invoice_number),
+            KEY swimmer_id (swimmer_id),
+            KEY sent_at (sent_at)
+        ) {$charsetCollate};";
+        dbDelta($sql);
+
         $tableName = Config::table('invoice_sequences');
         $sql = "CREATE TABLE {$tableName} (
             calendar_year smallint unsigned NOT NULL,

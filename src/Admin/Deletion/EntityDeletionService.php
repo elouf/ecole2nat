@@ -103,6 +103,8 @@ final class EntityDeletionService
             ['skill_level_history', 'season_id', __('de l’historique des progressions', 'ecole2nat')],
             ['competitions', 'season_id', __('des compétitions', 'ecole2nat')],
             ['training_performances', 'season_id', __('des chronos d’entraînement', 'ecole2nat')],
+            ['membership_payments', 'season_id', __('des règlements d’adhésion', 'ecole2nat')],
+            ['membership_invoices', 'season_id', __('des factures d’adhésion', 'ecole2nat')],
         ]);
     }
 
@@ -122,6 +124,8 @@ final class EntityDeletionService
             $wpdb->delete(Config::table('competition_participants'), ['swimmer_id' => $id], ['%d']);
             $wpdb->delete(Config::table('distribution_deliveries'), ['swimmer_id' => $id], ['%d']);
             $wpdb->delete(Config::table('distribution_targets'), ['swimmer_id' => $id], ['%d']);
+            $wpdb->delete(Config::table('membership_invoices'), ['swimmer_id' => $id], ['%d']);
+            $wpdb->delete(Config::table('membership_payments'), ['swimmer_id' => $id], ['%d']);
             $invoiceIds = $wpdb->get_col($wpdb->prepare('SELECT id FROM ' . Config::table('competition_invoices') . ' WHERE swimmer_id=%d', $id)) ?: [];
             foreach ($invoiceIds as $invoiceId) {
                 $wpdb->delete(Config::table('competition_invoice_versions'), ['invoice_id' => (int) $invoiceId], ['%d']);

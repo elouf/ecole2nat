@@ -2,6 +2,13 @@
 
 ## Non publié — 0.21.0
 
+- Importe le total des règlements d’adhésion par saison, avec une valeur fixe
+  de 50 € pour Pass’Sport, ainsi que les marqueurs `Payé ?` et
+  `Facture envoyée` ; ajoute un écran BO filtrable pour préparer, imprimer et
+  envoyer en masse les factures acquittées en PDF depuis l’adresse de la
+  trésorière ; porte le schéma à `0.15.1`.
+- Conserve définitivement tout `Facture envoyée = OUI` déjà importé, même si
+  la colonne est ensuite vidée ou retirée du classeur.
 - Affiche immédiatement le menu utilisateur après l'authentification Coach ou
   Nageur en excluant les portails du cache et en appliquant une redirection
   après connexion ; ajoute un retour vers l'accueil depuis le portail Nageurs.

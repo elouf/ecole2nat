@@ -78,7 +78,7 @@ final class SettingsPage
                     </tr>
                     <tr>
                         <th scope="row"><label for="e2n-treasurer-email"><?php esc_html_e('Email de la trésorière', 'ecole2nat'); ?></label></th>
-                        <td><input id="e2n-treasurer-email" name="treasurer_email" type="email" class="regular-text" value="<?php echo esc_attr(Config::treasurerEmail()); ?>" required><p class="description"><?php esc_html_e('Cette adresse recevra les déclarations de paiement depuis le portail Nageurs.', 'ecole2nat'); ?></p></td>
+                        <td><input id="e2n-treasurer-email" name="treasurer_email" type="email" class="regular-text" value="<?php echo esc_attr(Config::treasurerEmail()); ?>" required><p class="description"><?php esc_html_e('Cette adresse reçoit les déclarations de paiement et sert d’expéditeur/réponse pour les factures d’adhésion.', 'ecole2nat'); ?></p></td>
                     </tr>
                     <tr>
                         <th scope="row"><?php esc_html_e('Logo des factures', 'ecole2nat'); ?></th>

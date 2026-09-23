@@ -278,6 +278,22 @@ final class WorkbookReader
             $healthAlert = $this->string($row, ['info médicale', 'information médicale']) !== '' ? 1 : 0;
             $competitionText = $this->string($row, ['competition', 'categorie competition', 'catégorie compétition']);
             $competitionCategories = $this->uniqueNormalizedLabels($competitionText);
+            $paymentTotal = 0.0;
+            foreach ([
+                'HelloAsso' => ['helloasso', 'hello asso'],
+                'Virement' => ['virement'],
+                'MSA' => ['msa'],
+                'Hyper U' => ['hyper u'],
+                'Chèque' => ['cheque'],
+                'Espèce' => ['espece', 'especes'],
+                'UP' => ['up'],
+                'ANCV' => ['ancv'],
+            ] as $label => $aliases) {
+                $paymentTotal += $this->money($row, $aliases, $label, (int) $row['_row'], $errors);
+            }
+            if ($this->string($row, ["pass'sport", 'pass sport', 'passsport']) !== '') {
+                $paymentTotal += 50.0;
+            }
 
             $imageRightsRaw = $this->normalize(
                 $this->string($row, ["droit à l'image", 'droit image'])
@@ -307,6 +323,9 @@ final class WorkbookReader
                 'responsible_phone' => $phone,
                 'health_alert' => $healthAlert,
                 'competition_categories' => $competitionCategories,
+                'payment_total' => number_format($paymentTotal, 2, '.', ''),
+                'paid_flag' => $this->yesFlag($row, ['payé ?', 'paye', 'paye ?']),
+                'invoice_marked_sent' => $this->yesFlag($row, ['facture envoyée', 'facture envoyee']),
                 'image_rights' => $imageRights,
                 'category' => $category,
                 'slot' => $slot,
@@ -315,6 +334,24 @@ final class WorkbookReader
             ];
         }
         return $swimmers;
+    }
+
+    private function money(array $row, array $aliases, string $label, int $rowNumber, array &$errors): float
+    {
+        $raw = $this->string($row, $aliases);
+        if ($raw === '') return 0.0;
+        $normalized = str_replace(["\xc2\xa0", ' ', '€'], '', $raw);
+        $normalized = str_replace(',', '.', $normalized);
+        if (!is_numeric($normalized) || (float) $normalized < 0) {
+            $errors[] = sprintf('Onglet Inscriptions, ligne %d : montant %s invalide « %s ».', $rowNumber, $label, $raw);
+            return 0.0;
+        }
+        return (float) $normalized;
+    }
+
+    private function yesFlag(array $row, array $aliases): int
+    {
+        return in_array($this->normalize($this->string($row, $aliases)), ['oui', 'o', 'yes', '1'], true) ? 1 : 0;
     }
 
     private function readCompetitions($sheet, array &$errors): array

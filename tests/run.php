@@ -182,10 +182,11 @@ expectSame(true, str_contains((string) $coachPortalSource, 'data-e2n-other-amoun
 expectSame(true, substr_count((string) $installerSource, 'other_amount decimal(10,2) NOT NULL DEFAULT 0.00') === 2, 'Le montant libre est ajouté à la facture courante et à ses versions');
 expectSame(true, str_contains((string) $installerSource, 'name VARCHAR(500) NOT NULL'), 'Les noms d’exercices longs sont acceptés par le schéma');
 expectSame(true, str_contains((string) $exercisePageSource, 'maxlength="500"'), 'L’éditeur BO accepte les noms d’exercices longs');
-expectSame(true, str_contains((string) $bootstrapSource, "E2N_DB_VERSION', '0.15.0'"), 'La version DB inclut la migration des noms d’exercices et des distributions');
+expectSame(true, str_contains((string) $bootstrapSource, "E2N_DB_VERSION', '0.15.1'"), 'La version DB inclut les règlements et factures d’adhésion');
 expectSame(true, str_contains((string) $installerSource, "Config::table('distributions')"), 'Le schéma crée les distributions');
 expectSame(true, str_contains((string) $installerSource, "Config::table('distribution_targets')"), 'Le schéma crée les cibles de distribution');
 expectSame(true, str_contains((string) $installerSource, "Config::table('distribution_deliveries')"), 'Le schéma crée les remises de distribution');
+expectSame(true, str_contains((string) file_get_contents(__DIR__ . '/../src/Synchronization/SynchronizationRepository.php'), "max(\n                (int) (\$existing['invoice_marked_sent'] ?? 0)"), 'Une facture historiquement envoyée ne peut pas redevenir non envoyée');
 expectSame(true, str_contains((string) $billingRepositorySource, '+ $this->moneyToCents((string) $invoice[\'other_amount\'])'), 'Le montant libre participe au total facturé');
 
 $service = accessService(['manage_options']);
@@ -299,8 +300,8 @@ $groupsSheet->fromArray([
     ['Némo Lundi 17h15', 'Némo', 45],
 ]);
 $spreadsheet->createSheet()->setTitle('Inscriptions')->fromArray([
-    ['Nom', 'Prénom', 'Catégorie', 'Créneau 1', 'Renouvellement', 'Email', 'Téléphone', 'Info médicale', 'Commentaire', 'Compétition'],
-    ['Martin', 'Léa', 'Némo', 'Lundi 17h15', 'OUI', 'parent@example.test / second@example.test', '06 01 02 03 04 / 07 05 06 07 08', 'Détail sensible', 'Ancienne remarque', 'U11;u11;HANDI'],
+    ['Nom', 'Prénom', 'Catégorie', 'Créneau 1', 'Renouvellement', 'Email', 'Téléphone', 'Info médicale', 'Commentaire', 'Compétition', 'HelloAsso', 'Virement', 'MSA', 'Hyper U', 'Chèque', 'Espèce', 'UP', 'ANCV', "Pass'Sport", 'Payé ?', 'Facture envoyée'],
+    ['Martin', 'Léa', 'Némo', 'Lundi 17h15', 'OUI', 'parent@example.test / second@example.test', '06 01 02 03 04 / 07 05 06 07 08', 'Détail sensible', 'Ancienne remarque', 'U11;u11;HANDI', '100,50', 20, '', 10, 15, '4,50 €', '', 10, 'OUI', 'OUI', ''],
     ['Durand', 'Noé', 'Dauphin', 'Mardi 18h00', '', 'ignore@example.test', '', '', ''],
     ['Petit', 'Zoé', 'Avenir', 'Mercredi 19h00', 'En attente', 'ignore2@example.test', '', '', ''],
 ]);
@@ -333,6 +334,9 @@ expectSame(false, array_key_exists('medical_note', $workbook['data']['swimmers']
 expectSame('parent@example.test / second@example.test', $workbook['data']['swimmers'][0]['responsible_email'] ?? null, 'Plusieurs emails responsables conservés séparément');
 expectSame('06 01 02 03 04 / 07 05 06 07 08', $workbook['data']['swimmers'][0]['responsible_phone'] ?? null, 'Plusieurs téléphones responsables conservés séparément');
 expectSame(['U11', 'HANDI'], $workbook['data']['swimmers'][0]['competition_categories'] ?? null, 'Catégories de compétiteur multiples lues depuis les inscriptions');
+expectSame('210.00', $workbook['data']['swimmers'][0]['payment_total'] ?? null, 'Les moyens de paiement sont additionnés et Pass’Sport vaut 50 €');
+expectSame(1, $workbook['data']['swimmers'][0]['paid_flag'] ?? null, 'Le marqueur Payé ? est importé');
+expectSame(0, $workbook['data']['swimmers'][0]['invoice_marked_sent'] ?? null, 'Une facture envoyée vide reste non envoyée');
 expectSame(1, count($workbook['data']['swimmers']), 'Inscriptions sans Renouvellement OUI ou NON ignorées');
 expectSame(3, count($workbook['data']['reference']), 'Lecture de plusieurs onglets Référentiel par catégorie');
 expectSame('Némo', $workbook['data']['reference'][0]['category'] ?? null, 'Catégorie déduite du nom de l’onglet Référentiel');

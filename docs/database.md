@@ -159,6 +159,18 @@ code. Si plusieurs nageurs correspondent exactement, l'accès est refusé.
   La première allocation d'une année est `1000`, puis la séquence augmente
   transactionnellement. Le format public est `F` + année sur deux chiffres +
   numéro, par exemple `F26.1000`.
+- `e2n_membership_payments` conserve, pour chaque couple saison/nageur, le
+  total versé calculé à la synchronisation ainsi que les marqueurs Excel
+  `Payé ?` et `Facture envoyée`. Aucun détail par moyen de paiement n’est
+  conservé. Le marqueur d’envoi est monotone : après l’import d’un `OUI`, une
+  valeur vide ou l’absence ultérieure de la colonne ne peut pas le remettre à
+  zéro.
+- `e2n_membership_invoices` contient au plus une facture acquittée par
+  saison/nageur. Le numéro, le montant, le nageur, la saison et l’identité de
+  l’émetteur sont figés lors de la préparation. `sent_at`, `sent_by` et
+  `sent_to` historisent l’envoi WordPress indépendamment du marqueur Excel.
+  Ces factures partagent la séquence annuelle avec les factures de
+  compétition.
 
 La suppression d'un chrono collectif cible son identifiant et son contexte.
 La suppression d'une série cible son `series_key` et ne supprime aucune autre

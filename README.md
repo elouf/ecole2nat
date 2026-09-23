@@ -21,6 +21,8 @@ Plugin WordPress de suivi pédagogique pour école de natation.
   du portail Coach ;
 - distributions de matériel ciblées, suivies par les coachs et consultables
   dans le parcours des nageurs.
+- factures acquittées d’adhésion, imprimables et envoyables en PDF depuis le
+  back-office.
 
 La synchronisation attend un onglet `Référentiel <catégorie>` par référentiel
 (par exemple `Référentiel Némo`) avec les colonnes Domaine, Compétence et
@@ -201,7 +203,13 @@ Le menu **Ecole2Nat' → Synchronisation** accepte un classeur `.xlsx` comprenan
 - `Groupes` ou `Catégories` ;
 - `Référentiel`.
 
-Les autres onglets et les colonnes comptables sont ignorés. Avant l'analyse, l'administrateur choisit la **saison cible** : la colonne Saison n'est donc pas nécessaire dans l'onglet Groupes. L'association d'un nageur à son groupe repose sur la concaténation de la catégorie et du créneau, par exemple `Dauphin` + `Lundi 17h15` → `Dauphin Lundi 17h15`.
+Les autres onglets sont ignorés. Dans `Inscriptions`, les colonnes `HelloAsso`,
+`Virement`, `MSA`, `Hyper U`, `Chèque`, `Espèce`, `UP` et `ANCV` sont
+additionnées. Une cellule `Pass'Sport` non vide ajoute 50 €. Les indicateurs
+`Payé ?` et `Facture envoyée` alimentent le suivi des factures acquittées dans
+**Ecole2Nat' → Factures d’adhésion**. Une valeur `Facture envoyée = OUI` déjà
+importée reste acquise dans WordPress si la cellule est ensuite vidée ou si la
+colonne disparaît du classeur. Avant l'analyse, l'administrateur choisit la **saison cible** : la colonne Saison n'est donc pas nécessaire dans l'onglet Groupes. L'association d'un nageur à son groupe repose sur la concaténation de la catégorie et du créneau, par exemple `Dauphin` + `Lundi 17h15` → `Dauphin Lundi 17h15`.
 
 L’onglet `Groupes` ou `Catégories` peut contenir une colonne facultative `Durée (min)`. Lorsqu’elle est renseignée, l’heure de fin est calculée depuis l’heure de début reconnue dans le nom du groupe. Lorsqu’elle est vide, une heure de fin déjà corrigée dans WordPress est conservée. Les groupes peuvent aussi être modifiés depuis **Ecole2Nat’ → Groupes → Modifier**.
 

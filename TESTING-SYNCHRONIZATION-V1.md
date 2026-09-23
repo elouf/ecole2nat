@@ -47,6 +47,12 @@
     puis synchroniser : son libellé doit être intégralement conservé en base et
     affiché sans troncature dans la bibliothèque. Ouvrir ensuite l'exercice dans
     le back-office et vérifier que l'éditeur accepte également les 500 caractères.
+15. Renseigner les huit colonnes de règlement, puis vérifier que leur somme est
+    stockée pour la saison cible. Renseigner Pass’Sport avec n’importe quelle
+    valeur non vide et vérifier que 50 € sont ajoutés une seule fois.
+16. Vérifier que `Payé ? = OUI` et `Facture envoyée = OUI` sont repris dans le
+    suivi BO, puis resynchroniser sans doublon. Vider ensuite la cellule, puis
+    supprimer entièrement la colonne : le statut envoyé doit rester acquis.
 
 ## Erreurs
 

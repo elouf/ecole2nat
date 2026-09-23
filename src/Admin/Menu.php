@@ -11,6 +11,7 @@ use Ecole2Nat\Admin\Pages\ExercisePage;
 use Ecole2Nat\Admin\Pages\EvaluationPage;
 use Ecole2Nat\Admin\Pages\GroupPage;
 use Ecole2Nat\Admin\Pages\MaintenancePage;
+use Ecole2Nat\Admin\Pages\MembershipInvoicePage;
 use Ecole2Nat\Admin\Pages\ReferencePage;
 use Ecole2Nat\Admin\Pages\SeasonPage;
 use Ecole2Nat\Admin\Pages\SettingsPage;
@@ -45,6 +46,8 @@ class Menu
         );
 
         add_submenu_page('ecole2nat', __('Distributions','ecole2nat'), __('Distributions','ecole2nat'), 'manage_options', 'ecole2nat-distributions', [new DistributionPage(), 'render']);
+
+        add_submenu_page('ecole2nat', __('Factures d’adhésion','ecole2nat'), __('Factures d’adhésion','ecole2nat'), 'manage_options', 'ecole2nat-membership-invoices', [new MembershipInvoicePage(), 'render']);
 
         add_submenu_page(
             'ecole2nat',

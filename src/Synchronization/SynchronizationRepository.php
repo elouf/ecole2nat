@@ -25,6 +25,7 @@ final class SynchronizationRepository
             'season_skills' => $wpdb->get_results('SELECT * FROM ' . Config::table('season_skills'), ARRAY_A) ?: [],
             'memberships' => $wpdb->get_results('SELECT * FROM ' . Config::table('swimmer_group_memberships'), ARRAY_A) ?: [],
             'competitions' => $wpdb->get_results('SELECT * FROM ' . Config::table('competitions'), ARRAY_A) ?: [],
+            'membership_payments' => $wpdb->get_results('SELECT * FROM ' . Config::table('membership_payments'), ARRAY_A) ?: [],
         ];
     }
 
@@ -47,6 +48,8 @@ final class SynchronizationRepository
             if (!empty($row['licence_number'])) $swimmerLicence[$this->normalize($row['licence_number'])] = $row;
             $swimmerIdentity[$this->key($row['last_name'],$row['first_name'],(string)$row['birth_date'])] = $row;
         }
+        $paymentMap=[];
+        foreach($snapshot['membership_payments'] as $row)$paymentMap[(int)$row['season_id'].'|'.(int)$row['swimmer_id']]=$row;
         $virtualCategories=[]; $virtualDomains=[]; $virtualSkills=[];
         $seasonId = (int) ($season['id'] ?? 0);
         $plan['seasons']['unchanged']++;
@@ -77,6 +80,7 @@ final class SynchronizationRepository
         foreach ($data['swimmers'] as $row) {
             $existing = $row['licence_number']!=='' ? ($swimmerLicence[$this->normalize($row['licence_number'])]??null) : ($swimmerIdentity[$this->key($row['last_name'],$row['first_name'],(string)$row['birth_date'])]??null);
             $plan['swimmers'][$existing?'updated':'created']++;
+            $plan['membership_payments'][$existing&&isset($paymentMap[$seasonId.'|'.(int)$existing['id']])?'updated':'created']++;
         }
         $competitionMap=[];
         foreach ($snapshot['competitions'] as $row) $competitionMap[(int)$row['season_id'].'|'.$this->normalize($row['code'])]=$row;
@@ -293,7 +297,46 @@ final class SynchronizationRepository
                 if($wpdb->query($sql)===false) throw new \RuntimeException('Impossible d’historiser le groupe de '.$row['first_name'].' '.$row['last_name'].' : '.$wpdb->last_error);
             }
             $this->syncSwimmerCompetitionCategories($swimmerId,$row['competition_categories']??[],$row['first_name'].' '.$row['last_name']);
+            $this->syncMembershipPayment($seasonId, $swimmerId, $row, $stats);
         }
+    }
+
+    private function syncMembershipPayment(int $seasonId, int $swimmerId, array $row, array &$stats): void
+    {
+        global $wpdb;
+        $table = Config::table('membership_payments');
+        $existing = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$table} WHERE season_id=%d AND swimmer_id=%d LIMIT 1",
+            $seasonId,
+            $swimmerId
+        ), ARRAY_A);
+        $payload = [
+            'total_paid' => (string) ($row['payment_total'] ?? '0.00'),
+            'paid_flag' => (int) ($row['paid_flag'] ?? 0),
+            // Un OUI importé constitue un historique : une colonne ensuite
+            // vide ou supprimée ne doit jamais rendre la facture ré-éligible.
+            'invoice_marked_sent' => max(
+                (int) ($existing['invoice_marked_sent'] ?? 0),
+                (int) ($row['invoice_marked_sent'] ?? 0)
+            ),
+            'synced_at' => current_time('mysql'),
+            'updated_at' => current_time('mysql'),
+        ];
+        if ($existing === null) {
+            $payload['season_id'] = $seasonId;
+            $payload['swimmer_id'] = $swimmerId;
+            $payload['created_at'] = current_time('mysql');
+            if ($wpdb->insert($table, $payload) === false) throw new \RuntimeException('Impossible d’enregistrer le règlement de l’adhésion : ' . $wpdb->last_error);
+            $stats['membership_payments']['created']++;
+            return;
+        }
+        $changed = (string) $existing['total_paid'] !== (string) $payload['total_paid']
+            || (int) $existing['paid_flag'] !== $payload['paid_flag']
+            || (int) $existing['invoice_marked_sent'] !== $payload['invoice_marked_sent'];
+        if ($wpdb->update($table, $payload, ['season_id' => $seasonId, 'swimmer_id' => $swimmerId]) === false) {
+            throw new \RuntimeException('Impossible de mettre à jour le règlement de l’adhésion : ' . $wpdb->last_error);
+        }
+        $stats['membership_payments'][$changed ? 'updated' : 'unchanged']++;
     }
 
     private function syncSwimmerCompetitionCategories(int $swimmerId,array $categoryNames,string $swimmerName):void
@@ -327,7 +370,7 @@ final class SynchronizationRepository
 
     private function log(string $filename,int $userId,string $status,array $stats,array $errors):void
     { global $wpdb; $wpdb->insert(Config::table('synchronization_logs'),['filename'=>$filename,'status'=>$status,'summary'=>wp_json_encode($stats),'errors'=>wp_json_encode($errors),'created_by'=>$userId,'created_at'=>current_time('mysql')],['%s','%s','%s','%s','%d','%s']); }
-    private function emptyStats():array{ $keys=['seasons','categories','groups','domains','skills','season_skills','exercises','swimmers','competitions'];$r=[];foreach($keys as $k)$r[$k]=['created'=>0,'updated'=>0,'unchanged'=>0];return$r; }
+    private function emptyStats():array{ $keys=['seasons','categories','groups','domains','skills','season_skills','exercises','swimmers','membership_payments','competitions'];$r=[];foreach($keys as $k)$r[$k]=['created'=>0,'updated'=>0,'unchanged'=>0];return$r; }
     private function key(string ...$parts):string{return implode('|',array_map([$this,'normalize'],$parts));}
     private function normalize(string $value):string{$value=remove_accents(mb_strtolower(trim($value)));return trim(preg_replace('/\s+/',' ',preg_replace('/[^a-z0-9]+/u',' ',$value)?:'')?:'');}
 }
