@@ -63,6 +63,16 @@ class CompetitionService
     public function resume(int $competitionId): bool { return $this->repository->isStarted($competitionId)&&$this->repository->resume($competitionId); }
     public function activeCompetitions(): array { return $this->repository->activeCompetitions(10); }
     public function participants(int $competitionId): array { return $this->repository->participants($competitionId); }
+    public function participantExport(int $competitionId): ?array
+    {
+        $competition = $this->repository->find($competitionId);
+        if ($competition === null || ($competition['status'] ?? '') === 'draft') return null;
+        $started = !empty($competition['started_at']);
+        return [
+            'competition' => $competition,
+            'participants' => $this->repository->exportParticipants($competitionId, $started),
+        ];
+    }
     public function availableParticipants(int $competitionId): array { return $this->repository->availableParticipants($competitionId); }
     public function addParticipant(int $competitionId,int $swimmerId,int $userId): bool { return $this->repository->isStarted($competitionId)&&$this->repository->addParticipant($competitionId,$swimmerId,$userId); }
     public function performances(int $competitionId,int $swimmerId): array { return $this->repository->performances($competitionId,$swimmerId); }

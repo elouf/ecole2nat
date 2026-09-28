@@ -4,6 +4,7 @@ namespace Ecole2Nat\Coach;
 
 use Ecole2Nat\Competition\CompetitionService;
 use Ecole2Nat\Competition\CompetitionBillingService;
+use Ecole2Nat\Competition\CompetitionParticipantExportService;
 use Ecole2Nat\Evaluation\EvaluationService;
 use Ecole2Nat\Distribution\DistributionService;
 use Ecole2Nat\ParentPortal\ParentAccessService;
@@ -61,6 +62,7 @@ class CoachPortal
         add_action('wp_ajax_e2n_coach_save_category_visibility', [$this, 'ajaxSaveCategoryVisibility']);
         add_action('wp_ajax_e2n_coach_toggle_distribution', [$this, 'ajaxToggleDistribution']);
         add_action('wp_ajax_e2n_coach_save_distribution_category_visibility', [$this, 'ajaxSaveDistributionCategoryVisibility']);
+        add_action('admin_post_e2n_coach_export_competition_participants', [$this, 'downloadCompetitionParticipants']);
     }
 
     public function template(string $template): string
@@ -362,6 +364,7 @@ class CoachPortal
         <?php $this->competitionResources($data); ?>
         <div class="e2n-inline e2n-competition-links">
             <a class="e2n-btn <?php echo isset($_GET['e2n_billing']) ? 'is-active' : ''; ?>" href="<?php echo esc_url($this->base(['e2n_view'=>'competitions','e2n_competition'=>$competitionId,'e2n_billing'=>1])); ?>"><span aria-hidden="true">🧾</span> <?php esc_html_e('Facturation','ecole2nat'); ?></a>
+            <a class="e2n-btn" href="<?php echo esc_url(wp_nonce_url(add_query_arg(['action'=>'e2n_coach_export_competition_participants','competition_id'=>$competitionId],admin_url('admin-post.php')),'e2n_export_competition_participants_'.$competitionId)); ?>"><span aria-hidden="true">↓</span> <?php esc_html_e('Exporter les participants','ecole2nat'); ?></a>
         </div>
         <?php if(isset($_GET['e2n_billing'])){$this->competitionBilling($competitionId);return;} ?>
         <?php if(empty($data['started_at'])):?>
@@ -387,6 +390,21 @@ class CoachPortal
             $result=$this->billing->save($competitionId,wp_unslash($_POST),$action==='billing_generate',$userId);
             $this->competitionNotice=empty($result['success'])?(($result['message']??'')==='empty_generated_invoice'?'billing_zero_error':'billing_error'):($action==='billing_generate'?((int)($result['generated']??0)>0?'billing_generated':'billing_empty'):'billing_saved');
         }
+    }
+
+    public function downloadCompetitionParticipants(): void
+    {
+        $competitionId = absint($_GET['competition_id'] ?? 0);
+        check_admin_referer('e2n_export_competition_participants_' . $competitionId);
+        if (!$this->access->canView()) {
+            wp_die(esc_html__('Export non autorisé.', 'ecole2nat'), '', ['response' => 403]);
+        }
+        $data = $this->competitions->participantExport($competitionId);
+        if ($data === null) {
+            wp_die(esc_html__('Compétition introuvable.', 'ecole2nat'), '', ['response' => 404]);
+        }
+        (new CompetitionParticipantExportService())->download($data['competition'], $data['participants']);
+        exit;
     }
 
     private function competitionBilling(int $competitionId): void

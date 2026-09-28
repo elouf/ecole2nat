@@ -1,6 +1,11 @@
 # Changelog
 
-## Non publié — 0.21.0
+## Non publié — 0.21.1
+
+- Ajoute dans la fiche Coach d'une compétition un export Excel des participants
+  avec nom, prénom, catégorie et genre. Avant le démarrage, il reprend les
+  engagements Extranat validés ; après le démarrage, il utilise la liste figée
+  des participants, ajouts manuels compris.
 
 - Importe le total des règlements d’adhésion par saison, avec une valeur fixe
   de 50 € pour Pass’Sport, ainsi que les marqueurs `Payé ?` et

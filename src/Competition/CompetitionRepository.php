@@ -179,6 +179,34 @@ class CompetitionRepository
         return $wpdb->get_results($wpdb->prepare('SELECT s.id,s.first_name,s.last_name,s.gender,s.licence_number,g.name group_name,p.added_manually FROM '.Config::table('competition_participants').' p INNER JOIN '.Config::table('swimmers').' s ON s.id=p.swimmer_id LEFT JOIN '.Config::table('groups').' g ON g.id=s.group_id WHERE p.competition_id=%d ORDER BY s.last_name,s.first_name',$competitionId),ARRAY_A)?:[];
     }
 
+    public function exportParticipants(int $competitionId, bool $started): array
+    {
+        global $wpdb;
+        $competitions = Config::table('competitions');
+        $participants = Config::table('competition_participants');
+        $registrations = Config::table('competition_registrations');
+        $swimmers = Config::table('swimmers');
+        $memberships = Config::table('swimmer_group_memberships');
+        $groups = Config::table('groups');
+        $categories = Config::table('categories');
+        $sourceJoin = $started
+            ? "INNER JOIN {$participants} source ON source.competition_id=c.id"
+            : "INNER JOIN {$registrations} source ON source.competition_id=c.id AND source.response='yes' AND source.is_engaged=1";
+
+        return $wpdb->get_results($wpdb->prepare(
+            "SELECT DISTINCT s.id,s.last_name,s.first_name,s.gender,cat.name category_name
+             FROM {$competitions} c
+             {$sourceJoin}
+             INNER JOIN {$swimmers} s ON s.id=source.swimmer_id
+             LEFT JOIN {$memberships} m ON m.swimmer_id=s.id AND m.season_id=c.season_id
+             LEFT JOIN {$groups} g ON g.id=m.group_id
+             LEFT JOIN {$categories} cat ON cat.id=g.category_id
+             WHERE c.id=%d
+             ORDER BY s.last_name,s.first_name,s.id",
+            $competitionId
+        ), ARRAY_A) ?: [];
+    }
+
     public function availableParticipants(int $competitionId): array
     {
         global $wpdb;

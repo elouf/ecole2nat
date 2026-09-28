@@ -246,3 +246,20 @@
    s'ouvre dans un nouvel onglet.
 3. Refaire le contrôle avec un nageur sans licence : aucun lien ne doit être
    affiché.
+
+## 10. Export Excel des participants
+
+1. Avant le démarrage d'une compétition, engager sur Extranat deux nageurs ayant
+   répondu Oui et laisser un troisième sans engagement.
+2. Cliquer sur **Exporter les participants** et vérifier que le fichier `.xlsx`
+   contient uniquement les deux nageurs engagés, triés par nom puis prénom.
+3. Vérifier les quatre colonnes : `Nom`, `Prénom`, `Catégorie`, `Genre`, avec
+   `Femme` ou `Homme` lorsque le genre est renseigné.
+4. Démarrer la compétition, ajouter manuellement un nageur puis refaire
+   l'export : la liste figée et le nageur ajouté doivent être présents.
+5. Vérifier qu'une catégorie ou un genre non renseigné produit une cellule vide
+   et qu'un nom commençant par `=`, `+`, `-` ou `@` reste du texte dans Excel.
+6. Rejouer l'URL sans session Coach, avec un nonce absent ou invalide et avec un
+   identifiant de compétition inexistant : aucune donnée ne doit être exportée.
+7. Ouvrir le fichier dans Excel ou LibreOffice et vérifier l'en-tête, le filtre,
+   la ligne supérieure figée, les accents et l'absence d'avertissement de format.

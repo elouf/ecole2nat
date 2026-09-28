@@ -8,6 +8,7 @@ use Ecole2Nat\Coach\CoachAccessRepository;
 use Ecole2Nat\Coach\CoachAccessService;
 use Ecole2Nat\Competition\CompetitionService;
 use Ecole2Nat\Competition\CompetitionRepository;
+use Ecole2Nat\Competition\CompetitionParticipantExportService;
 use Ecole2Nat\ParentPortal\ParentAccessRepository;
 use Ecole2Nat\ParentPortal\ParentAccessService;
 use Ecole2Nat\Performance\PerformanceRepository;
@@ -70,6 +71,7 @@ final class FakeCompetitionRepository extends CompetitionRepository
     public bool $engaged = false;
     public bool $started = true;
     public bool $participant = true;
+    public bool $exportStarted = false;
 
     public function forSwimmer(int $swimmerId): array
     {
@@ -84,7 +86,7 @@ final class FakeCompetitionRepository extends CompetitionRepository
 
     public function find(int $competitionId): ?array
     {
-        return ['id'=>$competitionId,'status'=>'published','start_date'=>'2026-08-22','end_date'=>'2026-08-23','registration_opens_at'=>'2026-08-10 00:00:00','registration_closes_at'=>'2026-08-20 23:59:59'];
+        return ['id'=>$competitionId,'name'=>'Meeting test','status'=>'published','start_date'=>'2026-08-22','end_date'=>'2026-08-23','started_at'=>$this->exportStarted?'2026-08-22 08:00:00':null,'registration_opens_at'=>'2026-08-10 00:00:00','registration_closes_at'=>'2026-08-20 23:59:59'];
     }
     public function eligible(int $competitionId,int $swimmerId):bool{return true;}
     public function isEngaged(int $competitionId,int $swimmerId):bool{return $this->engaged;}
@@ -100,6 +102,8 @@ final class FakeCompetitionRepository extends CompetitionRepository
     { $this->saved=compact('competitionId','seriesKey');return 2; }
     public function saveResponse(int $competitionId,int $swimmerId,string $response,string $comment,string $source,?int $userId,?bool $parentsOfficial=null,?string $attendanceDays=null):bool
     { $this->saved=compact('competitionId','swimmerId','response','comment','source','userId','parentsOfficial','attendanceDays');return true; }
+    public function exportParticipants(int $competitionId,bool $started):array
+    { $this->saved=compact('competitionId','started');return [['last_name'=>'Martin','first_name'=>'Léa','category_name'=>'Dauphin','gender'=>'F']]; }
 }
 
 $tests = 0;
@@ -291,6 +295,30 @@ expectSame(null, ScheduleDurationCalculator::minutes('17:15:00', null, $timezone
 expectSame(null, ScheduleDurationCalculator::minutes('invalide', '18:00:00', $timezone), 'Horaire invalide');
 expectSame('18:00:00', ScheduleDurationCalculator::endTime('17:15:00', 45, $timezone), 'Calcul de l’heure de fin');
 expectSame('00:15:00', ScheduleDurationCalculator::endTime('23:30:00', 45, $timezone), 'Calcul de fin après minuit');
+
+$exportRepository = new FakeCompetitionRepository();
+$exportService = new CompetitionService($exportRepository);
+$exportData = $exportService->participantExport(8);
+expectSame(false, $exportRepository->saved['started'] ?? null, 'Avant démarrage, l’export utilise les engagements Extranat');
+expectSame('Martin', $exportData['participants'][0]['last_name'] ?? null, 'L’export prépare les nageurs engagés');
+$exportRepository->exportStarted = true;
+$exportService->participantExport(8);
+expectSame(true, $exportRepository->saved['started'] ?? null, 'Après démarrage, l’export utilise la liste figée des participants');
+
+$participantWorkbook = (new CompetitionParticipantExportService())->createWorkbook(
+    ['name' => 'Meeting test', 'start_date' => '2026-08-22'],
+    [
+        ['last_name' => '=DANGER', 'first_name' => 'Léa', 'category_name' => 'Dauphin', 'gender' => 'F'],
+        ['last_name' => 'Durand', 'first_name' => 'Noé', 'category_name' => 'Requin', 'gender' => 'M'],
+        ['last_name' => 'Petit', 'first_name' => 'Camille', 'category_name' => '', 'gender' => ''],
+    ]
+);
+$participantSheet = $participantWorkbook->getActiveSheet();
+expectSame(['Nom', 'Prénom', 'Catégorie', 'Genre'], $participantSheet->rangeToArray('A1:D1')[0], 'En-têtes de l’export des participants');
+expectSame(['=DANGER', 'Léa', 'Dauphin', 'Femme'], $participantSheet->rangeToArray('A2:D2', null, true, false)[0], 'Ligne féminine exportée et neutralisée comme texte');
+expectSame('s', $participantSheet->getCell('A2')->getDataType(), 'Un nom ressemblant à une formule reste explicitement du texte');
+expectSame(['Durand', 'Noé', 'Requin', 'Homme'], $participantSheet->rangeToArray('A3:D3', null, true, false)[0], 'Ligne masculine exportée');
+expectSame(['Petit', 'Camille', '', ''], $participantSheet->rangeToArray('A4:D4', null, true, false)[0], 'Genre ou catégorie inconnus laissés vides');
 
 $spreadsheet = new Spreadsheet();
 $groupsSheet = $spreadsheet->getActiveSheet();
