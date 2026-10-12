@@ -335,10 +335,21 @@ class CoachPortal
 
     private function competitions(): void
     {
-        $rows=$this->competitions->coachList(); ?>
-        <div class="e2n-coach-main"><h1><?php esc_html_e('Compétitions','ecole2nat'); ?></h1><div class="e2n-competition-list">
-        <?php if($rows===[]):?><section class="e2n-card"><p><?php esc_html_e('Aucune compétition publiée.','ecole2nat'); ?></p></section><?php endif; ?>
-        <?php foreach($rows as $row):$unanswered=max(0,(int)$row['eligible_count']-(int)$row['yes_count']-(int)$row['no_count']);$target=!empty($row['target_all'])?__('Tous','ecole2nat'):($row['competition_category_names']??'');?><article class="e2n-card e2n-competition-overview"><a class="e2n-competition-link" href="<?php echo esc_url($this->base(['e2n_view'=>'competitions','e2n_competition'=>(int)$row['id']])); ?>"><div><h2><?php echo esc_html($row['name']); ?></h2><p><?php echo esc_html(implode(' · ',array_filter([$this->competitionDateLabel($row),$target,$row['location']??'',$row['pool_length']??'']))); ?></p></div><span><?php echo esc_html(sprintf(__('%1$d oui · %2$d non · %3$d sans réponse · %4$d à engager','ecole2nat'),(int)$row['yes_count'],(int)$row['no_count'],$unanswered,(int)$row['pending_engagement_count'])); ?></span></a><?php $this->competitionResources($row); ?></article><?php endforeach; ?></div></div><?php
+        $rows=$this->competitions->coachList();
+        $current=array_values(array_filter($rows,static fn(array $row):bool=>empty($row['is_past'])));
+        $past=array_values(array_filter($rows,static fn(array $row):bool=>!empty($row['is_past']))); ?>
+        <div class="e2n-coach-main"><h1><?php esc_html_e('Compétitions','ecole2nat'); ?></h1>
+        <div class="e2n-competition-list">
+            <?php if($current===[]):?><section class="e2n-card"><p><?php echo esc_html($past===[]?__('Aucune compétition publiée.','ecole2nat'):__('Aucune compétition à venir ou récente.','ecole2nat')); ?></p></section><?php endif; ?>
+            <?php $this->competitionCards($current); ?>
+        </div>
+        <?php if($past!==[]):?><details class="e2n-past-competitions"><summary><?php echo esc_html(sprintf(__('Compétitions passées (%d)','ecole2nat'),count($past))); ?></summary><div class="e2n-competition-list"><?php $this->competitionCards($past); ?></div></details><?php endif; ?>
+        </div><?php
+    }
+
+    private function competitionCards(array $rows): void
+    {
+        foreach($rows as $row):$unanswered=max(0,(int)$row['eligible_count']-(int)$row['yes_count']-(int)$row['no_count']);$target=!empty($row['target_all'])?__('Tous','ecole2nat'):($row['competition_category_names']??'');?><article class="e2n-card e2n-competition-overview"><a class="e2n-competition-link" href="<?php echo esc_url($this->base(['e2n_view'=>'competitions','e2n_competition'=>(int)$row['id']])); ?>"><div><h2><?php echo esc_html($row['name']); ?></h2><p><?php echo esc_html(implode(' · ',array_filter([$this->competitionDateLabel($row),$target,$row['location']??'',$row['pool_length']??'']))); ?></p></div><span><?php echo esc_html(sprintf(__('%1$d oui · %2$d non · %3$d sans réponse · %4$d à engager','ecole2nat'),(int)$row['yes_count'],(int)$row['no_count'],$unanswered,(int)$row['pending_engagement_count'])); ?></span></a><?php $this->competitionResources($row); ?></article><?php endforeach;
     }
 
     private function competitionResources(array $competition): void

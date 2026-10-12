@@ -97,8 +97,8 @@ class CompetitionRepository
         $sql = 'SELECT c.*, GROUP_CONCAT(DISTINCT tc.category_name ORDER BY tc.category_name SEPARATOR \' / \') competition_category_names
                 FROM ' . Config::table('competitions') . ' c
                 LEFT JOIN ' . Config::table('competition_target_categories') . ' tc ON tc.competition_id=c.id
-                WHERE c.status<>\'draft\' AND c.start_date>=%s GROUP BY c.id ORDER BY c.start_date ASC';
-        return $wpdb->get_results($wpdb->prepare($sql,current_time('Y-m-d')), ARRAY_A) ?: [];
+                WHERE c.status<>\'draft\' GROUP BY c.id ORDER BY c.start_date ASC';
+        return $wpdb->get_results($sql, ARRAY_A) ?: [];
     }
 
     public function coachDetail(int $competitionId): ?array

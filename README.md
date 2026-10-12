@@ -75,6 +75,9 @@ nom, au chrono et à l'action Stop ; ce choix d'affichage est mémorisé sur
 l'appareil du coach.
 Jusqu'à dix compétitions en cours sont épinglées sous l'en-tête Coach. Elles peuvent
 être clôturées puis redémarrées sans perdre ni verrouiller les performances.
+Dans la liste Coach, une compétition reste visible avec les compétitions en cours
+ou à venir jusqu'à J+2 après son dernier jour. À partir de J+3, elle rejoint la
+zone **Compétitions passées**, repliée par défaut mais toujours consultable.
 
 Chaque compétition propose aussi un écran **Facturation**, limité aux nageurs
 engagés sur Extranat. Le coach y renseigne le nombre de repas et de nuitées,

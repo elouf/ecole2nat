@@ -1,6 +1,10 @@
 # Changelog
 
-## Non publié — 0.21.1
+## Non publié — 0.21.2
+
+- Conserve les compétitions dans la liste principale du portail Coach jusqu'au
+  deuxième jour suivant leur date de fin, puis les range à partir de J+3 dans
+  une zone « Compétitions passées » repliée par défaut.
 
 - Ajoute dans la fiche Coach d'une compétition un export Excel des participants
   avec nom, prénom, catégorie et genre. Avant le démarrage, il reprend les

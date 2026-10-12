@@ -50,8 +50,22 @@ class CompetitionService
     public function coachList(): array
     {
         $rows=$this->repository->coachList();
-        foreach($rows as &$row){$detail=$this->repository->coachDetail((int)$row['id']);$swimmers=$detail['swimmers']??[];$row['eligible_count']=count($swimmers);$row['yes_count']=count(array_filter($swimmers,static fn($s)=>($s['response']??'')==='yes'));$row['no_count']=count(array_filter($swimmers,static fn($s)=>($s['response']??'')==='no'));$row['pending_engagement_count']=count(array_filter($swimmers,static fn($s)=>($s['response']??'')==='yes' && empty($s['is_engaged'])));}
-        unset($row);return $rows;
+        foreach($rows as &$row){$detail=$this->repository->coachDetail((int)$row['id']);$swimmers=$detail['swimmers']??[];$row['eligible_count']=count($swimmers);$row['yes_count']=count(array_filter($swimmers,static fn($s)=>($s['response']??'')==='yes'));$row['no_count']=count(array_filter($swimmers,static fn($s)=>($s['response']??'')==='no'));$row['pending_engagement_count']=count(array_filter($swimmers,static fn($s)=>($s['response']??'')==='yes' && empty($s['is_engaged'])));$row['is_past']=$this->isPastForCoach($row);}
+        unset($row);
+        usort($rows, static function (array $left, array $right): int {
+            if ($left['is_past'] !== $right['is_past']) return $left['is_past'] ? 1 : -1;
+            $comparison = strcmp((string) ($left['start_date'] ?? ''), (string) ($right['start_date'] ?? ''));
+            return $left['is_past'] ? -$comparison : $comparison;
+        });
+        return $rows;
+    }
+
+    private function isPastForCoach(array $competition): bool
+    {
+        $lastDay = (string) (($competition['end_date'] ?? '') ?: ($competition['start_date'] ?? ''));
+        if ($lastDay === '') return false;
+        $archiveDate = (new \DateTimeImmutable($lastDay))->modify('+3 days')->format('Y-m-d');
+        return current_time('Y-m-d') >= $archiveDate;
     }
     public function coachDetail(int $competitionId): ?array { return $this->repository->coachDetail($competitionId); }
     public function events(): array { return EventCatalog::all(); }

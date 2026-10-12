@@ -263,3 +263,19 @@
    identifiant de compétition inexistant : aucune donnée ne doit être exportée.
 7. Ouvrir le fichier dans Excel ou LibreOffice et vérifier l'en-tête, le filtre,
    la ligne supérieure figée, les accents et l'absence d'avertissement de format.
+
+## 11. Classement des compétitions passées dans le portail Coach
+
+1. Créer une compétition publiée sur une seule journée et une compétition
+   publiée sur deux jours.
+2. Le jour de chaque compétition puis pendant les deux jours suivant sa date de
+   fin, vérifier qu'elle reste dans la liste principale du portail Coach et que
+   sa fiche reste accessible.
+3. Le troisième jour après sa date de fin, vérifier qu'elle quitte la liste
+   principale et apparaît dans **Compétitions passées**.
+4. Recharger la page et vérifier que cette zone est repliée par défaut, que son
+   compteur est exact et qu'elle peut être dépliée au clavier comme au toucher.
+5. Vérifier que les compétitions courantes et futures sont classées par date
+   croissante, et les compétitions passées de la plus récente à la plus ancienne.
+6. Contrôler l'affichage à 390, 768 et 1024 px et vérifier qu'une compétition
+   passée conserve l'accès à sa fiche, à son briefing et à ses liens utiles.

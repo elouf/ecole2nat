@@ -68,6 +68,7 @@ final class FakeParentAccessRepository extends ParentAccessRepository
 final class FakeCompetitionRepository extends CompetitionRepository
 {
     public array $saved = [];
+    public array $coachRows = [];
     public bool $engaged = false;
     public bool $started = true;
     public bool $participant = true;
@@ -83,6 +84,9 @@ final class FakeCompetitionRepository extends CompetitionRepository
             'registration_closes_at' => '2026-10-04 23:59:59',
         ]];
     }
+
+    public function coachList(): array { return $this->coachRows; }
+    public function coachDetail(int $competitionId): ?array { return ['id'=>$competitionId,'swimmers'=>[]]; }
 
     public function find(int $competitionId): ?array
     {
@@ -237,6 +241,16 @@ expectSame(1, count($upcomingCompetitions), 'Une compétition publiée reste vis
 expectSame('upcoming', $upcomingCompetitions[0]['registration_state'] ?? null, 'Une compétition visible avant ouverture reste non modifiable');
 $competitionRepository = new FakeCompetitionRepository();
 $competitionResponseService = new CompetitionService($competitionRepository);
+$competitionRepository->coachRows = [
+    ['id'=>1,'name'=>'J+2','start_date'=>'2026-08-15','end_date'=>null],
+    ['id'=>2,'name'=>'J+3','start_date'=>'2026-08-14','end_date'=>null],
+    ['id'=>3,'name'=>'Deux jours','start_date'=>'2026-08-12','end_date'=>'2026-08-16'],
+    ['id'=>4,'name'=>'Future','start_date'=>'2026-08-22','end_date'=>null],
+    ['id'=>5,'name'=>'Ancienne','start_date'=>'2026-08-01','end_date'=>null],
+];
+$coachCompetitions = $competitionResponseService->coachList();
+expectSame(['Deux jours','J+2','Future','J+3','Ancienne'],array_column($coachCompetitions,'name'),'Les compétitions récentes et futures précèdent les compétitions passées');
+expectSame([false,false,false,true,true],array_column($coachCompetitions,'is_past'),'Une compétition passe dans les archives trois jours après son dernier jour');
 expectSame('invalid', $competitionResponseService->saveParentResponse(1,42,'yes','',true,'')['message'], 'Le choix des jours est obligatoire pour une participation sur deux jours');
 expectSame('saved', $competitionResponseService->saveParentResponse(1,42,'yes','Note',true,'first_day')['message'], 'Une réponse complète sur deux jours est enregistrée');
 expectSame(true, $competitionRepository->saved['parentsOfficial'] ?? null, 'La participation des parents comme officiels est conservée');
