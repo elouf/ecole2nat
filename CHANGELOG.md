@@ -1,6 +1,10 @@
 # Changelog
 
-## Non publié — 0.21.2
+## Non publié — 0.21.3
+
+- Étend l'export Excel d'une compétition à tous les nageurs ayant répondu Oui
+  avant son démarrage et ajoute une colonne Statut : Inscrit sur fond orange ou
+  Validé sur fond vert selon l'engagement Extranat.
 
 - Conserve les compétitions dans la liste principale du portail Coach jusqu'au
   deuxième jour suivant leur date de fin, puis les range à partir de J+3 dans

@@ -107,7 +107,7 @@ final class FakeCompetitionRepository extends CompetitionRepository
     public function saveResponse(int $competitionId,int $swimmerId,string $response,string $comment,string $source,?int $userId,?bool $parentsOfficial=null,?string $attendanceDays=null):bool
     { $this->saved=compact('competitionId','swimmerId','response','comment','source','userId','parentsOfficial','attendanceDays');return true; }
     public function exportParticipants(int $competitionId,bool $started):array
-    { $this->saved=compact('competitionId','started');return [['last_name'=>'Martin','first_name'=>'Léa','category_name'=>'Dauphin','gender'=>'F']]; }
+    { $this->saved=compact('competitionId','started');return [['last_name'=>'Martin','first_name'=>'Léa','category_name'=>'Dauphin','gender'=>'F','participant_status'=>$started?'validated':'registered']]; }
 }
 
 $tests = 0;
@@ -313,26 +313,29 @@ expectSame('00:15:00', ScheduleDurationCalculator::endTime('23:30:00', 45, $time
 $exportRepository = new FakeCompetitionRepository();
 $exportService = new CompetitionService($exportRepository);
 $exportData = $exportService->participantExport(8);
-expectSame(false, $exportRepository->saved['started'] ?? null, 'Avant démarrage, l’export utilise les engagements Extranat');
-expectSame('Martin', $exportData['participants'][0]['last_name'] ?? null, 'L’export prépare les nageurs engagés');
+expectSame(false, $exportRepository->saved['started'] ?? null, 'Avant démarrage, l’export utilise les réponses Oui');
+expectSame('registered', $exportData['participants'][0]['participant_status'] ?? null, 'L’export conserve les postulants en attente de validation');
 $exportRepository->exportStarted = true;
-$exportService->participantExport(8);
+$startedExportData = $exportService->participantExport(8);
 expectSame(true, $exportRepository->saved['started'] ?? null, 'Après démarrage, l’export utilise la liste figée des participants');
+expectSame('validated', $startedExportData['participants'][0]['participant_status'] ?? null, 'Après démarrage, chaque participant exporté est validé');
 
 $participantWorkbook = (new CompetitionParticipantExportService())->createWorkbook(
     ['name' => 'Meeting test', 'start_date' => '2026-08-22'],
     [
-        ['last_name' => '=DANGER', 'first_name' => 'Léa', 'category_name' => 'Dauphin', 'gender' => 'F'],
-        ['last_name' => 'Durand', 'first_name' => 'Noé', 'category_name' => 'Requin', 'gender' => 'M'],
-        ['last_name' => 'Petit', 'first_name' => 'Camille', 'category_name' => '', 'gender' => ''],
+        ['last_name' => '=DANGER', 'first_name' => 'Léa', 'category_name' => 'Dauphin', 'gender' => 'F', 'participant_status' => 'registered'],
+        ['last_name' => 'Durand', 'first_name' => 'Noé', 'category_name' => 'Requin', 'gender' => 'M', 'participant_status' => 'validated'],
+        ['last_name' => 'Petit', 'first_name' => 'Camille', 'category_name' => '', 'gender' => '', 'participant_status' => 'registered'],
     ]
 );
 $participantSheet = $participantWorkbook->getActiveSheet();
-expectSame(['Nom', 'Prénom', 'Catégorie', 'Genre'], $participantSheet->rangeToArray('A1:D1')[0], 'En-têtes de l’export des participants');
-expectSame(['=DANGER', 'Léa', 'Dauphin', 'Femme'], $participantSheet->rangeToArray('A2:D2', null, true, false)[0], 'Ligne féminine exportée et neutralisée comme texte');
+expectSame(['Nom', 'Prénom', 'Catégorie', 'Genre', 'Statut'], $participantSheet->rangeToArray('A1:E1')[0], 'En-têtes de l’export des participants');
+expectSame(['=DANGER', 'Léa', 'Dauphin', 'Femme', 'Inscrit'], $participantSheet->rangeToArray('A2:E2', null, true, false)[0], 'Ligne féminine inscrite exportée et neutralisée comme texte');
 expectSame('s', $participantSheet->getCell('A2')->getDataType(), 'Un nom ressemblant à une formule reste explicitement du texte');
-expectSame(['Durand', 'Noé', 'Requin', 'Homme'], $participantSheet->rangeToArray('A3:D3', null, true, false)[0], 'Ligne masculine exportée');
-expectSame(['Petit', 'Camille', '', ''], $participantSheet->rangeToArray('A4:D4', null, true, false)[0], 'Genre ou catégorie inconnus laissés vides');
+expectSame('F4B183', $participantSheet->getStyle('E2')->getFill()->getStartColor()->getRGB(), 'Le statut Inscrit possède un fond orange');
+expectSame(['Durand', 'Noé', 'Requin', 'Homme', 'Validé'], $participantSheet->rangeToArray('A3:E3', null, true, false)[0], 'Ligne masculine validée exportée');
+expectSame('A9D18E', $participantSheet->getStyle('E3')->getFill()->getStartColor()->getRGB(), 'Le statut Validé possède un fond vert');
+expectSame(['Petit', 'Camille', '', '', 'Inscrit'], $participantSheet->rangeToArray('A4:E4', null, true, false)[0], 'Genre ou catégorie inconnus laissés vides');
 
 $spreadsheet = new Spreadsheet();
 $groupsSheet = $spreadsheet->getActiveSheet();

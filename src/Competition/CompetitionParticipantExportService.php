@@ -21,7 +21,7 @@ final class CompetitionParticipantExportService
 
         $sheet = $workbook->getActiveSheet();
         $sheet->setTitle('Participants');
-        $headers = ['Nom', 'Prénom', 'Catégorie', 'Genre'];
+        $headers = ['Nom', 'Prénom', 'Catégorie', 'Genre', 'Statut'];
 
         foreach ($headers as $index => $header) {
             $sheet->setCellValueExplicit([$index + 1, 1], $header, DataType::TYPE_STRING);
@@ -34,25 +34,39 @@ final class CompetitionParticipantExportService
                 (string) ($participant['first_name'] ?? ''),
                 (string) ($participant['category_name'] ?? ''),
                 $this->genderLabel((string) ($participant['gender'] ?? '')),
+                $this->statusLabel((string) ($participant['participant_status'] ?? '')),
             ];
             foreach ($values as $index => $value) {
                 $sheet->setCellValueExplicit([$index + 1, $row], $value, DataType::TYPE_STRING);
+            }
+            $statusColor = match ((string) ($participant['participant_status'] ?? '')) {
+                'registered' => 'F4B183',
+                'validated' => 'A9D18E',
+                default => null,
+            };
+            if ($statusColor !== null) {
+                $sheet->getStyle("E{$row}")->applyFromArray([
+                    'font' => ['bold' => true],
+                    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $statusColor]],
+                    'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+                ]);
             }
             $row++;
         }
 
         $lastRow = max(1, $row - 1);
-        $sheet->getStyle('A1:D1')->applyFromArray([
+        $sheet->getStyle('A1:E1')->applyFromArray([
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '2271B1']],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT],
         ]);
-        $sheet->setAutoFilter("A1:D{$lastRow}");
+        $sheet->setAutoFilter("A1:E{$lastRow}");
         $sheet->freezePane('A2');
         $sheet->getColumnDimension('A')->setWidth(24);
         $sheet->getColumnDimension('B')->setWidth(22);
         $sheet->getColumnDimension('C')->setWidth(24);
         $sheet->getColumnDimension('D')->setWidth(14);
+        $sheet->getColumnDimension('E')->setWidth(14);
         $sheet->setSelectedCell('A1');
 
         return $workbook;
@@ -79,6 +93,15 @@ final class CompetitionParticipantExportService
         return match (strtoupper(trim($gender))) {
             'F' => 'Femme',
             'M' => 'Homme',
+            default => '',
+        };
+    }
+
+    private function statusLabel(string $status): string
+    {
+        return match ($status) {
+            'registered' => 'Inscrit',
+            'validated' => 'Validé',
             default => '',
         };
     }

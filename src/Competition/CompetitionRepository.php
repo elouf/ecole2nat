@@ -191,10 +191,13 @@ class CompetitionRepository
         $categories = Config::table('categories');
         $sourceJoin = $started
             ? "INNER JOIN {$participants} source ON source.competition_id=c.id"
-            : "INNER JOIN {$registrations} source ON source.competition_id=c.id AND source.response='yes' AND source.is_engaged=1";
+            : "INNER JOIN {$registrations} source ON source.competition_id=c.id AND source.response='yes'";
+        $statusSelect = $started
+            ? "'validated' participant_status"
+            : "CASE WHEN source.is_engaged=1 THEN 'validated' ELSE 'registered' END participant_status";
 
         return $wpdb->get_results($wpdb->prepare(
-            "SELECT DISTINCT s.id,s.last_name,s.first_name,s.gender,cat.name category_name
+            "SELECT DISTINCT s.id,s.last_name,s.first_name,s.gender,cat.name category_name,{$statusSelect}
              FROM {$competitions} c
              {$sourceJoin}
              INNER JOIN {$swimmers} s ON s.id=source.swimmer_id

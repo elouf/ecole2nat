@@ -65,8 +65,10 @@ mode terrain suit uniquement les engagés, permet des ajouts manuels et conserve
 plusieurs performances par nageur avec épreuve, chrono, commentaire,
 disqualification et appréciation sur cinq.
 Depuis la fiche Coach, un export Excel fournit à tout moment les nom, prénom,
-catégorie et genre des participants : il reprend les engagements Extranat avant
-le démarrage, puis la liste figée et ses éventuels ajouts manuels après celui-ci.
+catégorie, genre et statut des participants. Avant le démarrage, il reprend tous
+les nageurs ayant répondu Oui : les postulants sont indiqués **Inscrit** sur fond
+orange et les engagements Extranat **Validé** sur fond vert. Après le démarrage,
+il utilise la liste figée et ses éventuels ajouts manuels, tous marqués **Validé**.
 Il propose également un chronomètre de série : le coach choisit l'épreuve et les
 participants, lance un départ commun puis arrête et enregistre chaque nageur
 individuellement, tout en continuant à saisir ses observations pendant la course.
