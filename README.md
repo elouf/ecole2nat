@@ -124,6 +124,13 @@ Le module Évaluations permet de suivre le niveau courant de chaque nageur sur l
 Les administrateurs peuvent ouvrir directement le portail Coach depuis le menu
 **Ecole2Nat' → Portail Coach** ou depuis l'écran **Coachs**, sans recevoir le rôle Coach.
 
+L'écran **Coachs** permet aussi d'attribuer le statut **Gestionnaire compétition**.
+Ce profil est dirigé uniquement vers la liste des compétitions. Il peut consulter
+les réponses et informations d'inscription, ouvrir une compétition, l'exporter,
+la démarrer, la facturer et utiliser les outils terrain. En revanche, il ne peut
+ni saisir une réponse Oui/Non, ni modifier l'engagement Extranat ; ces contrôles
+sont absents de son interface et les actions correspondantes sont refusées côté serveur.
+
 Le shortcode `[e2n_coach_portal]` propose trois accès complémentaires aux nageurs : liste alphabétique avec recherche, classement par catégorie et semaine type permanente construite depuis les créneaux des groupes. Aucun créneau n'est associé à une date et aucune préparation de séance n'est requise. Depuis une fiche d'évaluation, un coach peut ouvrir une prévisualisation sécurisée de la fiche Parents, afficher et copier le code permanent, ou le renvoyer à l'adresse responsable enregistrée.
 
 Un clic sur un créneau ouvre directement le groupe. Tous les comptes Coach peuvent mettre à jour les progressions de tous les groupes actifs, individuellement ou collectivement. Les titulaires habituels restent affichés à titre informatif.

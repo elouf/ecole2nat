@@ -32,7 +32,7 @@ class CoachPage
                 <div class="notice notice-error"><p><?php esc_html_e('La modification n’a pas pu être enregistrée.', 'ecole2nat'); ?></p></div>
             <?php endif; ?>
 
-            <p><?php esc_html_e('Tous les coachs peuvent consulter les groupes actifs et mettre à jour les progressions. Les titulaires servent uniquement à présenter les intervenants habituels dans la semaine type.', 'ecole2nat'); ?></p>
+            <p><?php esc_html_e('Tous les coachs peuvent consulter les groupes actifs et mettre à jour les progressions. Les gestionnaires compétition accèdent uniquement aux compétitions, sans pouvoir modifier les réponses ni les engagements Extranat. Les titulaires servent uniquement à présenter les intervenants habituels dans la semaine type.', 'ecole2nat'); ?></p>
 
             <h2><?php esc_html_e('Titulaires', 'ecole2nat'); ?></h2>
             <table class="widefat striped e2n-sortable-table">
@@ -40,11 +40,12 @@ class CoachPage
                 <tbody>
                 <?php foreach ($users as $user) :
                     $isCoach = user_can($user, 'e2n_coach_access');
+                    $isCompetitionManager = !$isCoach && user_can($user, 'e2n_competition_manager_access');
                     $assigned = $service->titularGroupIds((int) $user->ID);
                     ?>
                     <tr>
                         <td><strong><?php echo esc_html($user->display_name); ?></strong><br><small><?php echo esc_html($user->user_email); ?></small></td>
-                        <td><?php echo $isCoach ? esc_html__('Coach', 'ecole2nat') : '—'; ?></td>
+                        <td><?php echo $isCoach ? esc_html__('Coach', 'ecole2nat') : ($isCompetitionManager ? esc_html__('Gestionnaire compétition', 'ecole2nat') : '—'); ?></td>
                         <td>
                             <?php if ($isCoach) : ?>
                                 <form method="post">
@@ -65,8 +66,15 @@ class CoachPage
                             <form method="post">
                                 <?php wp_nonce_field('e2n_coach_admin'); ?>
                                 <input type="hidden" name="user_id" value="<?php echo (int) $user->ID; ?>">
-                                <input type="hidden" name="e2n_coach_action" value="<?php echo $isCoach ? 'disable' : 'enable'; ?>">
-                                <button class="button" type="submit"><?php echo esc_html($isCoach ? __('Retirer le rôle Coach', 'ecole2nat') : __('Définir comme Coach', 'ecole2nat')); ?></button>
+                                <?php if ($isCoach || $isCompetitionManager) : ?>
+                                    <button class="button" type="submit" name="e2n_coach_action" value="disable"><?php esc_html_e('Retirer le statut', 'ecole2nat'); ?></button>
+                                <?php endif; ?>
+                                <?php if (!$isCoach) : ?>
+                                    <button class="button" type="submit" name="e2n_coach_action" value="enable"><?php esc_html_e('Définir comme Coach', 'ecole2nat'); ?></button>
+                                <?php endif; ?>
+                                <?php if (!$isCompetitionManager) : ?>
+                                    <button class="button" type="submit" name="e2n_coach_action" value="enable_competition_manager"><?php esc_html_e('Définir comme Gestionnaire compétition', 'ecole2nat'); ?></button>
+                                <?php endif; ?>
                             </form>
                         </td>
                     </tr>
@@ -94,12 +102,20 @@ class CoachPage
         }
 
         if ($action === 'enable') {
+            $user->remove_role('e2n_competition_manager');
             $user->add_role('e2n_coach');
             return 'saved';
         }
 
+        if ($action === 'enable_competition_manager') {
+            $user->remove_role('e2n_coach');
+            $user->add_role('e2n_competition_manager');
+            return $service->clearUserAccess($userId) ? 'saved' : 'error';
+        }
+
         if ($action === 'disable') {
             $user->remove_role('e2n_coach');
+            $user->remove_role('e2n_competition_manager');
             return $service->clearUserAccess($userId) ? 'saved' : 'error';
         }
 

@@ -1,6 +1,11 @@
 # Changelog
 
-## Non publié — 0.21.3
+## Non publié — 0.21.4
+
+- Ajoute le statut WordPress « Gestionnaire compétition », attribuable depuis
+  l'écran Coachs : accès limité au module Compétitions avec export, facturation,
+  démarrage et outils terrain, mais sans saisie des réponses ni validation des
+  engagements Extranat, y compris côté serveur.
 
 - Étend l'export Excel d'une compétition à tous les nageurs ayant répondu Oui
   avant son démarrage et ajoute une colonne Statut : Inscrit sur fond orange ou

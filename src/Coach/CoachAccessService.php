@@ -17,12 +17,37 @@ class CoachAccessService
 
     public function canView(): bool
     {
-        return current_user_can('manage_options') || current_user_can('e2n_coach_access');
+        return $this->canCoach() || $this->canManageCompetitions();
     }
 
     public function canEvaluateGroup(int $groupId): bool
     {
-        return $this->canView();
+        return $this->canCoach();
+    }
+
+    public function canCoach(): bool
+    {
+        return current_user_can('manage_options') || current_user_can('e2n_coach_access');
+    }
+
+    public function canManageCompetitions(): bool
+    {
+        return $this->canCoach() || current_user_can('e2n_competition_manager_access');
+    }
+
+    public function canManageCompetitionRegistrations(): bool
+    {
+        return $this->canCoach();
+    }
+
+    public function isCompetitionManagerOnly(): bool
+    {
+        return !$this->canCoach() && current_user_can('e2n_competition_manager_access');
+    }
+
+    public function canManageDistributions(): bool
+    {
+        return $this->canCoach();
     }
 
     public function titularGroupIds(?int $userId = null): array

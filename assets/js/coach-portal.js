@@ -42,8 +42,10 @@
     function competitionRank(row) {
         var response = row.querySelector('[data-e2n-kind="competition-response"]:checked');
         var engaged = row.querySelector('[data-e2n-kind="competition-engaged"]');
-        if (response && response.value === 'yes') return engaged && engaged.checked ? 0 : 1;
-        if (response && response.value === 'no') return 2;
+        var responseValue = response ? response.value : (row.dataset.response || '');
+        var isEngaged = engaged ? engaged.checked : row.dataset.engaged === '1';
+        if (responseValue === 'yes') return isEngaged ? 0 : 1;
+        if (responseValue === 'no') return 2;
         return 3;
     }
 
@@ -564,6 +566,7 @@
             var competitionRow = input.closest('.e2n-competition-swimmer');
             var engagedInput = competitionRow ? competitionRow.querySelector('[data-e2n-kind="competition-engaged"]') : null;
             if (engagedInput instanceof HTMLInputElement) { engagedInput.disabled = input.value !== 'yes'; if (input.value !== 'yes') engagedInput.checked = false; }
+            if (competitionRow) { competitionRow.dataset.response = input.value; competitionRow.dataset.engaged = engagedInput instanceof HTMLInputElement && engagedInput.checked ? '1' : '0'; }
             if (competitionRow) updateCompetitionRow(competitionRow);
             var activeResponseSort = competitionRow ? competitionRow.closest('.e2n-card').querySelector('[data-e2n-competition-sort].is-active') : null;
             if (activeResponseSort instanceof HTMLButtonElement && activeResponseSort.dataset.e2nCompetitionSort === 'status') sortCompetitionRows(activeResponseSort);
@@ -575,6 +578,7 @@
                 swimmer_id: input.dataset.swimmerId, engaged: input.checked ? '1' : ''
             }, input);
             var engagementRow = input.closest('.e2n-competition-swimmer');
+            if (engagementRow) engagementRow.dataset.engaged = input.checked ? '1' : '0';
             if (engagementRow) updateCompetitionRow(engagementRow);
             var activeEngagementSort = engagementRow ? engagementRow.closest('.e2n-card').querySelector('[data-e2n-competition-sort].is-active') : null;
             if (activeEngagementSort instanceof HTMLButtonElement && activeEngagementSort.dataset.e2nCompetitionSort === 'status') sortCompetitionRows(activeEngagementSort);

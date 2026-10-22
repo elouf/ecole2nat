@@ -15,7 +15,7 @@ class Installer
         self::createTables();
         $healthAlertMigrated = self::migrateHealthAlert();
         self::migrateSeasonHistory();
-        self::ensureCoachRoleAndPage();
+        self::ensurePortalRolesAndPage();
         $sessionExercisesMigrated = self::allowRepeatedSessionExercises();
 
         update_option('e2n_version', E2N_VERSION);
@@ -42,13 +42,13 @@ class Installer
             self::createTables();
             $healthAlertMigrated = self::migrateHealthAlert();
             self::migrateSeasonHistory();
-            self::ensureCoachRoleAndPage();
             if (self::allowRepeatedSessionExercises() && $healthAlertMigrated) {
                 update_option('e2n_db_version', E2N_DB_VERSION);
             }
         }
 
         if ($installedVersion !== E2N_VERSION) {
+            self::ensurePortalRolesAndPage();
             update_option('e2n_version', E2N_VERSION);
         }
     }
@@ -883,13 +883,24 @@ class Installer
     }
 
 
-    private static function ensureCoachRoleAndPage(): void
+    private static function ensurePortalRolesAndPage(): void
     {
         $role = get_role('e2n_coach');
         if ($role === null) {
             $role = add_role('e2n_coach', __('Coach Ecole2Nat', 'ecole2nat'), ['read' => true, 'e2n_coach_access' => true]);
         } elseif (!$role->has_cap('e2n_coach_access')) {
             $role->add_cap('e2n_coach_access');
+        }
+
+        $competitionManagerRole = get_role('e2n_competition_manager');
+        if ($competitionManagerRole === null) {
+            $competitionManagerRole = add_role(
+                'e2n_competition_manager',
+                __('Gestionnaire compétition Ecole2Nat', 'ecole2nat'),
+                ['read' => true, 'e2n_competition_manager_access' => true]
+            );
+        } elseif (!$competitionManagerRole->has_cap('e2n_competition_manager_access')) {
+            $competitionManagerRole->add_cap('e2n_competition_manager_access');
         }
 
         $pageId = (int) get_option('e2n_coach_page_id', 0);

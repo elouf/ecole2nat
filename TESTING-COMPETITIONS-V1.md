@@ -282,3 +282,26 @@
    croissante, et les compétitions passées de la plus récente à la plus ancienne.
 6. Contrôler l'affichage à 390, 768 et 1024 px et vérifier qu'une compétition
    passée conserve l'accès à sa fiche, à son briefing et à ses liens utiles.
+
+## 12. Gestionnaire compétition
+
+1. Depuis **Ecole2Nat' → Coachs**, attribuer à un utilisateur sans rôle Coach le
+   statut **Gestionnaire compétition**, puis se connecter avec ce compte.
+2. Vérifier qu'il est redirigé vers les compétitions et que la navigation ne
+   présente ni Nageurs, ni Catégories, ni Semaine type, ni Distributions.
+3. Ouvrir une compétition non démarrée et vérifier que les informations des
+   nageurs restent visibles, avec un statut textuel, mais sans boutons Oui/Non
+   ni case **Engagement Extranat**.
+4. Forger successivement les appels AJAX de réponse et d'engagement avec un
+   nonce valide : chacun doit être refusé en HTTP 403 et aucune donnée ne doit
+   changer.
+5. Vérifier que la liste et la fiche restent accessibles, puis tester l'export
+   Excel, la facturation et le démarrage de la compétition.
+6. Après démarrage, vérifier l'ajout manuel d'un participant, le chronomètre et
+   la saisie d'une performance, puis la clôture et le redémarrage.
+7. Tenter d'ouvrir directement une URL Nageurs, Catégories, Semaine type ou
+   Distributions : le portail doit revenir aux compétitions. Forger également
+   une écriture d'évaluation et une remise de distribution : elles doivent être
+   refusées côté serveur.
+8. Repasser l'utilisateur Coach puis sans statut et vérifier respectivement le
+   retour des droits complets, puis le refus d'accès au portail.

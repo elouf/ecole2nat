@@ -185,6 +185,7 @@ $billingRepositorySource = file_get_contents(__DIR__ . '/../src/Competition/Comp
 $installerSource = file_get_contents(__DIR__ . '/../src/Database/Installer.php');
 $exercisePageSource = file_get_contents(__DIR__ . '/../src/Admin/Pages/ExercisePage.php');
 $settingsPageSource = file_get_contents(__DIR__ . '/../src/Admin/Pages/SettingsPage.php');
+$coachPageSource = file_get_contents(__DIR__ . '/../src/Admin/Pages/CoachPage.php');
 expectSame(false, str_contains((string) $settingsPageSource, 'parent_email_signature'), 'Les réglages ne proposent ni ne modifient plus la signature des anciens emails Parents');
 expectSame(true, str_contains((string) $coachPortalSource, 'data-e2n-other-amount'), 'La facturation Coach propose un montant libre');
 expectSame(true, substr_count((string) $installerSource, 'other_amount decimal(10,2) NOT NULL DEFAULT 0.00') === 2, 'Le montant libre est ajouté à la facture courante et à ses versions');
@@ -194,6 +195,9 @@ expectSame(true, str_contains((string) $bootstrapSource, "E2N_DB_VERSION', '0.15
 expectSame(true, str_contains((string) $installerSource, "Config::table('distributions')"), 'Le schéma crée les distributions');
 expectSame(true, str_contains((string) $installerSource, "Config::table('distribution_targets')"), 'Le schéma crée les cibles de distribution');
 expectSame(true, str_contains((string) $installerSource, "Config::table('distribution_deliveries')"), 'Le schéma crée les remises de distribution');
+expectSame(true, str_contains((string) $installerSource, "'e2n_competition_manager'"), 'La mise à jour crée le rôle Gestionnaire compétition');
+expectSame(true, str_contains((string) $coachPageSource, 'enable_competition_manager'), 'Le back-office permet d’attribuer le statut Gestionnaire compétition');
+expectSame(true, str_contains((string) $coachPortalSource, 'canManageCompetitionRegistrations()'), 'Les écritures de réponse et d’engagement possèdent un contrôle dédié');
 expectSame(true, str_contains((string) file_get_contents(__DIR__ . '/../src/Synchronization/SynchronizationRepository.php'), "max(\n                (int) (\$existing['invoice_marked_sent'] ?? 0)"), 'Une facture historiquement envoyée ne peut pas redevenir non envoyée');
 expectSame(true, str_contains((string) $billingRepositorySource, '+ $this->moneyToCents((string) $invoice[\'other_amount\'])'), 'Le montant libre participe au total facturé');
 
@@ -217,6 +221,15 @@ expectSame(false, $service->canEvaluateGroup(4), 'Un utilisateur sans capacité 
 $service = accessService(['e2n_coach_access']);
 expectSame(true, $service->canEvaluateGroup(4), 'Un coach peut évaluer un groupe sans dépendre d’une date');
 expectSame(true, $service->canEvaluateGroup(9), 'Un coach peut évaluer un groupe dont il n’est pas titulaire');
+expectSame(true, $service->canManageCompetitionRegistrations(), 'Un coach peut gérer les réponses et engagements d’une compétition');
+
+$service = accessService(['e2n_competition_manager_access']);
+expectSame(true, $service->canView(), 'Un gestionnaire compétition peut entrer dans le portail');
+expectSame(true, $service->canManageCompetitions(), 'Un gestionnaire compétition peut piloter une compétition');
+expectSame(true, $service->isCompetitionManagerOnly(), 'Le statut limité de gestionnaire compétition est identifié');
+expectSame(false, $service->canManageCompetitionRegistrations(), 'Un gestionnaire compétition ne peut modifier ni réponse ni engagement Extranat');
+expectSame(false, $service->canEvaluateGroup(4), 'Un gestionnaire compétition ne peut pas évaluer un groupe');
+expectSame(false, $service->canManageDistributions(), 'Un gestionnaire compétition ne peut pas modifier une distribution');
 
 $parentRepository = new FakeParentAccessRepository();
 $parentService = new ParentAccessService($parentRepository);
