@@ -1,6 +1,10 @@
 # Changelog
 
-## Non publié — 0.21.4
+## Non publié — 0.21.5
+
+- Importe la colonne facultative `Organisation` des compétitions et affiche
+  son lien dans un nouvel onglet aux côtés des autres ressources des portails
+  Coach et Nageurs ; porte le schéma à `0.15.2` et le plugin à `0.21.5`.
 
 - Ajoute le statut WordPress « Gestionnaire compétition », attribuable depuis
   l'écran Coachs : accès limité au module Compétitions avec export, facturation,

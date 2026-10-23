@@ -360,11 +360,12 @@ class CoachPortal
     private function competitionResources(array $competition): void
     { ?>
         <?php if (!empty($competition['information'])) : ?><details class="e2n-competition-briefing"><summary><?php esc_html_e('Briefing','ecole2nat'); ?></summary><div><?php echo nl2br(esc_html($competition['information'])); ?></div></details><?php endif; ?>
-        <?php $links = ['technical_document_url', 'program_url', 'carpool_url', 'liveffn_url', 'photo_album_url'];
+        <?php $links = ['technical_document_url', 'program_url', 'organization_url', 'carpool_url', 'liveffn_url', 'photo_album_url'];
         if (array_filter($links, static fn(string $key): bool => !empty($competition[$key]))) : ?>
             <div class="e2n-inline e2n-competition-links">
                 <?php if (!empty($competition['technical_document_url'])) : ?><a class="e2n-btn" href="<?php echo esc_url($competition['technical_document_url']); ?>" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">↗</span> <?php esc_html_e('Fiche technique','ecole2nat'); ?></a><?php endif; ?>
                 <?php if (!empty($competition['program_url'])) : ?><a class="e2n-btn" href="<?php echo esc_url($competition['program_url']); ?>" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">↗</span> <?php esc_html_e('Programme','ecole2nat'); ?></a><?php endif; ?>
+                <?php if (!empty($competition['organization_url'])) : ?><a class="e2n-btn" href="<?php echo esc_url($competition['organization_url']); ?>" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">↗</span> <?php esc_html_e('Organisation','ecole2nat'); ?></a><?php endif; ?>
                 <?php if (!empty($competition['carpool_url'])) : ?><a class="e2n-btn" href="<?php echo esc_url($competition['carpool_url']); ?>" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">🚗</span> <?php esc_html_e('Covoiturage','ecole2nat'); ?></a><?php endif; ?>
                 <?php if (!empty($competition['liveffn_url'])) : ?><a class="e2n-btn" href="<?php echo esc_url($competition['liveffn_url']); ?>" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">◉</span> <?php esc_html_e('liveFFN','ecole2nat'); ?></a><?php endif; ?>
                 <?php if (!empty($competition['photo_album_url'])) : ?><a class="e2n-btn" href="<?php echo esc_url($competition['photo_album_url']); ?>" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">📷</span> <?php esc_html_e('Album photo','ecole2nat'); ?></a><?php endif; ?>

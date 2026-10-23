@@ -77,6 +77,7 @@ final class CompetitionPage
                 <tr><th><?php esc_html_e('Bassin', 'ecole2nat'); ?></th><td><select name="pool_length"><option value=""><?php esc_html_e('Non renseigné', 'ecole2nat'); ?></option><option value="25m" <?php selected($row['pool_length']??'', '25m'); ?>>25m</option><option value="50m" <?php selected($row['pool_length']??'', '50m'); ?>>50m</option></select></td></tr>
                 <tr><th><?php esc_html_e('Fiche technique', 'ecole2nat'); ?></th><td><input class="large-text" type="url" name="technical_document_url" value="<?php echo esc_attr($row['technical_document_url']); ?>"></td></tr>
                 <tr><th><?php esc_html_e('Programme', 'ecole2nat'); ?></th><td><input class="large-text" type="url" name="program_url" value="<?php echo esc_attr($row['program_url']); ?>"></td></tr>
+                <tr><th><?php esc_html_e('Organisation', 'ecole2nat'); ?></th><td><input class="large-text" type="url" name="organization_url" value="<?php echo esc_attr($row['organization_url'] ?? ''); ?>"></td></tr>
                 <tr><th><?php esc_html_e('Covoiturage', 'ecole2nat'); ?></th><td><input class="large-text" type="url" name="carpool_url" value="<?php echo esc_attr($row['carpool_url']); ?>"></td></tr>
                 <tr><th><?php esc_html_e('liveFFN', 'ecole2nat'); ?></th><td><input class="large-text" type="url" name="liveffn_url" value="<?php echo esc_attr($row['liveffn_url']); ?>"></td></tr>
                 <tr><th><?php esc_html_e('Album photo', 'ecole2nat'); ?></th><td><input class="large-text" type="url" name="photo_album_url" value="<?php echo esc_attr($row['photo_album_url']); ?>"></td></tr>
@@ -107,6 +108,7 @@ final class CompetitionPage
             'registration_closes_at' => sanitize_text_field($_POST['registration_end'] ?? '') . ' 23:59:59',
             'technical_document_url' => esc_url_raw(wp_unslash($_POST['technical_document_url'] ?? '')),
             'program_url' => esc_url_raw(wp_unslash($_POST['program_url'] ?? '')),
+            'organization_url' => esc_url_raw(wp_unslash($_POST['organization_url'] ?? '')),
             'carpool_url' => esc_url_raw(wp_unslash($_POST['carpool_url'] ?? '')),
             'liveffn_url' => esc_url_raw(wp_unslash($_POST['liveffn_url'] ?? '')),
             'photo_album_url' => esc_url_raw(wp_unslash($_POST['photo_album_url'] ?? '')),

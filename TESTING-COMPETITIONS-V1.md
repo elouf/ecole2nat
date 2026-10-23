@@ -13,7 +13,7 @@
    index uniques documentés.
 3. Importer un onglet `Compétitions` comportant Code compétition, Nom, Date
    début, Date fin, Lieu, Bassin, Début inscriptions, Fin inscriptions, Catégories de
-   compétiteurs, Fiche technique, Programme, Covoiturage, liveFFN, Album photo,
+   compétiteurs, Fiche technique, Programme, Organisation, Covoiturage, liveFFN, Album photo,
    Informations et Statut.
 4. Relancer le même fichier : aucune compétition en double et aucune réponse
    familiale existante ne doit être supprimée.
@@ -58,7 +58,7 @@
 9. Vérifier que le briefing Parents est replié par défaut, que la fiche
    technique s'ouvre dans un nouvel onglet et que les deux actions restent
    lisibles et utilisables sur mobile.
-10. Renseigner puis vider les colonnes Programme, Covoiturage, liveFFN et
+10. Renseigner puis vider les colonnes Programme, Organisation, Covoiturage, liveFFN et
     Album photo : leurs boutons
     doivent apparaître uniquement lorsqu'une URL valide est importée et
     s'ouvrir dans un nouvel onglet.
@@ -85,7 +85,7 @@
    engagement Extranat, Oui sans engagement, Non, puis sans réponse.
 9. Vérifier les fonds vert, orange et rouge correspondants et leur mise à jour
    immédiate après modification d'une réponse ou de l'engagement.
-10. Vérifier que les boutons Fiche technique, Programme, Covoiturage, liveFFN
+10. Vérifier que les boutons Fiche technique, Programme, Organisation, Covoiturage, liveFFN
     et Album photo apparaissent uniquement lorsque leur URL est renseignée,
     s'ouvrent dans un nouvel onglet, utilisent tous le même style blanc bordé
     que dans le portail Parents et restent utilisables sur mobile.

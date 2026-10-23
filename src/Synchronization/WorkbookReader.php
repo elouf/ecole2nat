@@ -389,10 +389,11 @@ final class WorkbookReader
             $poolLength=mb_strtolower(trim($this->string($row,['bassin'])));
             if($poolLength!==''&&!in_array($poolLength,['25m','50m'],true)){$errors[]=sprintf('Onglet Compétitions, ligne %d : le bassin doit être 25m ou 50m.',$row['_row']);continue;}
             $programRaw=$this->string($row,['programme']);$programUrl=esc_url_raw($programRaw);
+            $organizationRaw=$this->string($row,['organisation']);$organizationUrl=esc_url_raw($organizationRaw);
             $carpoolRaw=$this->string($row,['covoiturage']);$carpoolUrl=esc_url_raw($carpoolRaw);
             $liveffnRaw=$this->string($row,['liveffn','live ffn']);$liveffnUrl=esc_url_raw($liveffnRaw);
             $photoAlbumRaw=$this->string($row,['album photo','album photos']);$photoAlbumUrl=esc_url_raw($photoAlbumRaw);
-            if(($programRaw!==''&&$programUrl==='')||($carpoolRaw!==''&&$carpoolUrl==='')||($liveffnRaw!==''&&$liveffnUrl==='')||($photoAlbumRaw!==''&&$photoAlbumUrl==='')){$errors[]=sprintf('Onglet Compétitions, ligne %d : le lien Programme, Covoiturage, liveFFN ou Album photo n’est pas une URL valide.',$row['_row']);continue;}
+            if(($programRaw!==''&&$programUrl==='')||($organizationRaw!==''&&$organizationUrl==='')||($carpoolRaw!==''&&$carpoolUrl==='')||($liveffnRaw!==''&&$liveffnUrl==='')||($photoAlbumRaw!==''&&$photoAlbumUrl==='')){$errors[]=sprintf('Onglet Compétitions, ligne %d : le lien Programme, Organisation, Covoiturage, liveFFN ou Album photo n’est pas une URL valide.',$row['_row']);continue;}
             $normalizedTargets=array_map([$this,'normalize'],$targets);$all=in_array('tous',$normalizedTargets,true);$competitionCategories=[];
             foreach($targets as $target)if($this->normalize($target)!=='tous')$competitionCategories[]=$target;
             if($all && count($targets)>1){$errors[]=sprintf('Onglet Compétitions, ligne %d : TOUS ne peut pas être combiné avec une catégorie de compétiteur.',$row['_row']);continue;}
@@ -405,6 +406,7 @@ final class WorkbookReader
                 'competition_categories'=>$competitionCategories, 'target_all'=>$all?1:0,
                 'technical_document_url'=>esc_url_raw($this->string($row, ['fiche technique', 'pdf'])),
                 'program_url'=>$programUrl,
+                'organization_url'=>$organizationUrl,
                 'carpool_url'=>$carpoolUrl, 'liveffn_url'=>$liveffnUrl,
                 'photo_album_url'=>$photoAlbumUrl,
                 'information'=>$this->string($row, ['informations', 'information']),

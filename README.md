@@ -36,7 +36,7 @@ changement est historisé à la date de sa synchronisation. L'onglet facultatif
 `Bassin` limité à `25m` ou `50m`, et les catégories de compétiteur concernées.
 `TOUS` permet de cibler tous les nageurs actifs de
 la saison, même sans catégorie de compétiteur. Les colonnes facultatives
-`Programme`, `Covoiturage`, `liveFFN` et `Album photo` ajoutent les boutons correspondants aux portails
+`Programme`, `Organisation`, `Covoiturage`, `liveFFN` et `Album photo` ajoutent les boutons correspondants aux portails
 Parents et Coach lorsqu'une URL est renseignée.
 
 Les familles peuvent répondre pendant la période d'inscription, indiquer si

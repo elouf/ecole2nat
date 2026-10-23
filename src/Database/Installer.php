@@ -131,6 +131,7 @@ class Installer
             registration_closes_at datetime NOT NULL,
             technical_document_url text NULL,
             program_url text NULL,
+            organization_url text NULL,
             carpool_url text NULL,
             liveffn_url text NULL,
             photo_album_url text NULL,
